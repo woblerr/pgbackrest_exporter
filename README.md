@@ -1,2 +1,3 @@
 # pgbackrest_exporter
-Prometheus exporter for pgBackRest
+Prometheus exporter for [pgBackRest](https://pgbackrest.org/).
+
