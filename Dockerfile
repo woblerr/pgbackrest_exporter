@@ -5,9 +5,10 @@ WORKDIR /build
 RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -trimpath -o pgbackrest_exporter pgbackrest_exporter.go
 
 FROM ghcr.io/woblerr/pgbackrest:${BACKREST_VERSION}
+ARG REPO_BUILD_TAG
 ENV EXPORTER_ENDPOINT="/metrics" \
     EXPORTER_PORT="9854" \
-    COLLECT_INTERVAL=600
+    COLLECT_INTERVAL="600"
 COPY --from=builder /build/pgbackrest_exporter /etc/pgbackrest/pgbackrest_exporter
 RUN chmod 755 /etc/pgbackrest/pgbackrest_exporter
 LABEL \
