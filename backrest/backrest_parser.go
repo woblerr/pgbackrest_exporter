@@ -144,7 +144,7 @@ func getPGVersion(id, repo_key int, db_list []db) string {
 
 func getMetrics(data stanza, verbose bool) {
 	var err error
-	// https://github.com/pgbackrest/pgbackrest/blob/master/src/command/info.c#L78-L94
+	//https://github.com/pgbackrest/pgbackrest/blob/03021c6a17f1374e84ef42614fa1dd2a6be4b64d/src/command/info/info.c#L78-L94
 	// Stanza and repo statuses:
 	//  0: "ok",
 	//  1: "missing stanza path",
