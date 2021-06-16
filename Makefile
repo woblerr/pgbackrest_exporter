@@ -12,7 +12,7 @@ test:
 build:
 	@echo "Build $(APP_NAME)"
 	@make test
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -o $(APP_NAME) $(APP_NAME).go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -trimpath -o $(APP_NAME) $(APP_NAME).go
 
 .PHONY: docker
 docker:
