@@ -12,7 +12,8 @@
 # Binary file
 /pgbackrest_exporter
 
-/containers_for_tests
+# Service file
+/pgbackrest_exporter.service
 
 # VSCode
 /.vscode
