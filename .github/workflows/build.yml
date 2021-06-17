@@ -65,7 +65,7 @@ jobs:
           ref="$(echo ${GITHUB_REF} | cut -d'/' -f3)"
           echo GITHUB_REF - $ref
           echo ${GITHUB_PKG} | docker login ghcr.io -u ${GITHUB_USER} --password-stdin
-          echo ${DOCKERHUB_PKG} | docker login -u ${USERNAME} --password-stdin
+          echo ${DOCKERHUB_PKG} | docker login -u ${DOCKERHUB_USER} --password-stdin
           docker buildx build --push \
               --build-arg REPO_BUILD_TAG=${GITHUB_REF}-${GITHUB_SHA} \
               --platform linux/amd64 \
