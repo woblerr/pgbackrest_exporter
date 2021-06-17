@@ -1,9 +1,10 @@
 package main
 
 import (
+	"crypto/rand"
 	"fmt"
 	"io/ioutil"
-	"math/rand"
+	"math/big"
 	"net/http"
 	"os"
 	"strconv"
@@ -12,7 +13,11 @@ import (
 )
 
 func TestMain(t *testing.T) {
-	port := 50000 + int(rand.Int31n(100))
+	n, err := rand.Int(rand.Reader, big.NewInt(1000))
+	if err != nil {
+		t.Errorf("\nGet error during generate random int value:\n%v", err)
+	}
+	port := 50000 + int(n.Int64())
 	os.Args = []string{"pgbackrest_exporter", "--prom.port=" + strconv.Itoa(port)}
 	finished := make(chan struct{})
 	go func() {

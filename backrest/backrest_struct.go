@@ -2,15 +2,15 @@ package backrest
 
 var stanzas []stanza
 
-//[{
-//	"archive": [{}],
-//  "backup": [{}],
-//  "cipher": "string",
-//  "db": [{}],
-//  "name": "string",
-//  "repo": [{}],
-//  "status": {}
-//}]
+//  [{
+//    "archive": [{}],
+//    "cipher": "string",
+//    "backup": [{}],
+//    "db": [{}],
+//    "name": "string",
+//    "repo": [{}],
+//    "status": {}
+//  }]
 type stanza struct {
 	Archive []archive `json:"archive"`
 	Backup  []backup  `json:"backup"`
@@ -21,12 +21,12 @@ type stanza struct {
 	Status  status    `json:"status"`
 }
 
-//"archive": [{
+//  "archive": [{
 //    "database": {},
 //    "id": "string",
 //    "max": "string",
 //    "min": "string"
-//}]
+//  }]
 type archive struct {
 	Database  databaseID `json:"database"`
 	PGVersion string     `json:"id"`
@@ -34,16 +34,16 @@ type archive struct {
 	WALMin    string     `json:"min"`
 }
 
-//"database": {
+//  "database": {
 //    "id": number,
 //    "repo-key": number
-//}
+//  }
 type databaseID struct {
 	ID      int `json:"id"`
 	RepoKey int `json:"repo-key"`
 }
 
-//"backup": [{
+//  "backup": [{
 //    "archive": {
 //        "start": "string",
 //        "stop": "string"
@@ -62,7 +62,7 @@ type databaseID struct {
 //        "stop": number
 //    },
 //    "type": "string"
-//}]
+//  }]
 type backup struct {
 	Archive struct {
 		StartWAL string `json:"start"`
@@ -84,14 +84,14 @@ type backup struct {
 	Type string `json:"type"`
 }
 
-//"info": {
+//  "info": {
 //    "delta": number,
 //    "repository": {
 //        "delta": number,
 //        "size": number
 //    },
 //    "size": number
-//}
+//  }
 type backupInfo struct {
 	Delta      int64 `json:"delta"`
 	Repository struct {
@@ -101,12 +101,12 @@ type backupInfo struct {
 	Size int64 `json:"size"`
 }
 
-//"db": [{
+//  "db": [{
 //    "id": number,
 //    "repo-key": number,
 //    "system-id": number,
 //    "version": "string"
-//}]
+//  }]
 type db struct {
 	ID       int    `json:"id"`
 	RepoKey  int    `json:"repo-key"`
@@ -114,14 +114,14 @@ type db struct {
 	Version  string `json:"version"`
 }
 
-//"repo": [{
+//  "repo": [{
 //    "cipher": "string",
 //    "key": number,
 //    "status": {
 //        "code": number,
 //        "message": "string"
 //    }
-//}]
+//  }]
 type repo struct {
 	Cipher string `json:"cipher"`
 	Key    int    `json:"key"`
@@ -131,7 +131,7 @@ type repo struct {
 	} `json:"status"`
 }
 
-//"status": {
+//  "status": {
 //    "code": number,
 //    "lock": {
 //        "backup": {
@@ -139,7 +139,7 @@ type repo struct {
 //        }
 //    },
 //    "message": "string"
-//}
+//  }
 type status struct {
 	Code int `json:"code"`
 	Lock struct {

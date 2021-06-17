@@ -117,7 +117,7 @@ func getAllInfoData() ([]byte, error) {
 }
 
 func parseResult(output []byte) ([]stanza, error) {
-	err := json.Unmarshal([]byte(output), &stanzas)
+	err := json.Unmarshal(output, &stanzas)
 	return stanzas, err
 }
 
@@ -133,9 +133,9 @@ func resetMetrics() {
 	pgbrWALArchivingMetric.Reset()
 }
 
-func getPGVersion(id, repo_key int, db_list []db) string {
-	for _, db := range db_list {
-		if id == db.ID && repo_key == db.RepoKey {
+func getPGVersion(id, repoKey int, dbList []db) string {
+	for _, db := range dbList {
+		if id == db.ID && repoKey == db.RepoKey {
 			return db.Version
 		}
 	}

@@ -171,9 +171,9 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 
 func TestGetPGVersion(t *testing.T) {
 	type args struct {
-		id       int
-		repo_key int
-		db_list  []db
+		id      int
+		repoKey int
+		dbList  []db
 	}
 	tests := []struct {
 		name string
@@ -191,7 +191,7 @@ func TestGetPGVersion(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getPGVersion(tt.args.id, tt.args.repo_key, tt.args.db_list); got != tt.want {
+			if got := getPGVersion(tt.args.id, tt.args.repoKey, tt.args.dbList); got != tt.want {
 				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", got, tt.want)
 			}
 		})
