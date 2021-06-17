@@ -6,20 +6,41 @@ The metrics are collected by parsing result of `pgbackrest info --output json` c
 
 Tested for pgBackRest 2.33.
 
-The metrics are described [below](#collected-metrics).
-
 ## Collected metrics
 
-The metrics provided by the client:
-* `pgbackrest_exporter_stanza_status` - current stanza status;
-* `pgbackrest_exporter_repo_status` - current repo status by stanza;
-* `pgbackrest_exporter_backup_info` - backup info by stanza and backup type;
-* `pgbackrest_exporter_backup_duration` - backup duration in seconds by stanza and backup type;
-* `pgbackrest_exporter_backup_size` - backup size by stanza and backup type;
-* `pgbackrest_exporter_backup_database_size` - database size in backup by stanza and backup type;
-* `pgbackrest_exporter_backup_repo_backup_set_size` - repo set size in backup by stanza and backup type ;
-* `pgbackrest_exporter_backup_repo_backup_size` - repo size in backup by stanza and backup type;
+The metrics provided by the client.
+
+* `pgbackrest_exporter_stanza_status` - current stanza status.
+* `pgbackrest_exporter_repo_status` - current repo status by stanza.
+
+    Values description for stanza and repo statuses:
+    - 0: ok,
+    - 1: missing stanza path,
+    - 2: no valid backups,
+    - 3: missing stanza data,
+    - 4: different across repos,
+    - 5: database mismatch across repos,
+    - 6: requested backup not found,
+    - 99: other.
+
+* `pgbackrest_exporter_backup_info` - backup info by stanza and backup type.
+    
+    Values description:
+     - 1 - info about backup is exist.
+
+* `pgbackrest_exporter_backup_duration` - backup duration in seconds by stanza and backup type.
+* `pgbackrest_exporter_backup_size` - backup size by stanza and backup type.
+* `pgbackrest_exporter_backup_database_size` - database size in backup by stanza and backup type.
+* `pgbackrest_exporter_backup_repo_backup_set_size` - repo set size in backup by stanza and backup type.
+* `pgbackrest_exporter_backup_repo_backup_size` - repo size in backup by stanza and backup type.
 * `pgbackrest_exporter_wal_archive_status` - WAL archive status by stanza.
+
+    Values description:
+    - 0 - any one of WALMin and WALMax have empty value, there is no correct information about WAL archiving,
+    - 1 - both WALMin and WALMax have no empty values, there is correct information about WAL archiving.
+
+    When flag `--verbose.info` is specified - WALMin and WALMax are added as metric labels.
+    This creates new different time series on each WAL archiving.
 
 ## Getting Started
 ### Building and running
