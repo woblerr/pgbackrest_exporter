@@ -1,4 +1,7 @@
 APP_NAME = pgbackrest_exporter
+BRANCH_FULL=$(shell git rev-parse --abbrev-ref HEAD)
+BRANCH=$(subst /,-,$(BRANCH_FULL))
+GIT_REV=$(shell git describe --abbrev=7 --always)
 SERVICE_CONF_DIR = /etc/systemd/system
 HTTP_PORT = 9854
 BACKREST_VERSION = 2.33
@@ -12,18 +15,19 @@ test:
 build:
 	@echo "Build $(APP_NAME)"
 	@make test
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -trimpath -o $(APP_NAME) $(APP_NAME).go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -trimpath -ldflags "-X main.version=$(BRANCH)-$(GIT_REV)" -o $(APP_NAME) $(APP_NAME).go
 
 .PHONY: build-darwin
 build-darwin:
 	@echo "Build $(APP_NAME)"
 	@make test
-	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -mod=vendor -trimpath -o $(APP_NAME) $(APP_NAME).go
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -mod=vendor -trimpath -ldflags "-X main.version=$(BRANCH)-$(GIT_REV)" -o $(APP_NAME) $(APP_NAME).go
 
 .PHONY: docker
 docker:
 	@echo "Build $(APP_NAME) docker container"
-	docker build --pull -f Dockerfile --build-arg BACKREST_VERSION=$(BACKREST_VERSION) -t $(APP_NAME) .
+	@echo "Version $(BRANCH)-$(GIT_REV)"
+	docker build --pull -f Dockerfile --build-arg REPO_BUILD_TAG=$(BRANCH)-$(GIT_REV) --build-arg BACKREST_VERSION=$(BACKREST_VERSION) -t $(APP_NAME) .
 
 .PHONY: prepare-service
 prepare-service:

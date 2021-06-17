@@ -1,8 +1,13 @@
 ARG BACKREST_VERSION="2.33"
+
 FROM golang:1.16-buster AS builder
+ARG REPO_BUILD_TAG
 COPY . /build
 WORKDIR /build
-RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -trimpath -o pgbackrest_exporter pgbackrest_exporter.go
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -mod=vendor -trimpath \
+    -ldflags "-X main.version=${REPO_BUILD_TAG}" \
+    -o pgbackrest_exporter pgbackrest_exporter.go
 
 FROM ghcr.io/woblerr/pgbackrest:${BACKREST_VERSION}
 ARG REPO_BUILD_TAG
