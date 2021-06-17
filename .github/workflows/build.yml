@@ -1,0 +1,68 @@
+name: build
+
+on:
+  push:
+    branches:
+    tags:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up go 1.16
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+        id: go
+
+      - name: Build and test
+        run: |
+          go test -v -timeout=100s -covermode=count -coverprofile=$GITHUB_WORKSPACE/coverage.out ./...
+        env:
+          GOFLAGS: "-mod=vendor"
+
+      - name: Install golangci-lint and goveralls
+        run: |
+          curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $GITHUB_WORKSPACE v1.41.0
+          GO111MODULE=off go get -u github.com/mattn/goveralls
+
+      - name: Run linters
+        run: $GITHUB_WORKSPACE/golangci-lint run
+        env:
+          GOFLAGS: "-mod=vendor"
+
+      - name: Submit coverage
+        run: $(go env GOPATH)/bin/goveralls -service="github" -coverprofile=$GITHUB_WORKSPACE/coverage.out
+        env:
+          COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Det up QEMU
+        uses: docker/setup-qemu-action@v1
+        
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Available platforms
+        run: echo ${{ steps.buildx.outputs.platforms }}
+
+      - name: Build and push master image to ghcr.io and Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        env:
+          GITHUB_USER: ${{ github.actor }}
+          GITHUB_PKG: ${{ secrets.GUTHUB_CR_PAT }}
+          DOCKERHUB_USER: ${{ secrets.DOCKEHUB_USER }}
+          DOCKERHUB_PKG: ${{ secrets.DOCKEHUB_TOKEN }}
+          GITHUB_SHA: ${{ github.sha}}
+          GITHUB_REF: ${{ github.ref}}
+        run: |
+          ref="$(echo ${GITHUB_REF} | cut -d'/' -f3)"
+          echo GITHUB_REF - $ref
+          echo ${GITHUB_PKG} | docker login ghcr.io -u ${GITHUB_USER} --password-stdin
+          echo ${DOCKERHUB_PKG} | docker login -u ${USERNAME} --password-stdin
+          docker buildx build --push \
+              --build-arg REPO_BUILD_TAG=${GITHUB_REF}-${GITHUB_SHA} \
+              --platform linux/amd64 \
+              -t ghcr.io/${GITHUB_USER}/pgbackrest_exporter:${ref} \
+              -t ${DOCKERHUB_USER}/pgbackrest_exporter:${ref} .
