@@ -15,6 +15,9 @@
 # Service file
 /pgbackrest_exporter.service
 
+# Release dir
+/dist
+
 # VSCode
 /.vscode
 

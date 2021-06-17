@@ -1,0 +1,35 @@
+---
+project_name: pgbackrest_exporter
+
+builds:
+  - env: 
+      - CGO_ENABLED=0
+    goos: 
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    flags: "-trimpath"
+    ldflags: "-s -w -X main.version={{ .Version }}"
+    main: .
+
+archives:
+  - id: pgbackrest_exporter
+    files:
+      - LICENSE
+    format: tar.gz
+    name_template: "{{ .Binary }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+    wrap_in_directory: true
+    replacements:
+      amd64: x86_64
+      darwin: macos
+
+checksum:
+  name_template: "{{ .ProjectName }}_checksums.txt"
+
+release:
+  draft: true
+
+changelog:
+  skip: true
