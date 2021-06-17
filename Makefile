@@ -14,6 +14,12 @@ build:
 	@make test
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -trimpath -o $(APP_NAME) $(APP_NAME).go
 
+.PHONY: build-darwin
+build-darwin:
+	@echo "Build $(APP_NAME)"
+	@make test
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -mod=vendor -trimpath -o $(APP_NAME) $(APP_NAME).go
+
 .PHONY: docker
 docker:
 	@echo "Build $(APP_NAME) docker container"
