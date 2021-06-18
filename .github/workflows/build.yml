@@ -72,3 +72,53 @@ jobs:
               --platform linux/amd64 \
               -t ghcr.io/${GITHUB_USER}/pgbackrest_exporter:${ref} \
               -t ${DOCKERHUB_USER}/pgbackrest_exporter:${ref} .
+
+      - name: Build and push tag (latest) image to ghcr.io and Docker Hub
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        env:
+          GITHUB_USER: ${{ github.actor }}
+          GITHUB_PKG: ${{ secrets.GUTHUB_CR_PAT }}
+          DOCKERHUB_USER: ${{ secrets.DOCKEHUB_USER }}
+          DOCKERHUB_PKG: ${{ secrets.DOCKEHUB_TOKEN }}
+          GITHUB_SHA: ${{ github.sha}}
+          GITHUB_REF: ${{ github.ref}}
+        run: |
+          ref="$(echo ${GITHUB_REF} | cut -d'/' -f3)"
+          echo REPO_BUILD_TAG: ${ref}
+          echo ${GITHUB_PKG} | docker login ghcr.io -u ${GITHUB_USER} --password-stdin
+          echo ${DOCKERHUB_PKG} | docker login -u ${DOCKERHUB_USER} --password-stdin
+          docker buildx build --push \
+              --build-arg REPO_BUILD_TAG=${ref} \
+              --platform linux/amd64 \
+              -t ghcr.io/${GITHUB_USER}/pgbackrest_exporter:${ref} \
+              -t ghcr.io/${GITHUB_USER}/pgbackrest_exporter:latest \
+              -t ${DOCKERHUB_USER}/pgbackrest_exporter:${ref} \
+              -t ${DOCKERHUB_USER}/pgbackrest_exporter:latest .
+
+  goreleaser:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Set up go 1.16
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+        id: go
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Get ref
+        id: vars
+        run: |
+          echo ::set-output name=ref::$(echo ${GITHUB_REF} | cut -d'/' -f3)
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v2
+        with:
+          distribution: goreleaser
+          version: ${REPO_BUILD_TAG}
+          args: release -f .goreleaser.yml --rm-dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_BUILD_TAG: ${{ steps.vars.outputs.ref }}
