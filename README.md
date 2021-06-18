@@ -156,9 +156,3 @@ sudo systemctl enable pgbackrest_exporter.service
 sudo systemctl restart pgbackrest_exporter.service
 systemctl -l status pgbackrest_exporter.service
 ```
-
-
-
-
-
-

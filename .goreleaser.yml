@@ -10,7 +10,9 @@ builds:
     goarch:
       - amd64
       - arm64
-    flags: "-trimpath"
+    flags: 
+      - -trimpath
+      - -mod=vendor
     ldflags: "-s -w -X main.version={{ .Version }}"
     main: .
 

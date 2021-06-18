@@ -118,8 +118,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v2
         with:
           distribution: goreleaser
-          version: ${REPO_BUILD_TAG}
-          args: release -f .goreleaser.yml --rm-dist
+          version: latest
+          args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO_BUILD_TAG: ${{ steps.vars.outputs.ref }}
