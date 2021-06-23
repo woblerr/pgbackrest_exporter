@@ -20,7 +20,7 @@ var (
 		[]string{"stanza"})
 	pgbrRepoStatusMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_exporter_repo_status",
-		Help: "Current repo status by stanza.",
+		Help: "Current repository status.",
 	},
 		[]string{
 			"cipher",
@@ -29,7 +29,7 @@ var (
 		})
 	pgbrStanzaBackupInfoMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_exporter_backup_info",
-		Help: "Backup info by stanza and backup type.",
+		Help: "Backup info.",
 	},
 		[]string{
 			"backrest_ver",
@@ -44,7 +44,7 @@ var (
 			"wal_archive_max"})
 	pgbrStanzaBackupDurationMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_exporter_backup_duration",
-		Help: "Backup duration in seconds by stanza and backup type.",
+		Help: "Backup duration in seconds.",
 	},
 		[]string{
 			"backup_name",
@@ -54,9 +54,11 @@ var (
 			"stanza",
 			"start_time",
 			"stop_time"})
+	// The 'database backup size' is the amount of data in the database to actually back up
+	// (these will be the same for full backups).
 	pgbrStanzaBackupSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_exporter_backup_size",
-		Help: "Backup size by stanza and backup type.",
+		Help: "The amount of data in the database to actually back up.",
 	},
 		[]string{
 			"backup_name",
@@ -64,9 +66,10 @@ var (
 			"database_id",
 			"repo_key",
 			"stanza"})
+	// The 'database size' is the full uncompressed size of the database.
 	pgbrStanzaBackupDatabaseSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_exporter_backup_database_size",
-		Help: "Database size in backup by stanza and backup type.",
+		Help: "The full uncompressed size of the database.",
 	},
 		[]string{
 			"backup_name",
@@ -74,9 +77,14 @@ var (
 			"database_id",
 			"repo_key",
 			"stanza"})
+	// The 'backup set size' includes all the files from this backup and
+	// any referenced backups in the repository that are required
+	// to restore the database from this backup.
+	// Repository 'backup set size' reflect compressed file sizes
+	// if compression is enabled in pgBackRest or the filesystem.
 	pgbrStanzaRepoBackupSetSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_exporter_backup_repo_backup_set_size",
-		Help: "Repo set size in backup by stanza and backup type.",
+		Help: "The full compressed files size to restore the database from backup.",
 	},
 		[]string{
 			"backup_name",
@@ -84,9 +92,13 @@ var (
 			"database_id",
 			"repo_key",
 			"stanza"})
+	// The 'backup size' includes only the files in this backup
+	// (these will also be the same for full backups).
+	// Repository 'backup size' reflect compressed file sizes
+	// if compression is enabled in pgBackRest or the filesystem.
 	pgbrStanzaRepoBackupSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_exporter_backup_repo_backup_size",
-		Help: "Repo size in backup by stanza and backup type.",
+		Help: "The compressed files size in backup.",
 	},
 		[]string{
 			"backup_name",
@@ -96,7 +108,7 @@ var (
 			"stanza"})
 	pgbrWALArchivingMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_exporter_wal_archive_status",
-		Help: "WAL archive status by stanza.",
+		Help: "Current WAL archive status.",
 	},
 		[]string{
 			"database_id",
@@ -229,7 +241,7 @@ func getMetrics(data stanza, verbose bool) {
 				time.Unix(backup.Timestamp.Stop, 0).Format(layout), ".",
 			)
 		}
-		// Backup size.
+		// Database backup size.
 		err = setUpMetricValue(
 			pgbrStanzaBackupSizeMetric,
 			float64(backup.Info.Delta),
@@ -273,7 +285,7 @@ func getMetrics(data stanza, verbose bool) {
 				data.Name, ".",
 			)
 		}
-		// Repo set size.
+		// Repo backup set size.
 		err = setUpMetricValue(
 			pgbrStanzaRepoBackupSetSizeMetric,
 			float64(backup.Info.Repository.Size),
@@ -295,7 +307,7 @@ func getMetrics(data stanza, verbose bool) {
 				data.Name, ".",
 			)
 		}
-		// Repo size.
+		// Repo backup size.
 		err = setUpMetricValue(
 			pgbrStanzaRepoBackupSizeMetric,
 			float64(backup.Info.Repository.Delta),

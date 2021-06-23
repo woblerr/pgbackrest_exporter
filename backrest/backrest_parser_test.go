@@ -15,31 +15,31 @@ func TestGetMetrics(t *testing.T) {
 		verbose  bool
 		testText string
 	}
-	templateMetrics := `# HELP pgbackrest_exporter_backup_database_size Database size in backup by stanza and backup type.
+	templateMetrics := `# HELP pgbackrest_exporter_backup_database_size The full uncompressed size of the database.
 # TYPE pgbackrest_exporter_backup_database_size gauge
 pgbackrest_exporter_backup_database_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
-# HELP pgbackrest_exporter_backup_duration Backup duration in seconds by stanza and backup type.
+# HELP pgbackrest_exporter_backup_duration Backup duration in seconds.
 # TYPE pgbackrest_exporter_backup_duration gauge
 pgbackrest_exporter_backup_duration{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo",start_time="2021-06-07 12:24:23",stop_time="2021-06-07 12:24:26"} 3
-# HELP pgbackrest_exporter_backup_info Backup info by stanza and backup type.
+# HELP pgbackrest_exporter_backup_info Backup info.
 # TYPE pgbackrest_exporter_backup_info gauge
 pgbackrest_exporter_backup_info{backrest_ver="2.33",backup_name="20210607-092423F",backup_type="full",database_id="1",pg_version="13",prior="",repo_key="1",stanza="demo",wal_archive_max="000000010000000000000002",wal_archive_min="000000010000000000000002"} 1
-# HELP pgbackrest_exporter_backup_repo_backup_set_size Repo set size in backup by stanza and backup type.
+# HELP pgbackrest_exporter_backup_repo_backup_set_size The full compressed files size to restore the database from backup.
 # TYPE pgbackrest_exporter_backup_repo_backup_set_size gauge
 pgbackrest_exporter_backup_repo_backup_set_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
-# HELP pgbackrest_exporter_backup_repo_backup_size Repo size in backup by stanza and backup type.
+# HELP pgbackrest_exporter_backup_repo_backup_size The compressed files size in backup.
 # TYPE pgbackrest_exporter_backup_repo_backup_size gauge
 pgbackrest_exporter_backup_repo_backup_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
-# HELP pgbackrest_exporter_backup_size Backup size by stanza and backup type.
+# HELP pgbackrest_exporter_backup_size The amount of data in the database to actually back up.
 # TYPE pgbackrest_exporter_backup_size gauge
 pgbackrest_exporter_backup_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
-# HELP pgbackrest_exporter_repo_status Current repo status by stanza.
+# HELP pgbackrest_exporter_repo_status Current repository status.
 # TYPE pgbackrest_exporter_repo_status gauge
 pgbackrest_exporter_repo_status{cipher="none",repo_key="1",stanza="demo"} 0
 # HELP pgbackrest_exporter_stanza_status Current stanza status.
 # TYPE pgbackrest_exporter_stanza_status gauge
 pgbackrest_exporter_stanza_status{stanza="demo"} 0
-# HELP pgbackrest_exporter_wal_archive_status WAL archive status by stanza.
+# HELP pgbackrest_exporter_wal_archive_status Current WAL archive status.
 # TYPE pgbackrest_exporter_wal_archive_status gauge
 `
 	templateStanza := func(WALMax, WALMin string) stanza {
