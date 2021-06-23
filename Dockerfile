@@ -5,7 +5,7 @@ FROM golang:1.16-buster AS builder
 ARG REPO_BUILD_TAG
 COPY . /build
 WORKDIR /build
-RUN CGO_ENABLED=0 GOOS=linux go build \
+RUN CGO_ENABLED=0 go build \
     -mod=vendor -trimpath \
     -ldflags "-X main.version=${REPO_BUILD_TAG}" \
     -o pgbackrest_exporter pgbackrest_exporter.go

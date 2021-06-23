@@ -42,7 +42,7 @@ jobs:
         env:
           COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Det up QEMU
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
 
       - name: Set up Docker Buildx
@@ -69,7 +69,7 @@ jobs:
           echo ${DOCKERHUB_PKG} | docker login -u ${DOCKERHUB_USER} --password-stdin
           docker buildx build --push \
               --build-arg REPO_BUILD_TAG=${ref}-${sha} \
-              --platform linux/amd64 \
+              --platform linux/amd64,linux/arm64 \
               -t ghcr.io/${GITHUB_USER}/pgbackrest_exporter:${ref} \
               -t ${DOCKERHUB_USER}/pgbackrest_exporter:${ref} .
 
@@ -89,7 +89,7 @@ jobs:
           echo ${DOCKERHUB_PKG} | docker login -u ${DOCKERHUB_USER} --password-stdin
           docker buildx build --push \
               --build-arg REPO_BUILD_TAG=${ref} \
-              --platform linux/amd64 \
+              --platform linux/amd64,linux/arm64 \
               -t ghcr.io/${GITHUB_USER}/pgbackrest_exporter:${ref} \
               -t ghcr.io/${GITHUB_USER}/pgbackrest_exporter:latest \
               -t ${DOCKERHUB_USER}/pgbackrest_exporter:${ref} \
