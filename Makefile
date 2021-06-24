@@ -23,6 +23,15 @@ build-darwin:
 	@make test
 	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -mod=vendor -trimpath -ldflags "-X main.version=$(BRANCH)-$(GIT_REV)" -o $(APP_NAME) $(APP_NAME).go
 
+.PHONY: dist
+dist:
+	- @mkdir -p dist
+	docker build -f Dockerfile.artifacts --progress=plain -t pgbackrest_exporter_dist .
+	- @docker rm -f pgbackrest_exporter_dist 2>/dev/null || exit 0
+	docker run -d --name=pgbackrest_exporter_dist pgbackrest_exporter_dist
+	docker cp pgbackrest_exporter_dist:/artifacts dist/
+	docker rm -f pgbackrest_exporter_dist
+
 .PHONY: docker
 docker:
 	@echo "Build $(APP_NAME) docker container"
