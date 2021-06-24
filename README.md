@@ -2,7 +2,7 @@
 
 Prometheus exporter for [pgBackRest](https://pgbackrest.org/).
 
-The metrics are collected by parsing result of `pgbackrest info --output json` command. The metrics are collected for all stanzas received by command. You need to run exporter in the same host where pgBackRest was installed.
+The metrics are collected by parsing result of `pgbackrest info --output json` command. The metrics are collected for all stanzas received by command. You need to run exporter on the same host where pgBackRest was installed or inside Docker.
 
 Tested for pgBackRest 2.33.
 
