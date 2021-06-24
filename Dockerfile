@@ -6,9 +6,9 @@ ARG REPO_BUILD_TAG
 COPY . /build
 WORKDIR /build
 RUN CGO_ENABLED=0 go build \
-    -mod=vendor -trimpath \
-    -ldflags "-X main.version=${REPO_BUILD_TAG}" \
-    -o pgbackrest_exporter pgbackrest_exporter.go
+        -mod=vendor -trimpath \
+        -ldflags "-X main.version=${REPO_BUILD_TAG}" \
+        -o pgbackrest_exporter pgbackrest_exporter.go
 
 FROM ghcr.io/woblerr/pgbackrest:${BACKREST_VERSION}
 ARG REPO_BUILD_TAG
