@@ -54,11 +54,11 @@ var (
 			"stanza",
 			"start_time",
 			"stop_time"})
-	// The 'database backup size' is the amount of data in the database to actually back up
-	// (these will be the same for full backups).
+	// The 'database backup size' is the amount of data in the database
+	// to actually backup (these will be the same for full backups).
 	pgbrStanzaBackupSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_exporter_backup_size",
-		Help: "The amount of data in the database to actually back up.",
+		Help: "Amount of data in the database to actually backup.",
 	},
 		[]string{
 			"backup_name",
@@ -69,7 +69,7 @@ var (
 	// The 'database size' is the full uncompressed size of the database.
 	pgbrStanzaBackupDatabaseSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_exporter_backup_database_size",
-		Help: "The full uncompressed size of the database.",
+		Help: "Full uncompressed size of the database.",
 	},
 		[]string{
 			"backup_name",
@@ -84,7 +84,7 @@ var (
 	// if compression is enabled in pgBackRest or the filesystem.
 	pgbrStanzaRepoBackupSetSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_exporter_backup_repo_backup_set_size",
-		Help: "The full compressed files size to restore the database from backup.",
+		Help: "Full compressed files size to restore the database from backup.",
 	},
 		[]string{
 			"backup_name",
@@ -98,7 +98,7 @@ var (
 	// if compression is enabled in pgBackRest or the filesystem.
 	pgbrStanzaRepoBackupSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_exporter_backup_repo_backup_size",
-		Help: "The compressed files size in backup.",
+		Help: "Compressed files size in backup.",
 	},
 		[]string{
 			"backup_name",
