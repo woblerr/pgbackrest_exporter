@@ -75,7 +75,7 @@ Flags:
 ```
 
 ### Building and running docker
-By default, pgBackRest version is `2.33`. Another version can be specified via arguments.
+By default, pgBackRest version is `2.34`. Another version can be specified via arguments.
 For base image used [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest) image.
 
 ```bash
@@ -85,7 +85,7 @@ make docker
 or for specific pgBackRest version
 
 ```bash
-docker build -f Dockerfile --build-arg BACKREST_VERSION=2.33 -t pgbackrest_exporter .
+docker build -f Dockerfile --build-arg BACKREST_VERSION=2.34 -t pgbackrest_exporter .
 ```
 
 Environment variables supported by this image:

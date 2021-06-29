@@ -40,7 +40,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 			`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 				`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
 				`"backup":[{"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
-				`"backrest":{"format":5,"version":"2.33"},"database":{"id":1,"repo-key":1},` +
+				`"backrest":{"format":5,"version":"2.34"},"database":{"id":1,"repo-key":1},` +
 				`"info":{"delta":24316343,"repository":{"delta":2969512,"size":2969512},"size":24316343},` +
 				`"label":"20210614-213200F","prior":null,"reference":null,"timestamp":{"start":1623706320,` +
 				`"stop":1623706322},"type":"full"}],"cipher":"none","db":[{"id":1,"repo-key":1,` +
