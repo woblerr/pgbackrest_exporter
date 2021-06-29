@@ -1,17 +1,25 @@
 # pgBackRest Exporter
 
+[![Actions Status](https://github.com/woblerr/pgbackrest_exporter/workflows/build/badge.svg)](https://github.com/woblerr/pgbackrest_exporter/actions)
+[![Coverage Status](https://coveralls.io/repos/github/woblerr/pgbackrest_exporter/badge.svg?branch=master)](https://coveralls.io/github/woblerr/pgbackrest_exporter?branch=master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/woblerr/pgbackrest_exporter)](https://goreportcard.com/report/github.com/woblerr/pgbackrest_exporter)
+
 Prometheus exporter for [pgBackRest](https://pgbackrest.org/).
 
 The metrics are collected by parsing result of `pgbackrest info --output json` command. The metrics are collected for all stanzas received by command. You need to run exporter on the same host where pgBackRest was installed or inside Docker.
 
-Tested for pgBackRest 2.33.
+All metrics are collected for `pgBackRest >= v2.32`.
+For earlier versions, some metrics may not be collected or have insignificant label values.
+
+For example, the `pgbackrest_exporter_repo_status` metric will be absent for `pgBackRest <= v2.31`.
+And for other metrics lable will be `repo_key="0"`.
 
 ## Collected metrics
 
 The metrics provided by the client.
 
 * `pgbackrest_exporter_stanza_status` - current stanza status.
-* `pgbackrest_exporter_repo_status` - current repo status by stanza.
+* `pgbackrest_exporter_repo_status` - current repository status.
 
     Values description for stanza and repo statuses:
     - 0: ok,
@@ -23,17 +31,17 @@ The metrics provided by the client.
     - 6: requested backup not found,
     - 99: other.
 
-* `pgbackrest_exporter_backup_info` - backup info by stanza and backup type.
+* `pgbackrest_exporter_backup_info` - backup info.
     
     Values description:
      - 1 - info about backup is exist.
 
-* `pgbackrest_exporter_backup_duration` - backup duration in seconds by stanza and backup type.
-* `pgbackrest_exporter_backup_size` - backup size by stanza and backup type.
-* `pgbackrest_exporter_backup_database_size` - database size in backup by stanza and backup type.
-* `pgbackrest_exporter_backup_repo_backup_set_size` - repo set size in backup by stanza and backup type.
-* `pgbackrest_exporter_backup_repo_backup_size` - repo size in backup by stanza and backup type.
-* `pgbackrest_exporter_wal_archive_status` - WAL archive status by stanza.
+* `pgbackrest_exporter_backup_duration` - backup duration in seconds.
+* `pgbackrest_exporter_backup_size` - amount of data in the database to actually backup.
+* `pgbackrest_exporter_backup_database_size` - full uncompressed size of the database.
+* `pgbackrest_exporter_backup_repo_backup_set_size` - full compressed files size to restore the database from backup.
+* `pgbackrest_exporter_backup_repo_backup_size` - compressed files size in backup.
+* `pgbackrest_exporter_wal_archive_status` - Current WAL archive status.
 
     Values description:
     - 0 - any one of WALMin and WALMax have empty value, there is no correct information about WAL archiving,
