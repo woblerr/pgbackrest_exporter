@@ -321,13 +321,14 @@ func TestSetUpMetricValue(t *testing.T) {
 }
 
 func fakeSetUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...string) error {
-	return errors.New("Custorm error for test.")
+	return errors.New("Custorm error for test")
 }
 
-func templateStanza(WALMax, WALMin string) stanza {
+//nolint:unparam
+func templateStanza(walMax, walMin string) stanza {
 	return stanza{
 		[]archive{
-			{databaseID{1, 1}, "13-1", WALMax, WALMin},
+			{databaseID{1, 1}, "13-1", walMax, walMin},
 		},
 		[]backup{
 			{struct {
@@ -387,10 +388,11 @@ func templateStanza(WALMax, WALMin string) stanza {
 	}
 }
 
-func templateStanzaRepoAbsent(WALMax, WALMin string) stanza {
+//nolint:unparam
+func templateStanzaRepoAbsent(walMax, walMin string) stanza {
 	return stanza{
 		[]archive{
-			{databaseID{1, 0}, "13-1", WALMax, WALMin},
+			{databaseID{1, 0}, "13-1", walMax, walMin},
 		},
 		[]backup{
 			{struct {
