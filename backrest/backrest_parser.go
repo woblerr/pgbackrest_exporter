@@ -12,6 +12,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
+type setUpMetricValueFunType func(metric *prometheus.GaugeVec, value float64, labels ...string) error
+
 var (
 	pgbrStanzaStatusMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_exporter_stanza_status",
@@ -154,7 +156,7 @@ func getPGVersion(id, repoKey int, dbList []db) string {
 	return ""
 }
 
-func getMetrics(data stanza, verbose bool) {
+func getMetrics(data stanza, verbose bool, setUpMetricValueFun setUpMetricValueFunType) {
 	var err error
 	//https://github.com/pgbackrest/pgbackrest/blob/03021c6a17f1374e84ef42614fa1dd2a6be4b64d/src/command/info/info.c#L78-L94
 	// Stanza and repo statuses:
@@ -166,7 +168,7 @@ func getMetrics(data stanza, verbose bool) {
 	//  5: "database mismatch across repos",
 	//  6: "requested backup not found",
 	//  99: "other".
-	err = setUpMetricValue(
+	err = setUpMetricValueFun(
 		pgbrStanzaStatusMetric,
 		float64(data.Status.Code),
 		data.Name,
@@ -182,7 +184,7 @@ func getMetrics(data stanza, verbose bool) {
 	// Each backup for current stanza.
 	for _, backup := range data.Backup {
 		//  1 - info about backup is exist.
-		err = setUpMetricValue(
+		err = setUpMetricValueFun(
 			pgbrStanzaBackupInfoMetric,
 			1,
 			backup.BackrestInfo.Version,
@@ -214,7 +216,7 @@ func getMetrics(data stanza, verbose bool) {
 			)
 		}
 		// Backup durations in seconds.
-		err = setUpMetricValue(
+		err = setUpMetricValueFun(
 			pgbrStanzaBackupDurationMetric,
 			time.Unix(backup.Timestamp.Stop, 0).Sub(time.Unix(backup.Timestamp.Start, 0)).Seconds(),
 			backup.Label,
@@ -242,7 +244,7 @@ func getMetrics(data stanza, verbose bool) {
 			)
 		}
 		// Database backup size.
-		err = setUpMetricValue(
+		err = setUpMetricValueFun(
 			pgbrStanzaBackupSizeMetric,
 			float64(backup.Info.Delta),
 			backup.Label,
@@ -264,7 +266,7 @@ func getMetrics(data stanza, verbose bool) {
 			)
 		}
 		// Database size.
-		err = setUpMetricValue(
+		err = setUpMetricValueFun(
 			pgbrStanzaBackupDatabaseSizeMetric,
 			float64(backup.Info.Size),
 			backup.Label,
@@ -286,7 +288,7 @@ func getMetrics(data stanza, verbose bool) {
 			)
 		}
 		// Repo backup set size.
-		err = setUpMetricValue(
+		err = setUpMetricValueFun(
 			pgbrStanzaRepoBackupSetSizeMetric,
 			float64(backup.Info.Repository.Size),
 			backup.Label,
@@ -308,7 +310,7 @@ func getMetrics(data stanza, verbose bool) {
 			)
 		}
 		// Repo backup size.
-		err = setUpMetricValue(
+		err = setUpMetricValueFun(
 			pgbrStanzaRepoBackupSizeMetric,
 			float64(backup.Info.Repository.Delta),
 			backup.Label,
@@ -332,7 +334,7 @@ func getMetrics(data stanza, verbose bool) {
 	}
 	// Repo status.
 	for _, repo := range data.Repo {
-		err = setUpMetricValue(
+		err = setUpMetricValueFun(
 			pgbrRepoStatusMetric,
 			float64(repo.Status.Code),
 			repo.Cipher,
@@ -359,7 +361,7 @@ func getMetrics(data stanza, verbose bool) {
 	for _, archive := range data.Archive {
 		if archive.WALMin != "" && archive.WALMax != "" {
 			if verbose {
-				err = setUpMetricValue(
+				err = setUpMetricValueFun(
 					pgbrWALArchivingMetric,
 					1,
 					strconv.Itoa(archive.Database.ID),
@@ -383,7 +385,7 @@ func getMetrics(data stanza, verbose bool) {
 					)
 				}
 			} else {
-				err = setUpMetricValue(
+				err = setUpMetricValueFun(
 					pgbrWALArchivingMetric,
 					1,
 					strconv.Itoa(archive.Database.ID),
@@ -408,7 +410,7 @@ func getMetrics(data stanza, verbose bool) {
 				}
 			}
 		} else {
-			err = setUpMetricValue(
+			err = setUpMetricValueFun(
 				pgbrWALArchivingMetric,
 				0,
 				strconv.Itoa(archive.Database.ID),

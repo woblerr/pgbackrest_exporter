@@ -45,7 +45,7 @@ func GetPgBackRestInfo(verbose bool) error {
 	}
 	resetMetrics()
 	for _, singleStanza := range parseStanzaData {
-		getMetrics(singleStanza, verbose)
+		getMetrics(singleStanza, verbose, setUpMetricValue)
 	}
 	return nil
 }
