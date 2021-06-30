@@ -2,7 +2,10 @@ package backrest
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"log"
+	"strings"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -11,9 +14,10 @@ import (
 
 func TestGetMetrics(t *testing.T) {
 	type args struct {
-		data     stanza
-		verbose  bool
-		testText string
+		data                stanza
+		verbose             bool
+		testText            string
+		setUpMetricValueFun setUpMetricValueFunType
 	}
 	templateMetrics := `# HELP pgbackrest_exporter_backup_database_size Full uncompressed size of the database.
 # TYPE pgbackrest_exporter_backup_database_size gauge
@@ -42,68 +46,6 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 # HELP pgbackrest_exporter_wal_archive_status Current WAL archive status.
 # TYPE pgbackrest_exporter_wal_archive_status gauge
 `
-	templateStanza := func(WALMax, WALMin string) stanza {
-		return stanza{
-			[]archive{
-				{databaseID{1, 1}, "13-1", WALMax, WALMin},
-			},
-			[]backup{
-				{struct {
-					StartWAL string "json:\"start\""
-					StopWAL  string "json:\"stop\""
-				}{"000000010000000000000002", "000000010000000000000002"},
-					struct {
-						Format  int    "json:\"format\""
-						Version string "json:\"version\""
-					}{5, "2.34"},
-					databaseID{1, 1},
-					backupInfo{
-						24316343,
-						struct {
-							Delta int64 "json:\"delta\""
-							Size  int64 "json:\"size\""
-						}{2969514, 2969514},
-						24316343,
-					},
-					"20210607-092423F",
-					"",
-					[]string{""},
-					struct {
-						Start int64 "json:\"start\""
-						Stop  int64 "json:\"stop\""
-					}{1623057863, 1623057866},
-					"full",
-				},
-			},
-			"none",
-			[]db{
-				{1, 1, 6970977677138971135, "13"},
-			},
-			"demo",
-			[]repo{
-				{"none",
-					1,
-					struct {
-						Code    int    "json:\"code\""
-						Message string "json:\"message\""
-					}{0, "ok"},
-				},
-			},
-			status{
-				0,
-				struct {
-					Backup struct {
-						Held bool "json:\"held\""
-					} "json:\"backup\""
-				}{
-					struct {
-						Held bool "json:\"held\""
-					}{false},
-				},
-				"ok",
-			},
-		}
-	}
 	tests := []struct {
 		name string
 		args args
@@ -115,6 +57,7 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 				templateMetrics +
 					`pgbackrest_exporter_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_archive_max="",wal_archive_min=""} 1` +
 					"\n",
+				setUpMetricValue,
 			},
 		},
 		{"getMetricsVerboseTrue",
@@ -124,6 +67,7 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 				templateMetrics +
 					`pgbackrest_exporter_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_archive_max="000000010000000000000004",wal_archive_min="000000010000000000000001"} 1` +
 					"\n",
+				setUpMetricValue,
 			},
 		},
 		{"getMetricsWithoutWal",
@@ -133,12 +77,13 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 				templateMetrics +
 					`pgbackrest_exporter_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_archive_max="",wal_archive_min=""} 0` +
 					"\n",
+				setUpMetricValue,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			getMetrics(tt.args.data, tt.args.verbose)
+			getMetrics(tt.args.data, tt.args.verbose, tt.args.setUpMetricValueFun)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaStatusMetric,
@@ -171,9 +116,10 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 
 func TestGetMetricsRepoAbsent(t *testing.T) {
 	type args struct {
-		data     stanza
-		verbose  bool
-		testText string
+		data                stanza
+		verbose             bool
+		testText            string
+		setUpMetricValueFun setUpMetricValueFunType
 	}
 	templateMetrics := `# HELP pgbackrest_exporter_backup_database_size Full uncompressed size of the database.
 # TYPE pgbackrest_exporter_backup_database_size gauge
@@ -199,77 +145,24 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 # HELP pgbackrest_exporter_wal_archive_status Current WAL archive status.
 # TYPE pgbackrest_exporter_wal_archive_status gauge
 `
-	templateStanza := func(WALMax, WALMin string) stanza {
-		return stanza{
-			[]archive{
-				{databaseID{1, 0}, "13-1", WALMax, WALMin},
-			},
-			[]backup{
-				{struct {
-					StartWAL string "json:\"start\""
-					StopWAL  string "json:\"stop\""
-				}{"000000010000000000000002", "000000010000000000000002"},
-					struct {
-						Format  int    "json:\"format\""
-						Version string "json:\"version\""
-					}{5, "2.34"},
-					databaseID{1, 0},
-					backupInfo{
-						24316343,
-						struct {
-							Delta int64 "json:\"delta\""
-							Size  int64 "json:\"size\""
-						}{2969514, 2969514},
-						24316343,
-					},
-					"20210607-092423F",
-					"",
-					[]string{""},
-					struct {
-						Start int64 "json:\"start\""
-						Stop  int64 "json:\"stop\""
-					}{1623057863, 1623057866},
-					"full",
-				},
-			},
-			"none",
-			[]db{
-				{1, 0, 6970977677138971135, "13"},
-			},
-			"demo",
-			[]repo{},
-			status{
-				0,
-				struct {
-					Backup struct {
-						Held bool "json:\"held\""
-					} "json:\"backup\""
-				}{
-					struct {
-						Held bool "json:\"held\""
-					}{false},
-				},
-				"ok",
-			},
-		}
-	}
 	tests := []struct {
 		name string
 		args args
 	}{
 		{"getMetricsVerboseFalse",
 			args{
-				templateStanza("000000010000000000000004", "000000010000000000000001"),
+				templateStanzaRepoAbsent("000000010000000000000004", "000000010000000000000001"),
 				false,
 				templateMetrics +
 					`pgbackrest_exporter_wal_archive_status{database_id="1",pg_version="13",repo_key="0",stanza="demo",wal_archive_max="",wal_archive_min=""} 1` +
 					"\n",
+				setUpMetricValue,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			getMetrics(tt.args.data, tt.args.verbose)
+			getMetrics(tt.args.data, tt.args.verbose, tt.args.setUpMetricValueFun)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaStatusMetric,
@@ -296,6 +189,79 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", tt.args.testText, out.String())
 			}
 			resetMetrics()
+		})
+	}
+}
+
+func TestGetMetricsErrors(t *testing.T) {
+	type args struct {
+		data                stanza
+		verbose             bool
+		setUpMetricValueFun setUpMetricValueFunType
+		errorsCount         int
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{"getMetricsVerboseFalseLogError",
+			args{
+				templateStanza("000000010000000000000004", "000000010000000000000001"),
+				false,
+				fakeSetUpMetricValue,
+				9,
+			},
+		},
+		{"getMetricsVerboseTrueLogError",
+			args{
+				templateStanza("000000010000000000000004", "000000010000000000000001"),
+				true,
+				fakeSetUpMetricValue,
+				9,
+			},
+		},
+		{"getMetricsWithoutWalLogError",
+			args{
+				templateStanza("", "000000010000000000000001"),
+				false,
+				fakeSetUpMetricValue,
+				9,
+			},
+		},
+		{"getMetricsVerboseFalseLogErrorRepoAbsent",
+			args{
+				templateStanzaRepoAbsent("000000010000000000000004", "000000010000000000000001"),
+				false,
+				fakeSetUpMetricValue,
+				8,
+			},
+		},
+		{"getMetricsVerboseTrueLogErrorRepoAbsent",
+			args{
+				templateStanzaRepoAbsent("000000010000000000000004", "000000010000000000000001"),
+				true,
+				fakeSetUpMetricValue,
+				8,
+			},
+		},
+		{"getMetricsWithoutWalLogErrorRepoAbsent",
+			args{
+				templateStanzaRepoAbsent("", "000000010000000000000001"),
+				false,
+				fakeSetUpMetricValue,
+				8,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out := &bytes.Buffer{}
+			log.SetOutput(out)
+			getMetrics(tt.args.data, tt.args.verbose, tt.args.setUpMetricValueFun)
+			errorsOutputCount := strings.Count(out.String(), "[ERROR]")
+			if tt.args.errorsCount != errorsOutputCount {
+				t.Errorf("\nVariables do not match:\n%d\nwant:\n%d", tt.args.errorsCount, errorsOutputCount)
+			}
 		})
 	}
 }
@@ -351,5 +317,129 @@ func TestSetUpMetricValue(t *testing.T) {
 				t.Errorf("\nVariables do not match:\n%v\nwant:\n%v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func fakeSetUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...string) error {
+	return errors.New("Custorm error for test")
+}
+
+//nolint:unparam
+func templateStanza(walMax, walMin string) stanza {
+	return stanza{
+		[]archive{
+			{databaseID{1, 1}, "13-1", walMax, walMin},
+		},
+		[]backup{
+			{struct {
+				StartWAL string "json:\"start\""
+				StopWAL  string "json:\"stop\""
+			}{"000000010000000000000002", "000000010000000000000002"},
+				struct {
+					Format  int    "json:\"format\""
+					Version string "json:\"version\""
+				}{5, "2.34"},
+				databaseID{1, 1},
+				backupInfo{
+					24316343,
+					struct {
+						Delta int64 "json:\"delta\""
+						Size  int64 "json:\"size\""
+					}{2969514, 2969514},
+					24316343,
+				},
+				"20210607-092423F",
+				"",
+				[]string{""},
+				struct {
+					Start int64 "json:\"start\""
+					Stop  int64 "json:\"stop\""
+				}{1623057863, 1623057866},
+				"full",
+			},
+		},
+		"none",
+		[]db{
+			{1, 1, 6970977677138971135, "13"},
+		},
+		"demo",
+		[]repo{
+			{"none",
+				1,
+				struct {
+					Code    int    "json:\"code\""
+					Message string "json:\"message\""
+				}{0, "ok"},
+			},
+		},
+		status{
+			0,
+			struct {
+				Backup struct {
+					Held bool "json:\"held\""
+				} "json:\"backup\""
+			}{
+				struct {
+					Held bool "json:\"held\""
+				}{false},
+			},
+			"ok",
+		},
+	}
+}
+
+//nolint:unparam
+func templateStanzaRepoAbsent(walMax, walMin string) stanza {
+	return stanza{
+		[]archive{
+			{databaseID{1, 0}, "13-1", walMax, walMin},
+		},
+		[]backup{
+			{struct {
+				StartWAL string "json:\"start\""
+				StopWAL  string "json:\"stop\""
+			}{"000000010000000000000002", "000000010000000000000002"},
+				struct {
+					Format  int    "json:\"format\""
+					Version string "json:\"version\""
+				}{5, "2.34"},
+				databaseID{1, 0},
+				backupInfo{
+					24316343,
+					struct {
+						Delta int64 "json:\"delta\""
+						Size  int64 "json:\"size\""
+					}{2969514, 2969514},
+					24316343,
+				},
+				"20210607-092423F",
+				"",
+				[]string{""},
+				struct {
+					Start int64 "json:\"start\""
+					Stop  int64 "json:\"stop\""
+				}{1623057863, 1623057866},
+				"full",
+			},
+		},
+		"none",
+		[]db{
+			{1, 0, 6970977677138971135, "13"},
+		},
+		"demo",
+		[]repo{},
+		status{
+			0,
+			struct {
+				Backup struct {
+					Held bool "json:\"held\""
+				} "json:\"backup\""
+			}{
+				struct {
+					Held bool "json:\"held\""
+				}{false},
+			},
+			"ok",
+		},
 	}
 }
