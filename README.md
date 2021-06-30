@@ -41,7 +41,7 @@ The metrics provided by the client.
 * `pgbackrest_exporter_backup_database_size` - full uncompressed size of the database.
 * `pgbackrest_exporter_backup_repo_backup_set_size` - full compressed files size to restore the database from backup.
 * `pgbackrest_exporter_backup_repo_backup_size` - compressed files size in backup.
-* `pgbackrest_exporter_wal_archive_status` - Current WAL archive status.
+* `pgbackrest_exporter_wal_archive_status` - current WAL archive status.
 
     Values description:
     - 0 - any one of WALMin and WALMax have empty value, there is no correct information about WAL archiving,
