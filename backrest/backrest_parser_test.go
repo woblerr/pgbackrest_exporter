@@ -19,7 +19,10 @@ func TestGetMetrics(t *testing.T) {
 		testText            string
 		setUpMetricValueFun setUpMetricValueFunType
 	}
-	templateMetrics := `# HELP pgbackrest_exporter_backup_database_size Full uncompressed size of the database.
+	templateMetrics := `# HELP pgbackrest_exporter_backup_database_backup_size Amount of data in the database to actually backup.
+# TYPE pgbackrest_exporter_backup_database_backup_size gauge
+pgbackrest_exporter_backup_database_backup_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
+# HELP pgbackrest_exporter_backup_database_size Full uncompressed size of the database.
 # TYPE pgbackrest_exporter_backup_database_size gauge
 pgbackrest_exporter_backup_database_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
 # HELP pgbackrest_exporter_backup_duration Backup duration in seconds.
@@ -34,9 +37,6 @@ pgbackrest_exporter_backup_repo_backup_set_size{backup_name="20210607-092423F",b
 # HELP pgbackrest_exporter_backup_repo_backup_size Compressed files size in backup.
 # TYPE pgbackrest_exporter_backup_repo_backup_size gauge
 pgbackrest_exporter_backup_repo_backup_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
-# HELP pgbackrest_exporter_backup_size Amount of data in the database to actually backup.
-# TYPE pgbackrest_exporter_backup_size gauge
-pgbackrest_exporter_backup_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
 # HELP pgbackrest_exporter_repo_status Current repository status.
 # TYPE pgbackrest_exporter_repo_status gauge
 pgbackrest_exporter_repo_status{cipher="none",repo_key="1",stanza="demo"} 0
@@ -90,10 +90,10 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 				pgbrRepoStatusMetric,
 				pgbrStanzaBackupInfoMetric,
 				pgbrStanzaBackupDurationMetric,
-				pgbrStanzaBackupSizeMetric,
 				pgbrStanzaBackupDatabaseSizeMetric,
-				pgbrStanzaRepoBackupSetSizeMetric,
-				pgbrStanzaRepoBackupSizeMetric,
+				pgbrStanzaBackupDatabaseBackupSizeMetric,
+				pgbrStanzaBackupRepoBackupSetSizeMetric,
+				pgbrStanzaBackupRepoBackupSizeMetric,
 				pgbrWALArchivingMetric,
 			)
 			metricFamily, err := reg.Gather()
@@ -121,7 +121,10 @@ func TestGetMetricsRepoAbsent(t *testing.T) {
 		testText            string
 		setUpMetricValueFun setUpMetricValueFunType
 	}
-	templateMetrics := `# HELP pgbackrest_exporter_backup_database_size Full uncompressed size of the database.
+	templateMetrics := `# HELP pgbackrest_exporter_backup_database_backup_size Amount of data in the database to actually backup.
+# TYPE pgbackrest_exporter_backup_database_backup_size gauge
+pgbackrest_exporter_backup_database_backup_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo"} 2.4316343e+07
+# HELP pgbackrest_exporter_backup_database_size Full uncompressed size of the database.
 # TYPE pgbackrest_exporter_backup_database_size gauge
 pgbackrest_exporter_backup_database_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo"} 2.4316343e+07
 # HELP pgbackrest_exporter_backup_duration Backup duration in seconds.
@@ -136,9 +139,6 @@ pgbackrest_exporter_backup_repo_backup_set_size{backup_name="20210607-092423F",b
 # HELP pgbackrest_exporter_backup_repo_backup_size Compressed files size in backup.
 # TYPE pgbackrest_exporter_backup_repo_backup_size gauge
 pgbackrest_exporter_backup_repo_backup_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo"} 2.969514e+06
-# HELP pgbackrest_exporter_backup_size Amount of data in the database to actually backup.
-# TYPE pgbackrest_exporter_backup_size gauge
-pgbackrest_exporter_backup_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo"} 2.4316343e+07
 # HELP pgbackrest_exporter_stanza_status Current stanza status.
 # TYPE pgbackrest_exporter_stanza_status gauge
 pgbackrest_exporter_stanza_status{stanza="demo"} 0
@@ -169,10 +169,10 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 				pgbrRepoStatusMetric,
 				pgbrStanzaBackupInfoMetric,
 				pgbrStanzaBackupDurationMetric,
-				pgbrStanzaBackupSizeMetric,
 				pgbrStanzaBackupDatabaseSizeMetric,
-				pgbrStanzaRepoBackupSetSizeMetric,
-				pgbrStanzaRepoBackupSizeMetric,
+				pgbrStanzaBackupDatabaseBackupSizeMetric,
+				pgbrStanzaBackupRepoBackupSetSizeMetric,
+				pgbrStanzaBackupRepoBackupSizeMetric,
 				pgbrWALArchivingMetric,
 			)
 			metricFamily, err := reg.Gather()

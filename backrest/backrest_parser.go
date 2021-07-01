@@ -56,11 +56,10 @@ var (
 			"stanza",
 			"start_time",
 			"stop_time"})
-	// The 'database backup size' is the amount of data in the database
-	// to actually backup (these will be the same for full backups).
-	pgbrStanzaBackupSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_exporter_backup_size",
-		Help: "Amount of data in the database to actually backup.",
+	// The 'database size' is the full uncompressed size of the database.
+	pgbrStanzaBackupDatabaseSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_exporter_backup_database_size",
+		Help: "Full uncompressed size of the database.",
 	},
 		[]string{
 			"backup_name",
@@ -68,10 +67,11 @@ var (
 			"database_id",
 			"repo_key",
 			"stanza"})
-	// The 'database size' is the full uncompressed size of the database.
-	pgbrStanzaBackupDatabaseSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_exporter_backup_database_size",
-		Help: "Full uncompressed size of the database.",
+	// The 'database backup size' is the amount of data in the database
+	// to actually backup (these will be the same for full backups).
+	pgbrStanzaBackupDatabaseBackupSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_exporter_backup_database_backup_size",
+		Help: "Amount of data in the database to actually backup.",
 	},
 		[]string{
 			"backup_name",
@@ -84,7 +84,7 @@ var (
 	// to restore the database from this backup.
 	// Repository 'backup set size' reflect compressed file sizes
 	// if compression is enabled in pgBackRest or the filesystem.
-	pgbrStanzaRepoBackupSetSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	pgbrStanzaBackupRepoBackupSetSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_exporter_backup_repo_backup_set_size",
 		Help: "Full compressed files size to restore the database from backup.",
 	},
@@ -98,7 +98,7 @@ var (
 	// (these will also be the same for full backups).
 	// Repository 'backup size' reflect compressed file sizes
 	// if compression is enabled in pgBackRest or the filesystem.
-	pgbrStanzaRepoBackupSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	pgbrStanzaBackupRepoBackupSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_exporter_backup_repo_backup_size",
 		Help: "Compressed files size in backup.",
 	},
@@ -140,10 +140,10 @@ func resetMetrics() {
 	pgbrRepoStatusMetric.Reset()
 	pgbrStanzaBackupInfoMetric.Reset()
 	pgbrStanzaBackupDurationMetric.Reset()
-	pgbrStanzaBackupSizeMetric.Reset()
 	pgbrStanzaBackupDatabaseSizeMetric.Reset()
-	pgbrStanzaRepoBackupSetSizeMetric.Reset()
-	pgbrStanzaRepoBackupSizeMetric.Reset()
+	pgbrStanzaBackupDatabaseBackupSizeMetric.Reset()
+	pgbrStanzaBackupRepoBackupSetSizeMetric.Reset()
+	pgbrStanzaBackupRepoBackupSizeMetric.Reset()
 	pgbrWALArchivingMetric.Reset()
 }
 
@@ -243,28 +243,6 @@ func getMetrics(data stanza, verbose bool, setUpMetricValueFun setUpMetricValueF
 				time.Unix(backup.Timestamp.Stop, 0).Format(layout), ".",
 			)
 		}
-		// Database backup size.
-		err = setUpMetricValueFun(
-			pgbrStanzaBackupSizeMetric,
-			float64(backup.Info.Delta),
-			backup.Label,
-			backup.Type,
-			strconv.Itoa(backup.Database.ID),
-			strconv.Itoa(backup.Database.RepoKey),
-			data.Name,
-		)
-		if err != nil {
-			log.Println(
-				"[ERROR] Metric pgbackrest_exporter_backup_size set up failed;",
-				"value:", float64(backup.Info.Delta), ";",
-				"labels:",
-				backup.Label, ",",
-				backup.Type, ",",
-				strconv.Itoa(backup.Database.ID), ",",
-				strconv.Itoa(backup.Database.RepoKey), ",",
-				data.Name, ".",
-			)
-		}
 		// Database size.
 		err = setUpMetricValueFun(
 			pgbrStanzaBackupDatabaseSizeMetric,
@@ -287,9 +265,31 @@ func getMetrics(data stanza, verbose bool, setUpMetricValueFun setUpMetricValueF
 				data.Name, ".",
 			)
 		}
+		// Database backup size.
+		err = setUpMetricValueFun(
+			pgbrStanzaBackupDatabaseBackupSizeMetric,
+			float64(backup.Info.Delta),
+			backup.Label,
+			backup.Type,
+			strconv.Itoa(backup.Database.ID),
+			strconv.Itoa(backup.Database.RepoKey),
+			data.Name,
+		)
+		if err != nil {
+			log.Println(
+				"[ERROR] Metric pgbackrest_exporter_backup_database_backup_size set up failed;",
+				"value:", float64(backup.Info.Delta), ";",
+				"labels:",
+				backup.Label, ",",
+				backup.Type, ",",
+				strconv.Itoa(backup.Database.ID), ",",
+				strconv.Itoa(backup.Database.RepoKey), ",",
+				data.Name, ".",
+			)
+		}
 		// Repo backup set size.
 		err = setUpMetricValueFun(
-			pgbrStanzaRepoBackupSetSizeMetric,
+			pgbrStanzaBackupRepoBackupSetSizeMetric,
 			float64(backup.Info.Repository.Size),
 			backup.Label,
 			backup.Type,
@@ -311,7 +311,7 @@ func getMetrics(data stanza, verbose bool, setUpMetricValueFun setUpMetricValueF
 		}
 		// Repo backup size.
 		err = setUpMetricValueFun(
-			pgbrStanzaRepoBackupSizeMetric,
+			pgbrStanzaBackupRepoBackupSizeMetric,
 			float64(backup.Info.Repository.Delta),
 			backup.Label,
 			backup.Type,
