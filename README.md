@@ -37,8 +37,8 @@ The metrics provided by the client.
      - 1 - info about backup is exist.
 
 * `pgbackrest_exporter_backup_duration` - backup duration in seconds.
-* `pgbackrest_exporter_backup_size` - amount of data in the database to actually backup.
 * `pgbackrest_exporter_backup_database_size` - full uncompressed size of the database.
+* `pgbackrest_exporter_backup_database_backup_size` - amount of data in the database to actually backup.
 * `pgbackrest_exporter_backup_repo_backup_set_size` - full compressed files size to restore the database from backup.
 * `pgbackrest_exporter_backup_repo_backup_size` - compressed files size in backup.
 * `pgbackrest_exporter_wal_archive_status` - current WAL archive status.
