@@ -27,8 +27,8 @@ func StartPromEndpoint() {
 }
 
 // GetPgBackRestInfo get and parse pgbackrest info
-func GetPgBackRestInfo(verbose bool) error {
-	stanzaData, err := getAllInfoData()
+func GetPgBackRestInfo(config, configIncludePath string, verbose bool) error {
+	stanzaData, err := getAllInfoData(config, configIncludePath)
 	if err != nil {
 		log.Printf("[ERROR] Get data from pgbackrest failed, %v.", err)
 		resetMetrics()
