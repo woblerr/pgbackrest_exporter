@@ -62,7 +62,7 @@ func main() {
 		log.Printf("[INFO] Custom pgBackRest configuration file %s.", *backrestCustomConfig)
 	}
 	if *backrestCustomConfigIncludePath != "" {
-		log.Printf("[INFO] Custom path to additional pgBackRest configuration files %s.", *backrestCustomConfig)
+		log.Printf("[INFO] Custom path to additional pgBackRest configuration files %s.", *backrestCustomConfigIncludePath)
 	}
 	// Setup parameters for exporter.
 	backrest.SetPromPortandPath(*promPort, *promPath)
