@@ -71,6 +71,9 @@ Flags:
   --prom.port="9854"          Port for prometheus metrics to listen on.
   --prom.endpoint="/metrics"  Endpoint used for metrics.
   --collect.interval=600      Collecting metrics interval in seconds.
+  --backrest.config=""        Non default pgBackRest configuration file.
+  --backrest.config-include-path=""  
+                              Non default path to additional pgBackRest configuration files.
   --verbose.info              Enable additional metrics labels.
 ```
 
