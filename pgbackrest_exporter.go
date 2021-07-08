@@ -30,11 +30,11 @@ func main() {
 		).Default("600").Int()
 		backrestCustomConfig = kingpin.Flag(
 			"backrest.config",
-			"Non default pgBackRest configuration file.",
+			"Full path to pgBackRest configuration file.",
 		).Default("").String()
 		backrestCustomConfigIncludePath = kingpin.Flag(
 			"backrest.config-include-path",
-			"Non default path to additional pgBackRest configuration files.",
+			"Full path to additional pgBackRest configuration files.",
 		).Default("").String()
 		verboseInfo = kingpin.Flag(
 			"verbose.info",
