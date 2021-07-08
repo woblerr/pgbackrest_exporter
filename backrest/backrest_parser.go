@@ -125,8 +125,50 @@ var (
 // https://golang.org/pkg/time/#Time.Format
 const layout = "2006-01-02 15:04:05"
 
-func getAllInfoData() ([]byte, error) {
-	out, err := execCommand("pgbackrest", "info", "--output", "json").Output()
+func returnDefaultExecArgs() []string {
+	// Base exec arguments.
+	defaultArgs := []string{"info", "--output", "json"}
+	return defaultArgs
+}
+
+func returnConfigExecArgs(config, configIncludePath string) []string {
+	var configArgs []string
+	switch {
+	case config == "" && configIncludePath == "":
+		// Use default config and config-include-path (or define by env).
+		configArgs = []string{}
+	case config != "" && configIncludePath == "":
+		// Use custom config.
+		configArgs = []string{"--config", config}
+	case config == "" && configIncludePath != "":
+		// Use custom config-include-path.
+		configArgs = []string{"--config-include-path", configIncludePath}
+	case config != "" && configIncludePath != "":
+		// Use custom config and config-include-path.
+		configArgs = []string{"--config", config, "--config-include-path", configIncludePath}
+	default:
+		// Do nothing.
+	}
+	return configArgs
+}
+
+func concatExecArgs(slices [][]string) []string {
+	tmp := []string{}
+	for _, s := range slices {
+		tmp = append(tmp, s...)
+	}
+	return tmp
+}
+
+func getAllInfoData(config, configIncludePath string) ([]byte, error) {
+	app := "pgbackrest"
+	args := [][]string{
+		returnDefaultExecArgs(),
+		returnConfigExecArgs(config, configIncludePath),
+	}
+	// Finally arguments for exec command
+	concatArgs := concatExecArgs(args)
+	out, err := execCommand(app, concatArgs...).Output()
 	return out, err
 }
 

@@ -47,9 +47,6 @@ The metrics provided by the client.
     - 0 - any one of WALMin and WALMax have empty value, there is no correct information about WAL archiving,
     - 1 - both WALMin and WALMax have no empty values, there is correct information about WAL archiving.
 
-    When flag `--verbose.info` is specified - WALMin and WALMax are added as metric labels.
-    This creates new different time series on each WAL archiving.
-
 ## Getting Started
 ### Building and running
 
@@ -71,8 +68,19 @@ Flags:
   --prom.port="9854"          Port for prometheus metrics to listen on.
   --prom.endpoint="/metrics"  Endpoint used for metrics.
   --collect.interval=600      Collecting metrics interval in seconds.
+  --backrest.config=""        Full path to pgBackRest configuration file.
+  --backrest.config-include-path=""  
+                              Full path to additional pgBackRest configuration files.
   --verbose.info              Enable additional metrics labels.
 ```
+
+#### Additional description of flags.
+
+Custom `config` and/or custom `config-include-path` for `pgbackrest` command could be specify via `--backrest.config` and `--backrest.config-include-path` flags. 
+Full paths must be specified. For example, `--backrest.config=/tmp/pgbackrest.conf` and/or `--backrest.config-include-path=/tmp/pgbackrest/conf.d`.
+
+When flag `--verbose.info` is specified - WALMin and WALMax are added as metric labels.
+This creates new different time series on each WAL archiving.
 
 ### Building and running docker
 By default, pgBackRest version is `2.34`. Another version can be specified via arguments.

@@ -28,6 +28,14 @@ func main() {
 			"collect.interval",
 			"Collecting metrics interval in seconds.",
 		).Default("600").Int()
+		backrestCustomConfig = kingpin.Flag(
+			"backrest.config",
+			"Full path to pgBackRest configuration file.",
+		).Default("").String()
+		backrestCustomConfigIncludePath = kingpin.Flag(
+			"backrest.config-include-path",
+			"Full path to additional pgBackRest configuration files.",
+		).Default("").String()
 		verboseInfo = kingpin.Flag(
 			"verbose.info",
 			"Enable additional metrics labels.",
@@ -50,6 +58,12 @@ func main() {
 	log.Printf("[INFO] Version %s.", version)
 	log.Printf("[INFO] Verbose info %t.", *verboseInfo)
 	log.Printf("[INFO] Collecting metrics every %d seconds.", *collectionInterval)
+	if *backrestCustomConfig != "" {
+		log.Printf("[INFO] Custom pgBackRest configuration file %s.", *backrestCustomConfig)
+	}
+	if *backrestCustomConfigIncludePath != "" {
+		log.Printf("[INFO] Custom path to additional pgBackRest configuration files %s.", *backrestCustomConfigIncludePath)
+	}
 	// Setup parameters for exporter.
 	backrest.SetPromPortandPath(*promPort, *promPath)
 	log.Printf("[INFO] Use port %s and HTTP endpoint %s.", *promPort, *promPath)
@@ -57,7 +71,11 @@ func main() {
 	backrest.StartPromEndpoint()
 	for {
 		// Get information form pgbackrest.
-		err := backrest.GetPgBackRestInfo(*verboseInfo)
+		err := backrest.GetPgBackRestInfo(
+			*backrestCustomConfig,
+			*backrestCustomConfigIncludePath,
+			*verboseInfo,
+		)
 		if err != nil {
 			log.Printf("[ERROR] Get data failed, %v.", err)
 		}

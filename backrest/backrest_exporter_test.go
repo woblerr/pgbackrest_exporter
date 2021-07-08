@@ -26,7 +26,9 @@ func TestSetPromPortandPath(t *testing.T) {
 
 func TestGetPgBackRestInfo(t *testing.T) {
 	type args struct {
-		verbose bool
+		config            string
+		configIncludePath string
+		verbose           bool
 	}
 	tests := []struct {
 		name       string
@@ -36,7 +38,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 		wantErr    bool
 	}{
 		{"GetPgBackRestInfoGoodDataReturn",
-			args{false},
+			args{"", "", false},
 			`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 				`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
 				`"backup":[{"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
@@ -50,20 +52,35 @@ func TestGetPgBackRestInfo(t *testing.T) {
 			0,
 			false},
 		{"GetPgBackRestInfoBadDataReturn",
-			args{false},
+			args{"", "", false},
 			`Forty two`,
 			1,
 			true},
 		{"GetPgBackRestInfoZeroDataReturn",
-			args{false},
+			args{"", "", false},
 			`[]`,
 			0,
 			false},
 		{"GetPgBackRestInfoJsonUnmarshalFail",
-			args{false},
+			args{"", "", false},
 			`[{}`,
 			0,
 			true},
+		{"GetPgBackRestInfoConfig",
+			args{"/tmp/pgbackrest.conf", "", false},
+			`[]`,
+			0,
+			false},
+		{"GetPgBackRestInfoConfigIncludePath",
+			args{"", "/tmp/pgbackrest/conf.d", false},
+			`[]`,
+			0,
+			false},
+		{"GetPgBackRestInfoConfigAndConfigIncludePath",
+			args{"/tmp/pgbackrest.conf", "/tmp/pgbackrest/conf.d", false},
+			`[]`,
+			0,
+			false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -71,7 +88,11 @@ func TestGetPgBackRestInfo(t *testing.T) {
 			execCommand = fakeExecCommand
 			mockExit = tt.mockExit
 			defer func() { execCommand = exec.Command }()
-			if err := GetPgBackRestInfo(tt.args.verbose); (err != nil) != tt.wantErr {
+			if err := GetPgBackRestInfo(
+				tt.args.config,
+				tt.args.configIncludePath,
+				tt.args.verbose,
+			); (err != nil) != tt.wantErr {
 				t.Errorf("\nVariables do not match:\n%v\nwant:\n%v", err, tt.wantErr)
 			}
 		})
