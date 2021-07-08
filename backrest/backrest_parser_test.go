@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -320,8 +321,87 @@ func TestSetUpMetricValue(t *testing.T) {
 	}
 }
 
+func TestReturnDefaultExecArgs(t *testing.T) {
+	testArgs := []string{"info", "--output", "json"}
+	defaultArgs := returnDefaultExecArgs()
+	if !reflect.DeepEqual(testArgs, defaultArgs) {
+		t.Errorf("\nVariables do not match: %s,\nwant: %s", testArgs, defaultArgs)
+	}
+}
+
+func TestReturnConfigExecArgs(t *testing.T) {
+	type args struct {
+		config            string
+		configIncludePath string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{"returnConfigExecArgsEmpty",
+			args{"", ""},
+			[]string{},
+		},
+		{"returnConfigExecArgsNotEmptyConfig",
+			args{"/tmp/pgbackrest.conf", ""},
+			[]string{"--config", "/tmp/pgbackrest.conf"},
+		},
+		{"returnConfigExecArgsNotEmptyConfigInckudePath",
+			args{"", "/tmp/pgbackrest/conf.d"},
+			[]string{"--config-include-path", "/tmp/pgbackrest/conf.d"},
+		},
+		{"returnConfigExecArgsNotEmptyConfigAndConfigInckudePath",
+			args{"/tmp/pgbackrest.conf", "/tmp/pgbackrest/conf.d"},
+			[]string{"--config", "/tmp/pgbackrest.conf", "--config-include-path", "/tmp/pgbackrest/conf.d"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := returnConfigExecArgs(tt.args.config, tt.args.configIncludePath); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestConcatExecArgs(t *testing.T) {
+	type args struct {
+		slices [][]string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{"concatExecArgsEmpty",
+			args{[][]string{{}, {}}},
+			[]string{},
+		},
+		{"concatExecArgsNotEmptyAndEmpty",
+			args{[][]string{{"test", "data"}, {}}},
+			[]string{"test", "data"},
+		},
+		{"concatExecArgsEmptyAndNotEmpty",
+			args{[][]string{{}, {"test", "data"}}},
+			[]string{"test", "data"},
+		},
+		{"concatExecArgsNotEmpty",
+			args{[][]string{{"the", "best"}, {"test", "data"}}},
+			[]string{"the", "best", "test", "data"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := concatExecArgs(tt.args.slices); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", got, tt.want)
+			}
+		})
+	}
+}
+
 func fakeSetUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...string) error {
-	return errors.New("Custorm error for test")
+	return errors.New("сustorm error for test")
 }
 
 //nolint:unparam
