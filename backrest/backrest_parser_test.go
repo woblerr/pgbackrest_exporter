@@ -84,6 +84,7 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ResetMetrics()
 			getMetrics(tt.args.data, tt.args.verbose, tt.args.setUpMetricValueFun)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
@@ -110,7 +111,6 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 			if tt.args.testText != out.String() {
 				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", tt.args.testText, out.String())
 			}
-			resetMetrics()
 		})
 	}
 }
@@ -163,6 +163,7 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ResetMetrics()
 			getMetrics(tt.args.data, tt.args.verbose, tt.args.setUpMetricValueFun)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
@@ -189,7 +190,6 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 			if tt.args.testText != out.String() {
 				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", tt.args.testText, out.String())
 			}
-			resetMetrics()
 		})
 	}
 }
@@ -359,6 +359,33 @@ func TestReturnConfigExecArgs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := returnConfigExecArgs(tt.args.config, tt.args.configIncludePath); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestReturnConfigStanzaArgs(t *testing.T) {
+	type args struct {
+		stanza string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{"returnStanzaExecArgsEmpty",
+			args{""},
+			[]string{},
+		},
+		{"returnStanzaExecArgsNotEmpty",
+			args{"demo"},
+			[]string{"--stanza", "demo"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := returnConfigStanzaArgs(tt.args.stanza); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", got, tt.want)
 			}
 		})
