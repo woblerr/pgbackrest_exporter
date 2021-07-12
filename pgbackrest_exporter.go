@@ -39,7 +39,7 @@ func main() {
 		).Default("").String()
 		backrestStanza = kingpin.Flag(
 			"backrest.stanza",
-			"Specific stanza to collect metrics. Can be specified several times.",
+			"Specific stanza for collecting metrics. Can be specified several times.",
 		).Default("").PlaceHolder("\"\"").Strings()
 		verboseInfo = kingpin.Flag(
 			"verbose.info",

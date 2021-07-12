@@ -71,7 +71,7 @@ Flags:
   --backrest.config=""        Full path to pgBackRest configuration file.
   --backrest.config-include-path=""  
                               Full path to additional pgBackRest configuration files.
-  --backrest.stanza="" ...    Specific stanza to collect metrics. Can be specified several times.
+  --backrest.stanza="" ...    Specific stanza for collecting metrics. Can be specified several times.
   --verbose.info              Enable additional metrics labels.
 ```
 
@@ -105,6 +105,7 @@ Environment variables supported by this image:
 * all environment variables from [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest#docker-pgbackrest)  image;
 * `EXPORTER_ENDPOINT` - metrics endpoint, default `/metrics`;
 * `EXPORTER_PORT` - port for prometheus metrics to listen on, default `9854`;
+* `STANZA` - 
 * `COLLECT_INTERVAL` - collecting metrics interval in seconds, default `600`;
 
 You will need to mount the necessary directories or files inside the container.
