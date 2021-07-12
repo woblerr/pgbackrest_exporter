@@ -105,7 +105,7 @@ Environment variables supported by this image:
 * all environment variables from [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest#docker-pgbackrest)  image;
 * `EXPORTER_ENDPOINT` - metrics endpoint, default `/metrics`;
 * `EXPORTER_PORT` - port for prometheus metrics to listen on, default `9854`;
-* `STANZA` - 
+* `STANZA` - specific stanza for collecting metrics, default `""`;
 * `COLLECT_INTERVAL` - collecting metrics interval in seconds, default `600`;
 
 You will need to mount the necessary directories or files inside the container.
@@ -136,6 +136,35 @@ docker run -d \
     pgbackrest_exporter
 ```
 
+For specific stanza:
+
+```bash
+docker run -d \
+    --name pgbackrest_exporter \
+    -e STANZA=demo \
+    -p 9854:9854 \
+    -v  /etc/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf \
+    pgbackrest_exporter
+```
+
+If you want to specify several stanzas for collecting metrics, 
+you can run containers on different ports:
+
+```bash
+docker run -d \
+    --name pgbackrest_exporter_demo1 \
+    -e STANZA=demo1 \
+    -p 9854:9854 \
+    -v  /etc/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf \
+    pgbackrest_exporter
+
+docker run -d \
+    --name pgbackrest_exporter_demo2 \
+    -e STANZA=demo2 \
+    -p 9855:9854 \
+    -v  /etc/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf \
+    pgbackrest_exporter
+```
 ### Running as systemd service
 
 * Register `pgbackrest_exporter` (already builded, if not - exec `make build` before) as a systemd service:
