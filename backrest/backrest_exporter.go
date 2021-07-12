@@ -26,24 +26,34 @@ func StartPromEndpoint() {
 	}()
 }
 
-// GetPgBackRestInfo get and parse pgbackrest info
-func GetPgBackRestInfo(config, configIncludePath string, verbose bool) error {
-	stanzaData, err := getAllInfoData(config, configIncludePath)
+// ResetMetrics reset metrics
+func ResetMetrics() {
+	pgbrStanzaStatusMetric.Reset()
+	pgbrRepoStatusMetric.Reset()
+	pgbrStanzaBackupInfoMetric.Reset()
+	pgbrStanzaBackupDurationMetric.Reset()
+	pgbrStanzaBackupDatabaseSizeMetric.Reset()
+	pgbrStanzaBackupDatabaseBackupSizeMetric.Reset()
+	pgbrStanzaBackupRepoBackupSetSizeMetric.Reset()
+	pgbrStanzaBackupRepoBackupSizeMetric.Reset()
+	pgbrWALArchivingMetric.Reset()
+}
+
+// GetPgBackRestInfo get and parse pgbackrest info and set metrics
+func GetPgBackRestInfo(config, configIncludePath, stanza string, verbose bool) error {
+	stanzaData, err := getAllInfoData(config, configIncludePath, stanza)
 	if err != nil {
 		log.Printf("[ERROR] Get data from pgbackrest failed, %v.", err)
-		resetMetrics()
 		return err
 	}
 	parseStanzaData, err := parseResult(stanzaData)
 	if err != nil {
 		log.Printf("[ERROR] Parse JSON failed, %v.", err)
-		resetMetrics()
 		return err
 	}
 	if len(parseStanzaData) == 0 {
 		log.Printf("[WARN] No backup data returned.")
 	}
-	resetMetrics()
 	for _, singleStanza := range parseStanzaData {
 		getMetrics(singleStanza, verbose, setUpMetricValue)
 	}

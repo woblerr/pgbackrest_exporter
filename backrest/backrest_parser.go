@@ -143,13 +143,24 @@ func returnConfigExecArgs(config, configIncludePath string) []string {
 	case config == "" && configIncludePath != "":
 		// Use custom config-include-path.
 		configArgs = []string{"--config-include-path", configIncludePath}
-	case config != "" && configIncludePath != "":
+	default:
 		// Use custom config and config-include-path.
 		configArgs = []string{"--config", config, "--config-include-path", configIncludePath}
-	default:
-		// Do nothing.
 	}
 	return configArgs
+}
+
+func returnConfigStanzaArgs(stanza string) []string {
+	var stanzaArgs []string
+	switch {
+	case stanza == "":
+		// Stanza not set. No return parametrs.
+		stanzaArgs = []string{}
+	default:
+		// Use specific stanza.
+		stanzaArgs = []string{"--stanza", stanza}
+	}
+	return stanzaArgs
 }
 
 func concatExecArgs(slices [][]string) []string {
@@ -160,11 +171,12 @@ func concatExecArgs(slices [][]string) []string {
 	return tmp
 }
 
-func getAllInfoData(config, configIncludePath string) ([]byte, error) {
+func getAllInfoData(config, configIncludePath, stanza string) ([]byte, error) {
 	app := "pgbackrest"
 	args := [][]string{
 		returnDefaultExecArgs(),
 		returnConfigExecArgs(config, configIncludePath),
+		returnConfigStanzaArgs(stanza),
 	}
 	// Finally arguments for exec command
 	concatArgs := concatExecArgs(args)
@@ -175,18 +187,6 @@ func getAllInfoData(config, configIncludePath string) ([]byte, error) {
 func parseResult(output []byte) ([]stanza, error) {
 	err := json.Unmarshal(output, &stanzas)
 	return stanzas, err
-}
-
-func resetMetrics() {
-	pgbrStanzaStatusMetric.Reset()
-	pgbrRepoStatusMetric.Reset()
-	pgbrStanzaBackupInfoMetric.Reset()
-	pgbrStanzaBackupDurationMetric.Reset()
-	pgbrStanzaBackupDatabaseSizeMetric.Reset()
-	pgbrStanzaBackupDatabaseBackupSizeMetric.Reset()
-	pgbrStanzaBackupRepoBackupSetSizeMetric.Reset()
-	pgbrStanzaBackupRepoBackupSizeMetric.Reset()
-	pgbrWALArchivingMetric.Reset()
 }
 
 func getPGVersion(id, repoKey int, dbList []db) string {

@@ -6,7 +6,7 @@
 
 Prometheus exporter for [pgBackRest](https://pgbackrest.org/).
 
-The metrics are collected by parsing result of `pgbackrest info --output json` command. The metrics are collected for all stanzas received by command. You need to run exporter on the same host where pgBackRest was installed or inside Docker.
+The metrics are collected based on result of `pgbackrest info --output json` command. By default, the metrics are collected for all stanzas received by command. You can specify stanzas to collect metrics. You need to run exporter on the same host where pgBackRest was installed or inside Docker.
 
 All metrics are collected for `pgBackRest >= v2.32`.
 For earlier versions, some metrics may not be collected or have insignificant label values.
@@ -71,13 +71,18 @@ Flags:
   --backrest.config=""        Full path to pgBackRest configuration file.
   --backrest.config-include-path=""  
                               Full path to additional pgBackRest configuration files.
+  --backrest.stanza="" ...    Specific stanza for collecting metrics. Can be specified several times.
   --verbose.info              Enable additional metrics labels.
 ```
 
 #### Additional description of flags.
 
-Custom `config` and/or custom `config-include-path` for `pgbackrest` command could be specify via `--backrest.config` and `--backrest.config-include-path` flags. 
+Custom `config` and/or custom `config-include-path` for `pgbackrest` command can be specified via `--backrest.config` and `--backrest.config-include-path` flags. 
 Full paths must be specified. For example, `--backrest.config=/tmp/pgbackrest.conf` and/or `--backrest.config-include-path=/tmp/pgbackrest/conf.d`.
+
+Custom `stanza` for collecting metrics can be specified via `--backrest.stanza` flag. 
+You can specify several stanzas. For example, `--backrest.stanza=demo1 --backrest.stanza=demo2`.
+For this case, metrics will be collected only for `demo1` and `demo2` stanzas.
 
 When flag `--verbose.info` is specified - WALMin and WALMax are added as metric labels.
 This creates new different time series on each WAL archiving.
@@ -100,6 +105,7 @@ Environment variables supported by this image:
 * all environment variables from [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest#docker-pgbackrest)  image;
 * `EXPORTER_ENDPOINT` - metrics endpoint, default `/metrics`;
 * `EXPORTER_PORT` - port for prometheus metrics to listen on, default `9854`;
+* `STANZA` - specific stanza for collecting metrics, default `""`;
 * `COLLECT_INTERVAL` - collecting metrics interval in seconds, default `600`;
 
 You will need to mount the necessary directories or files inside the container.
@@ -130,6 +136,35 @@ docker run -d \
     pgbackrest_exporter
 ```
 
+For specific stanza:
+
+```bash
+docker run -d \
+    --name pgbackrest_exporter \
+    -e STANZA=demo \
+    -p 9854:9854 \
+    -v  /etc/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf \
+    pgbackrest_exporter
+```
+
+If you want to specify several stanzas for collecting metrics, 
+you can run containers on different ports:
+
+```bash
+docker run -d \
+    --name pgbackrest_exporter_demo1 \
+    -e STANZA=demo1 \
+    -p 9854:9854 \
+    -v  /etc/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf \
+    pgbackrest_exporter
+
+docker run -d \
+    --name pgbackrest_exporter_demo2 \
+    -e STANZA=demo2 \
+    -p 9855:9854 \
+    -v  /etc/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf \
+    pgbackrest_exporter
+```
 ### Running as systemd service
 
 * Register `pgbackrest_exporter` (already builded, if not - exec `make build` before) as a systemd service:
