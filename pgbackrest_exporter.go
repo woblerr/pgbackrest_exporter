@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"reflect"
 	"syscall"
 	"time"
 
@@ -36,6 +37,10 @@ func main() {
 			"backrest.config-include-path",
 			"Full path to additional pgBackRest configuration files.",
 		).Default("").String()
+		backrestStanza = kingpin.Flag(
+			"backrest.stanza",
+			"Specific stanza to collect metrics. Can be specified several times.",
+		).Default("").PlaceHolder("\"\"").Strings()
 		verboseInfo = kingpin.Flag(
 			"verbose.info",
 			"Enable additional metrics labels.",
@@ -64,20 +69,32 @@ func main() {
 	if *backrestCustomConfigIncludePath != "" {
 		log.Printf("[INFO] Custom path to additional pgBackRest configuration files %s.", *backrestCustomConfigIncludePath)
 	}
+	if !reflect.DeepEqual(*backrestStanza, []string{""}) {
+		for _, stanza := range *backrestStanza {
+			log.Printf("[INFO] Collecting metrics for specific stanza %s.", stanza)
+		}
+	}
 	// Setup parameters for exporter.
 	backrest.SetPromPortandPath(*promPort, *promPath)
 	log.Printf("[INFO] Use port %s and HTTP endpoint %s.", *promPort, *promPath)
 	// Start exporter.
 	backrest.StartPromEndpoint()
 	for {
-		// Get information form pgbackrest.
-		err := backrest.GetPgBackRestInfo(
-			*backrestCustomConfig,
-			*backrestCustomConfigIncludePath,
-			*verboseInfo,
-		)
-		if err != nil {
-			log.Printf("[ERROR] Get data failed, %v.", err)
+		// Reset metrics.
+		backrest.ResetMetrics()
+		// Loop over each stanza.
+		// If stanza not set - perform a single loop step to get metrics for all stanzas.
+		for _, stanza := range *backrestStanza {
+			// Get information form pgbackrest.
+			err := backrest.GetPgBackRestInfo(
+				*backrestCustomConfig,
+				*backrestCustomConfigIncludePath,
+				stanza,
+				*verboseInfo,
+			)
+			if err != nil {
+				log.Printf("[ERROR] Get data failed, %v.", err)
+			}
 		}
 		// Sleep for 'collection.interval' seconds.
 		time.Sleep(time.Duration(*collectionInterval) * time.Second)
