@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
@@ -425,6 +426,52 @@ func TestConcatExecArgs(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCompareLastBackups(t *testing.T) {
+	fullDate := parseDate("2021-07-21 00:01:01")
+	diffDate := parseDate("2021-07-21 00:05:01")
+	incrDate := parseDate("2021-07-21 00:10:01")
+	lastBackups := lastBackupsStruct{}
+	type args struct {
+		backups       *lastBackupsStruct
+		currentBackup time.Time
+		backupType    string
+	}
+	tests := []struct {
+		name string
+		args args
+		want lastBackupsStruct
+	}{
+		{"compareLastBackupsFull",
+			args{&lastBackups, fullDate, "full"},
+			lastBackupsStruct{fullDate, fullDate, fullDate},
+		},
+		{"compareLastBackupsDiff",
+			args{&lastBackups, diffDate, "diff"},
+			lastBackupsStruct{fullDate, diffDate, diffDate},
+		},
+		{"compareLastBackupsIncr",
+			args{&lastBackups, incrDate, "incr"},
+			lastBackupsStruct{fullDate, diffDate, incrDate},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			compareLastBackups(tt.args.backups, tt.args.currentBackup, tt.args.backupType)
+			if !reflect.DeepEqual(*tt.args.backups, tt.want) {
+				t.Errorf("\nVariables do not match:\n%v\nwant:\n%v", *tt.args.backups, tt.want)
+			}
+		})
+	}
+}
+
+func parseDate(value string) time.Time {
+	valueReturn, err := time.Parse(layout, value)
+	if err != nil {
+		panic(err)
+	}
+	return valueReturn
 }
 
 func fakeSetUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...string) error {
