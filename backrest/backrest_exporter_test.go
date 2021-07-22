@@ -9,13 +9,11 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 )
 
 var (
-	mockStdout              string
-	mockExit                int
-	curretnUnixTimeForTests = parseDate("2021-07-22 21:00:00").UnixNano()
+	mockStdout string
+	mockExit   int
 )
 
 func TestSetPromPortandPath(t *testing.T) {
@@ -113,12 +111,4 @@ func TestExecCommandHelper(t *testing.T) {
 	fmt.Fprintf(os.Stdout, "%s", os.Getenv("STDOUT"))
 	i, _ := strconv.Atoi(os.Getenv("EXIT_STATUS"))
 	os.Exit(i)
-}
-
-func parseDate(value string) time.Time {
-	valueReturn, err := time.Parse(layout, value)
-	if err != nil {
-		panic(err)
-	}
-	return valueReturn
 }

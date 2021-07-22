@@ -14,6 +14,8 @@ import (
 	"github.com/prometheus/common/expfmt"
 )
 
+var curretnUnixTimeForTests = parseDate("2021-07-22 21:00:00").UnixNano()
+
 func TestGetMetrics(t *testing.T) {
 	type args struct {
 		data                stanza
@@ -612,4 +614,12 @@ func templateStanzaRepoAbsent(walMax, walMin string) stanza {
 			"ok",
 		},
 	}
+}
+
+func parseDate(value string) time.Time {
+	valueReturn, err := time.Parse(layout, value)
+	if err != nil {
+		panic(err)
+	}
+	return valueReturn
 }
