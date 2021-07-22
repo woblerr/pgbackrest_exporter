@@ -27,9 +27,18 @@ pgbackrest_exporter_backup_database_backup_size{backup_name="20210607-092423F",b
 # HELP pgbackrest_exporter_backup_database_size Full uncompressed size of the database.
 # TYPE pgbackrest_exporter_backup_database_size gauge
 pgbackrest_exporter_backup_database_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
+# HELP pgbackrest_exporter_backup_diff_time_since_last_completion Seconds since the last completed full or differential backup.
+# TYPE pgbackrest_exporter_backup_diff_time_since_last_completion gauge
+pgbackrest_exporter_backup_diff_time_since_last_completion{stanza="demo"} 9.223372036854776e+09
 # HELP pgbackrest_exporter_backup_duration Backup duration in seconds.
 # TYPE pgbackrest_exporter_backup_duration gauge
 pgbackrest_exporter_backup_duration{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo",start_time="2021-06-07 12:24:23",stop_time="2021-06-07 12:24:26"} 3
+# HELP pgbackrest_exporter_backup_full_time_since_last_completion Seconds since the last completed full backup.
+# TYPE pgbackrest_exporter_backup_full_time_since_last_completion gauge
+pgbackrest_exporter_backup_full_time_since_last_completion{stanza="demo"} 9.223372036854776e+09
+# HELP pgbackrest_exporter_backup_incr_time_since_last_completion Seconds since the last completed full, differential or incremental backup.
+# TYPE pgbackrest_exporter_backup_incr_time_since_last_completion gauge
+pgbackrest_exporter_backup_incr_time_since_last_completion{stanza="demo"} 9.223372036854776e+09
 # HELP pgbackrest_exporter_backup_info Backup info.
 # TYPE pgbackrest_exporter_backup_info gauge
 pgbackrest_exporter_backup_info{backrest_ver="2.34",backup_name="20210607-092423F",backup_type="full",database_id="1",pg_version="13",prior="",repo_key="1",stanza="demo",wal_archive_max="000000010000000000000002",wal_archive_min="000000010000000000000002"} 1
@@ -86,7 +95,7 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ResetMetrics()
-			getMetrics(tt.args.data, tt.args.verbose, tt.args.setUpMetricValueFun)
+			getMetrics(tt.args.data, tt.args.verbose, curretnUnixTimeForTests, tt.args.setUpMetricValueFun)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaStatusMetric,
@@ -97,6 +106,9 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 				pgbrStanzaBackupDatabaseBackupSizeMetric,
 				pgbrStanzaBackupRepoBackupSetSizeMetric,
 				pgbrStanzaBackupRepoBackupSizeMetric,
+				pgbrStanzaBackupLastFullMetric,
+				pgbrStanzaBackupLastDiffMetric,
+				pgbrStanzaBackupLastIncrMetric,
 				pgbrWALArchivingMetric,
 			)
 			metricFamily, err := reg.Gather()
@@ -129,9 +141,18 @@ pgbackrest_exporter_backup_database_backup_size{backup_name="20210607-092423F",b
 # HELP pgbackrest_exporter_backup_database_size Full uncompressed size of the database.
 # TYPE pgbackrest_exporter_backup_database_size gauge
 pgbackrest_exporter_backup_database_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo"} 2.4316343e+07
+# HELP pgbackrest_exporter_backup_diff_time_since_last_completion Seconds since the last completed full or differential backup.
+# TYPE pgbackrest_exporter_backup_diff_time_since_last_completion gauge
+pgbackrest_exporter_backup_diff_time_since_last_completion{stanza="demo"} 9.223372036854776e+09
 # HELP pgbackrest_exporter_backup_duration Backup duration in seconds.
 # TYPE pgbackrest_exporter_backup_duration gauge
 pgbackrest_exporter_backup_duration{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo",start_time="2021-06-07 12:24:23",stop_time="2021-06-07 12:24:26"} 3
+# HELP pgbackrest_exporter_backup_full_time_since_last_completion Seconds since the last completed full backup.
+# TYPE pgbackrest_exporter_backup_full_time_since_last_completion gauge
+pgbackrest_exporter_backup_full_time_since_last_completion{stanza="demo"} 9.223372036854776e+09
+# HELP pgbackrest_exporter_backup_incr_time_since_last_completion Seconds since the last completed full, differential or incremental backup.
+# TYPE pgbackrest_exporter_backup_incr_time_since_last_completion gauge
+pgbackrest_exporter_backup_incr_time_since_last_completion{stanza="demo"} 9.223372036854776e+09
 # HELP pgbackrest_exporter_backup_info Backup info.
 # TYPE pgbackrest_exporter_backup_info gauge
 pgbackrest_exporter_backup_info{backrest_ver="2.34",backup_name="20210607-092423F",backup_type="full",database_id="1",pg_version="13",prior="",repo_key="0",stanza="demo",wal_archive_max="000000010000000000000002",wal_archive_min="000000010000000000000002"} 1
@@ -165,7 +186,7 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ResetMetrics()
-			getMetrics(tt.args.data, tt.args.verbose, tt.args.setUpMetricValueFun)
+			getMetrics(tt.args.data, tt.args.verbose, curretnUnixTimeForTests, tt.args.setUpMetricValueFun)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaStatusMetric,
@@ -176,6 +197,9 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 				pgbrStanzaBackupDatabaseBackupSizeMetric,
 				pgbrStanzaBackupRepoBackupSetSizeMetric,
 				pgbrStanzaBackupRepoBackupSizeMetric,
+				pgbrStanzaBackupLastFullMetric,
+				pgbrStanzaBackupLastDiffMetric,
+				pgbrStanzaBackupLastIncrMetric,
 				pgbrWALArchivingMetric,
 			)
 			metricFamily, err := reg.Gather()
@@ -259,7 +283,7 @@ func TestGetMetricsErrors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			out := &bytes.Buffer{}
 			log.SetOutput(out)
-			getMetrics(tt.args.data, tt.args.verbose, tt.args.setUpMetricValueFun)
+			getMetrics(tt.args.data, tt.args.verbose, curretnUnixTimeForTests, tt.args.setUpMetricValueFun)
 			errorsOutputCount := strings.Count(out.String(), "[ERROR]")
 			if tt.args.errorsCount != errorsOutputCount {
 				t.Errorf("\nVariables do not match:\n%d\nwant:\n%d", tt.args.errorsCount, errorsOutputCount)
@@ -464,14 +488,6 @@ func TestCompareLastBackups(t *testing.T) {
 			}
 		})
 	}
-}
-
-func parseDate(value string) time.Time {
-	valueReturn, err := time.Parse(layout, value)
-	if err != nil {
-		panic(err)
-	}
-	return valueReturn
 }
 
 func fakeSetUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...string) error {

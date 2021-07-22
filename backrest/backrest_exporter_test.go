@@ -1,16 +1,21 @@
 package backrest
 
 import (
+	"bytes"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"testing"
+	"time"
 )
 
 var (
-	mockStdout string
-	mockExit   int
+	mockStdout              string
+	mockExit                int
+	curretnUnixTimeForTests = parseDate("2021-07-22 21:00:00").UnixNano()
 )
 
 func TestSetPromPortandPath(t *testing.T) {
@@ -28,7 +33,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 	type args struct {
 		config            string
 		configIncludePath string
-		stanza            string
+		stanzas           []string
 		verbose           bool
 	}
 	tests := []struct {
@@ -36,10 +41,10 @@ func TestGetPgBackRestInfo(t *testing.T) {
 		args       args
 		mockStdout string
 		mockExit   int
-		wantErr    bool
+		testText   string
 	}{
 		{"GetPgBackRestInfoGoodDataReturn",
-			args{"", "", "", false},
+			args{"", "", []string{""}, false},
 			`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 				`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
 				`"backup":[{"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
@@ -51,56 +56,40 @@ func TestGetPgBackRestInfo(t *testing.T) {
 				`"key":1,"status":{"code":0,"message":"ok"}}],"status":{"code":0,"lock":{"backup":` +
 				`{"held":false}},"message":"ok"}}]`,
 			0,
-			false},
+			""},
 		{"GetPgBackRestInfoBadDataReturn",
-			args{"", "", "", false},
+			args{"", "", []string{""}, false},
 			`Forty two`,
 			1,
-			true},
+			"[ERROR] Parse JSON failed, invalid character 'F' looking for beginning of value"},
 		{"GetPgBackRestInfoZeroDataReturn",
-			args{"", "", "", false},
+			args{"", "", []string{""}, false},
 			`[]`,
 			0,
-			false},
+			"[WARN] No backup data returned"},
 		{"GetPgBackRestInfoJsonUnmarshalFail",
-			args{"", "", "", false},
+			args{"", "", []string{""}, false},
 			`[{}`,
 			0,
-			true},
-		{"GetPgBackRestInfoConfig",
-			args{"/tmp/pgbackrest.conf", "", "", false},
-			`[]`,
-			0,
-			false},
-		{"GetPgBackRestInfoConfigIncludePath",
-			args{"", "/tmp/pgbackrest/conf.d", "", false},
-			`[]`,
-			0,
-			false},
-		{"GetPgBackRestInfoConfigAndConfigIncludePath",
-			args{"/tmp/pgbackrest.conf", "/tmp/pgbackrest/conf.d", "", false},
-			`[]`,
-			0,
-			false},
-		{"GetPgBackRestInfoStanzaPath",
-			args{"", "", "demo", false},
-			`[]`,
-			0,
-			false},
+			"[ERROR] Parse JSON failed, unexpected end of JSON input"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ResetMetrics()
 			mockStdout = tt.mockStdout
 			execCommand = fakeExecCommand
 			mockExit = tt.mockExit
 			defer func() { execCommand = exec.Command }()
-			if err := GetPgBackRestInfo(
+			out := &bytes.Buffer{}
+			log.SetOutput(out)
+			GetPgBackRestInfo(
 				tt.args.config,
 				tt.args.configIncludePath,
-				tt.args.stanza,
+				tt.args.stanzas,
 				tt.args.verbose,
-			); (err != nil) != tt.wantErr {
-				t.Errorf("\nVariables do not match:\n%v\nwant:\n%v", err, tt.wantErr)
+			)
+			if !strings.Contains(out.String(), tt.testText) {
+				t.Errorf("\nVariable do not match:\n%s\nwant:\n%s", tt.testText, out.String())
 			}
 		})
 	}
@@ -124,4 +113,12 @@ func TestExecCommandHelper(t *testing.T) {
 	fmt.Fprintf(os.Stdout, "%s", os.Getenv("STDOUT"))
 	i, _ := strconv.Atoi(os.Getenv("EXIT_STATUS"))
 	os.Exit(i)
+}
+
+func parseDate(value string) time.Time {
+	valueReturn, err := time.Parse(layout, value)
+	if err != nil {
+		panic(err)
+	}
+	return valueReturn
 }

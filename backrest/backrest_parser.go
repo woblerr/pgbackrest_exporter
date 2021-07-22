@@ -224,7 +224,7 @@ func getPGVersion(id, repoKey int, dbList []db) string {
 	return ""
 }
 
-func getMetrics(data stanza, verbose bool, setUpMetricValueFun setUpMetricValueFunType) {
+func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricValueFun setUpMetricValueFunType) {
 	var err error
 	lastBackups := lastBackupsStruct{}
 	//https://github.com/pgbackrest/pgbackrest/blob/03021c6a17f1374e84ef42614fa1dd2a6be4b64d/src/command/info/info.c#L78-L94
@@ -430,18 +430,17 @@ func getMetrics(data stanza, verbose bool, setUpMetricValueFun setUpMetricValueF
 	// incremental backups also will be set.
 	// If not - metrics won't be set.
 	if !lastBackups.full.IsZero() {
-		timeNow := time.Now().Unix()
 		// Seconds since the last completed full backup.
 		err = setUpMetricValueFun(
 			pgbrStanzaBackupLastFullMetric,
 			// Trim nanoseconds.
-			time.Unix(timeNow, 0).Sub(lastBackups.full).Seconds(),
+			time.Unix(currentUnixTime, 0).Sub(lastBackups.full).Seconds(),
 			data.Name,
 		)
 		if err != nil {
 			log.Println(
 				"[ERROR] Metric pgbackrest_exporter_backup_full_time_since_last_completion set up failed;",
-				"value:", time.Unix(timeNow, 0).Sub(lastBackups.full).Seconds(), ";",
+				"value:", time.Unix(currentUnixTime, 0).Sub(lastBackups.full).Seconds(), ";",
 				"labels:",
 				data.Name, ".",
 			)
@@ -449,13 +448,13 @@ func getMetrics(data stanza, verbose bool, setUpMetricValueFun setUpMetricValueF
 		// Seconds since the last completed full or differential backup.
 		err = setUpMetricValueFun(
 			pgbrStanzaBackupLastDiffMetric,
-			time.Unix(timeNow, 0).Sub(lastBackups.diff).Seconds(),
+			time.Unix(currentUnixTime, 0).Sub(lastBackups.diff).Seconds(),
 			data.Name,
 		)
 		if err != nil {
 			log.Println(
 				"[ERROR] Metric pgbackrest_exporter_backup_diff_time_since_last_completion set up failed;",
-				"value:", time.Unix(timeNow, 0).Sub(lastBackups.diff).Seconds(), ";",
+				"value:", time.Unix(currentUnixTime, 0).Sub(lastBackups.diff).Seconds(), ";",
 				"labels:",
 				data.Name, ".",
 			)
@@ -463,13 +462,13 @@ func getMetrics(data stanza, verbose bool, setUpMetricValueFun setUpMetricValueF
 		// Seconds since the last completed full, differential or incremental backup.
 		err = setUpMetricValueFun(
 			pgbrStanzaBackupLastIncrMetric,
-			time.Unix(timeNow, 0).Sub(lastBackups.incr).Seconds(),
+			time.Unix(currentUnixTime, 0).Sub(lastBackups.incr).Seconds(),
 			data.Name,
 		)
 		if err != nil {
 			log.Println(
 				"[ERROR] Metric pgbackrest_exporter_backup_incr_time_since_last_completion set up failed;",
-				"value:", time.Unix(timeNow, 0).Sub(lastBackups.incr).Seconds(), ";",
+				"value:", time.Unix(currentUnixTime, 0).Sub(lastBackups.incr).Seconds(), ";",
 				"labels:",
 				data.Name, ".",
 			)
