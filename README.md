@@ -41,6 +41,9 @@ The metrics provided by the client.
 * `pgbackrest_exporter_backup_database_backup_size` - amount of data in the database to actually backup.
 * `pgbackrest_exporter_backup_repo_backup_set_size` - full compressed files size to restore the database from backup.
 * `pgbackrest_exporter_backup_repo_backup_size` - compressed files size in backup.
+* `pgbackrest_exporter_backup_full_time_since_last_completion` - seconds since the last completed full backup.
+* `pgbackrest_exporter_backup_diff_time_since_last_completion` - seconds since the last completed full or differential backup.
+* `pgbackrest_exporter_backup_incr_time_since_last_completion` - seconds since the last completed full, differential or incremental backup.
 * `pgbackrest_exporter_wal_archive_status` - current WAL archive status.
 
     Values description:

@@ -14,6 +14,12 @@ import (
 
 type setUpMetricValueFunType func(metric *prometheus.GaugeVec, value float64, labels ...string) error
 
+type lastBackupsStruct struct {
+	full time.Time
+	diff time.Time
+	incr time.Time
+}
+
 var (
 	pgbrStanzaStatusMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_exporter_stanza_status",
@@ -108,6 +114,26 @@ var (
 			"database_id",
 			"repo_key",
 			"stanza"})
+	pgbrStanzaBackupLastFullMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_exporter_backup_full_time_since_last_completion",
+		Help: "Seconds since the last completed full backup.",
+	},
+		[]string{"stanza"})
+	// Differential backup is always based on last full,
+	// if the last backup was full, the metric will take full backup value.
+	pgbrStanzaBackupLastDiffMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_exporter_backup_diff_time_since_last_completion",
+		Help: "Seconds since the last completed full or differential backup.",
+	},
+		[]string{"stanza"})
+	// Incremental backup is always based on last full or differential,
+	// if the last backup was full or differential, the metric will take
+	// full or differential backup value.
+	pgbrStanzaBackupLastIncrMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_exporter_backup_incr_time_since_last_completion",
+		Help: "Seconds since the last completed full, differential or incremental backup.",
+	},
+		[]string{"stanza"})
 	pgbrWALArchivingMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_exporter_wal_archive_status",
 		Help: "Current WAL archive status.",
@@ -198,8 +224,9 @@ func getPGVersion(id, repoKey int, dbList []db) string {
 	return ""
 }
 
-func getMetrics(data stanza, verbose bool, setUpMetricValueFun setUpMetricValueFunType) {
+func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricValueFun setUpMetricValueFunType) {
 	var err error
+	lastBackups := lastBackupsStruct{}
 	//https://github.com/pgbackrest/pgbackrest/blob/03021c6a17f1374e84ef42614fa1dd2a6be4b64d/src/command/info/info.c#L78-L94
 	// Stanza and repo statuses:
 	//  0: "ok",
@@ -222,6 +249,26 @@ func getMetrics(data stanza, verbose bool, setUpMetricValueFun setUpMetricValueF
 			"labels:",
 			data.Name, ".",
 		)
+	}
+	// Repo status.
+	for _, repo := range data.Repo {
+		err = setUpMetricValueFun(
+			pgbrRepoStatusMetric,
+			float64(repo.Status.Code),
+			repo.Cipher,
+			strconv.Itoa(repo.Key),
+			data.Name,
+		)
+		if err != nil {
+			log.Println(
+				"[ERROR] Metric pgbackrest_exporter_repo_status set up failed;",
+				"value:", float64(repo.Status.Code), ";",
+				"labels:",
+				repo.Cipher, ",",
+				strconv.Itoa(repo.Key), ",",
+				data.Name, ".",
+			)
+		}
 	}
 	// Each backup for current stanza.
 	for _, backup := range data.Backup {
@@ -373,23 +420,56 @@ func getMetrics(data stanza, verbose bool, setUpMetricValueFun setUpMetricValueF
 				data.Name, ".",
 			)
 		}
+		compareLastBackups(
+			&lastBackups,
+			time.Unix(backup.Timestamp.Stop, 0),
+			backup.Type,
+		)
 	}
-	// Repo status.
-	for _, repo := range data.Repo {
+	// If full backup exists, the values of metrics for differential and
+	// incremental backups also will be set.
+	// If not - metrics won't be set.
+	if !lastBackups.full.IsZero() {
+		// Seconds since the last completed full backup.
 		err = setUpMetricValueFun(
-			pgbrRepoStatusMetric,
-			float64(repo.Status.Code),
-			repo.Cipher,
-			strconv.Itoa(repo.Key),
+			pgbrStanzaBackupLastFullMetric,
+			// Trim nanoseconds.
+			time.Unix(currentUnixTime, 0).Sub(lastBackups.full).Seconds(),
 			data.Name,
 		)
 		if err != nil {
 			log.Println(
-				"[ERROR] Metric pgbackrest_exporter_repo_status set up failed;",
-				"value:", float64(repo.Status.Code), ";",
+				"[ERROR] Metric pgbackrest_exporter_backup_full_time_since_last_completion set up failed;",
+				"value:", time.Unix(currentUnixTime, 0).Sub(lastBackups.full).Seconds(), ";",
 				"labels:",
-				repo.Cipher, ",",
-				strconv.Itoa(repo.Key), ",",
+				data.Name, ".",
+			)
+		}
+		// Seconds since the last completed full or differential backup.
+		err = setUpMetricValueFun(
+			pgbrStanzaBackupLastDiffMetric,
+			time.Unix(currentUnixTime, 0).Sub(lastBackups.diff).Seconds(),
+			data.Name,
+		)
+		if err != nil {
+			log.Println(
+				"[ERROR] Metric pgbackrest_exporter_backup_diff_time_since_last_completion set up failed;",
+				"value:", time.Unix(currentUnixTime, 0).Sub(lastBackups.diff).Seconds(), ";",
+				"labels:",
+				data.Name, ".",
+			)
+		}
+		// Seconds since the last completed full, differential or incremental backup.
+		err = setUpMetricValueFun(
+			pgbrStanzaBackupLastIncrMetric,
+			time.Unix(currentUnixTime, 0).Sub(lastBackups.incr).Seconds(),
+			data.Name,
+		)
+		if err != nil {
+			log.Println(
+				"[ERROR] Metric pgbackrest_exporter_backup_incr_time_since_last_completion set up failed;",
+				"value:", time.Unix(currentUnixTime, 0).Sub(lastBackups.incr).Seconds(), ";",
+				"labels:",
 				data.Name, ".",
 			)
 		}
@@ -494,4 +574,30 @@ func setUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...stri
 	}
 	metricVec.Set(value)
 	return nil
+}
+
+func compareLastBackups(backups *lastBackupsStruct, currentBackup time.Time, backupType string) {
+	switch backupType {
+	case "full":
+		if currentBackup.After(backups.full) {
+			backups.full = currentBackup
+		}
+		if currentBackup.After(backups.diff) {
+			backups.diff = currentBackup
+		}
+		if currentBackup.After(backups.incr) {
+			backups.incr = currentBackup
+		}
+	case "diff":
+		if currentBackup.After(backups.diff) {
+			backups.diff = currentBackup
+		}
+		if currentBackup.After(backups.incr) {
+			backups.incr = currentBackup
+		}
+	case "incr":
+		if currentBackup.After(backups.incr) {
+			backups.incr = currentBackup
+		}
+	}
 }

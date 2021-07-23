@@ -82,20 +82,13 @@ func main() {
 	for {
 		// Reset metrics.
 		backrest.ResetMetrics()
-		// Loop over each stanza.
-		// If stanza not set - perform a single loop step to get metrics for all stanzas.
-		for _, stanza := range *backrestStanza {
-			// Get information form pgbackrest.
-			err := backrest.GetPgBackRestInfo(
-				*backrestCustomConfig,
-				*backrestCustomConfigIncludePath,
-				stanza,
-				*verboseInfo,
-			)
-			if err != nil {
-				log.Printf("[ERROR] Get data failed, %v.", err)
-			}
-		}
+		// Get information form pgbackrest.
+		backrest.GetPgBackRestInfo(
+			*backrestCustomConfig,
+			*backrestCustomConfigIncludePath,
+			*backrestStanza,
+			*verboseInfo,
+		)
 		// Sleep for 'collection.interval' seconds.
 		time.Sleep(time.Duration(*collectionInterval) * time.Second)
 	}
