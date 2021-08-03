@@ -55,28 +55,28 @@ func main() {
 	// Method invoked upon seeing signal.
 	go func() {
 		s := <-sigs
-		log.Printf("[WARN] RECEIVED SIGNAL %s.", s)
-		log.Printf("[WARN] Stopping  %s.", filepath.Base(os.Args[0]))
+		log.Printf("[WARN] RECEIVED SIGNAL %s", s)
+		log.Printf("[WARN] Stopping  %s", filepath.Base(os.Args[0]))
 		os.Exit(1)
 	}()
-	log.Printf("[INFO] Starting %s.", filepath.Base(os.Args[0]))
-	log.Printf("[INFO] Version %s.", version)
-	log.Printf("[INFO] Verbose info %t.", *verboseInfo)
-	log.Printf("[INFO] Collecting metrics every %d seconds.", *collectionInterval)
+	log.Printf("[INFO] Starting %s", filepath.Base(os.Args[0]))
+	log.Printf("[INFO] Version %s", version)
+	log.Printf("[INFO] Verbose info %t", *verboseInfo)
+	log.Printf("[INFO] Collecting metrics every %d seconds", *collectionInterval)
 	if *backrestCustomConfig != "" {
-		log.Printf("[INFO] Custom pgBackRest configuration file %s.", *backrestCustomConfig)
+		log.Printf("[INFO] Custom pgBackRest configuration file %s", *backrestCustomConfig)
 	}
 	if *backrestCustomConfigIncludePath != "" {
-		log.Printf("[INFO] Custom path to additional pgBackRest configuration files %s.", *backrestCustomConfigIncludePath)
+		log.Printf("[INFO] Custom path to additional pgBackRest configuration files %s", *backrestCustomConfigIncludePath)
 	}
 	if !reflect.DeepEqual(*backrestStanza, []string{""}) {
 		for _, stanza := range *backrestStanza {
-			log.Printf("[INFO] Collecting metrics for specific stanza %s.", stanza)
+			log.Printf("[INFO] Collecting metrics for specific stanza %s", stanza)
 		}
 	}
 	// Setup parameters for exporter.
 	backrest.SetPromPortandPath(*promPort, *promPath)
-	log.Printf("[INFO] Use port %s and HTTP endpoint %s.", *promPort, *promPath)
+	log.Printf("[INFO] Use port %s and HTTP endpoint %s", *promPort, *promPath)
 	// Start exporter.
 	backrest.StartPromEndpoint()
 	for {

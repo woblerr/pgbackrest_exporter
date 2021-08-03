@@ -23,7 +23,7 @@ func SetPromPortandPath(port, endpoint string) {
 func StartPromEndpoint() {
 	go func() {
 		http.Handle(promEndpoint, promhttp.Handler())
-		log.Fatalf("[ERROR] Run HTTP endpoint failed, %v.", http.ListenAndServe(":"+promPort, nil))
+		log.Fatalf("[ERROR] Run HTTP endpoint failed, %v", http.ListenAndServe(":"+promPort, nil))
 	}()
 }
 
@@ -53,14 +53,14 @@ func GetPgBackRestInfo(config, configIncludePath string, stanzas []string, verbo
 	for _, stanza := range stanzas {
 		stanzaData, err := getAllInfoData(config, configIncludePath, stanza)
 		if err != nil {
-			log.Printf("[ERROR] Get data from pgbackrest failed, %v - %v.", err, string(stanzaData))
+			log.Printf("[ERROR] Get data from pgbackrest failed, %v - %v", err, string(stanzaData))
 		}
 		parseStanzaData, err := parseResult(stanzaData)
 		if err != nil {
-			log.Printf("[ERROR] Parse JSON failed, %v.", err)
+			log.Printf("[ERROR] Parse JSON failed, %v", err)
 		}
 		if len(parseStanzaData) == 0 {
-			log.Printf("[WARN] No backup data returned.")
+			log.Printf("[WARN] No backup data returned")
 		}
 		for _, singleStanza := range parseStanzaData {
 			getMetrics(singleStanza, verbose, currentUnixTime, setUpMetricValue)
