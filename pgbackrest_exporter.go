@@ -82,7 +82,7 @@ func main() {
 	for {
 		// Reset metrics.
 		backrest.ResetMetrics()
-		// Get information form pgbackrest.
+		// Get information form pgBackRest.
 		backrest.GetPgBackRestInfo(
 			*backrestCustomConfig,
 			*backrestCustomConfigIncludePath,

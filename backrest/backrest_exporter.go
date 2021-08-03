@@ -43,7 +43,7 @@ func ResetMetrics() {
 	pgbrWALArchivingMetric.Reset()
 }
 
-// GetPgBackRestInfo get and parse pgbackrest info and set metrics
+// GetPgBackRestInfo get and parse pgBackRest info and set metrics
 func GetPgBackRestInfo(config, configIncludePath string, stanzas []string, verbose bool) {
 	// To calculate the time elapsed since the last completed full, differential or incremental backup.
 	// For all stanzas values are calculated relative to one value.
@@ -53,7 +53,7 @@ func GetPgBackRestInfo(config, configIncludePath string, stanzas []string, verbo
 	for _, stanza := range stanzas {
 		stanzaData, err := getAllInfoData(config, configIncludePath, stanza)
 		if err != nil {
-			log.Printf("[ERROR] Get data from pgbackrest failed, %v - %v", err, string(stanzaData))
+			log.Printf("[ERROR] Get data from pgBackRest failed, %v - %v", err, string(stanzaData))
 		}
 		parseStanzaData, err := parseResult(stanzaData)
 		if err != nil {
