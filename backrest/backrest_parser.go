@@ -206,7 +206,10 @@ func getAllInfoData(config, configIncludePath, stanza string) ([]byte, error) {
 	}
 	// Finally arguments for exec command
 	concatArgs := concatExecArgs(args)
-	out, err := execCommand(app, concatArgs...).Output()
+	// pgBackRest writes errors to stderr.
+	// If an error occurs when execution pgBackRest,
+	// we will get the error text instead of the data.
+	out, err := execCommand(app, concatArgs...).CombinedOutput()
 	return out, err
 }
 

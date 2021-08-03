@@ -53,7 +53,7 @@ func GetPgBackRestInfo(config, configIncludePath string, stanzas []string, verbo
 	for _, stanza := range stanzas {
 		stanzaData, err := getAllInfoData(config, configIncludePath, stanza)
 		if err != nil {
-			log.Printf("[ERROR] Get data from pgbackrest failed, %v.", err)
+			log.Printf("[ERROR] Get data from pgbackrest failed, %v - %v.", err, string(stanzaData))
 		}
 		parseStanzaData, err := parseResult(stanzaData)
 		if err != nil {
