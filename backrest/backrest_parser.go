@@ -206,10 +206,13 @@ func getAllInfoData(config, configIncludePath, stanza string) ([]byte, error) {
 	}
 	// Finally arguments for exec command
 	concatArgs := concatExecArgs(args)
-	// pgBackRest writes errors to stderr.
-	// If an error occurs when execution pgBackRest,
-	// we will get the error text instead of the data.
 	out, err := execCommand(app, concatArgs...).CombinedOutput()
+	// If error occurs - write error from pgBackRest to log and
+	// return nil for stanza data.
+	if err != nil {
+		log.Printf("[ERROR] pgBackRest error: %v", string(out))
+		return nil, err
+	}
 	return out, err
 }
 
