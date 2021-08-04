@@ -23,7 +23,7 @@ func SetPromPortandPath(port, endpoint string) {
 func StartPromEndpoint() {
 	go func() {
 		http.Handle(promEndpoint, promhttp.Handler())
-		log.Fatalf("[ERROR] Run HTTP endpoint failed, %v.", http.ListenAndServe(":"+promPort, nil))
+		log.Fatalf("[ERROR] Run HTTP endpoint failed, %v", http.ListenAndServe(":"+promPort, nil))
 	}()
 }
 
@@ -43,7 +43,7 @@ func ResetMetrics() {
 	pgbrWALArchivingMetric.Reset()
 }
 
-// GetPgBackRestInfo get and parse pgbackrest info and set metrics
+// GetPgBackRestInfo get and parse pgBackRest info and set metrics
 func GetPgBackRestInfo(config, configIncludePath string, stanzas []string, verbose bool) {
 	// To calculate the time elapsed since the last completed full, differential or incremental backup.
 	// For all stanzas values are calculated relative to one value.
@@ -53,14 +53,14 @@ func GetPgBackRestInfo(config, configIncludePath string, stanzas []string, verbo
 	for _, stanza := range stanzas {
 		stanzaData, err := getAllInfoData(config, configIncludePath, stanza)
 		if err != nil {
-			log.Printf("[ERROR] Get data from pgbackrest failed, %v.", err)
+			log.Printf("[ERROR] Get data from pgBackRest failed, %v", err)
 		}
 		parseStanzaData, err := parseResult(stanzaData)
 		if err != nil {
-			log.Printf("[ERROR] Parse JSON failed, %v.", err)
+			log.Printf("[ERROR] Parse JSON failed, %v", err)
 		}
 		if len(parseStanzaData) == 0 {
-			log.Printf("[WARN] No backup data returned.")
+			log.Printf("[WARN] No backup data returned")
 		}
 		for _, singleStanza := range parseStanzaData {
 			getMetrics(singleStanza, verbose, currentUnixTime, setUpMetricValue)

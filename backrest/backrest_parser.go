@@ -206,7 +206,13 @@ func getAllInfoData(config, configIncludePath, stanza string) ([]byte, error) {
 	}
 	// Finally arguments for exec command
 	concatArgs := concatExecArgs(args)
-	out, err := execCommand(app, concatArgs...).Output()
+	out, err := execCommand(app, concatArgs...).CombinedOutput()
+	// If error occurs - write error from pgBackRest to log and
+	// return nil for stanza data.
+	if err != nil {
+		log.Printf("[ERROR] pgBackRest error: %v", string(out))
+		return nil, err
+	}
 	return out, err
 }
 
@@ -247,7 +253,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 			"[ERROR] Metric pgbackrest_exporter_stanza_status set up failed;",
 			"value:", float64(data.Status.Code), ";",
 			"labels:",
-			data.Name, ".",
+			data.Name,
 		)
 	}
 	// Repo status.
@@ -266,7 +272,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				"labels:",
 				repo.Cipher, ",",
 				strconv.Itoa(repo.Key), ",",
-				data.Name, ".",
+				data.Name,
 			)
 		}
 	}
@@ -301,7 +307,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				data.Name, ",",
 				backup.Prior, ",",
 				backup.Archive.StartWAL, ",",
-				backup.Archive.StopWAL, ".",
+				backup.Archive.StopWAL,
 			)
 		}
 		// Backup durations in seconds.
@@ -329,7 +335,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				strconv.Itoa(backup.Database.RepoKey), ",",
 				data.Name, ",",
 				time.Unix(backup.Timestamp.Start, 0).Format(layout), ",",
-				time.Unix(backup.Timestamp.Stop, 0).Format(layout), ".",
+				time.Unix(backup.Timestamp.Stop, 0).Format(layout),
 			)
 		}
 		// Database size.
@@ -351,7 +357,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				backup.Type, ",",
 				strconv.Itoa(backup.Database.ID), ",",
 				strconv.Itoa(backup.Database.RepoKey), ",",
-				data.Name, ".",
+				data.Name,
 			)
 		}
 		// Database backup size.
@@ -373,7 +379,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				backup.Type, ",",
 				strconv.Itoa(backup.Database.ID), ",",
 				strconv.Itoa(backup.Database.RepoKey), ",",
-				data.Name, ".",
+				data.Name,
 			)
 		}
 		// Repo backup set size.
@@ -395,7 +401,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				backup.Type, ",",
 				strconv.Itoa(backup.Database.ID), ",",
 				strconv.Itoa(backup.Database.RepoKey), ",",
-				data.Name, ".",
+				data.Name,
 			)
 		}
 		// Repo backup size.
@@ -417,7 +423,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				backup.Type, ",",
 				strconv.Itoa(backup.Database.ID), ",",
 				strconv.Itoa(backup.Database.RepoKey), ",",
-				data.Name, ".",
+				data.Name,
 			)
 		}
 		compareLastBackups(
@@ -442,7 +448,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				"[ERROR] Metric pgbackrest_exporter_backup_full_time_since_last_completion set up failed;",
 				"value:", time.Unix(currentUnixTime, 0).Sub(lastBackups.full).Seconds(), ";",
 				"labels:",
-				data.Name, ".",
+				data.Name,
 			)
 		}
 		// Seconds since the last completed full or differential backup.
@@ -456,7 +462,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				"[ERROR] Metric pgbackrest_exporter_backup_diff_time_since_last_completion set up failed;",
 				"value:", time.Unix(currentUnixTime, 0).Sub(lastBackups.diff).Seconds(), ";",
 				"labels:",
-				data.Name, ".",
+				data.Name,
 			)
 		}
 		// Seconds since the last completed full, differential or incremental backup.
@@ -470,7 +476,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				"[ERROR] Metric pgbackrest_exporter_backup_incr_time_since_last_completion set up failed;",
 				"value:", time.Unix(currentUnixTime, 0).Sub(lastBackups.incr).Seconds(), ";",
 				"labels:",
-				data.Name, ".",
+				data.Name,
 			)
 		}
 	}
@@ -503,7 +509,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 						strconv.Itoa(archive.Database.RepoKey), ",",
 						data.Name, ",",
 						archive.WALMin, ",",
-						archive.WALMax, ".",
+						archive.WALMax,
 					)
 				}
 			} else {
@@ -526,8 +532,8 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 						getPGVersion(archive.Database.ID, archive.Database.RepoKey, data.DB), ",",
 						strconv.Itoa(archive.Database.RepoKey), ",",
 						data.Name, ",",
-						"", ",",
-						"", ".",
+						"\"\"", ",",
+						"\"\"",
 					)
 				}
 			}
@@ -551,8 +557,8 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 					getPGVersion(archive.Database.ID, archive.Database.RepoKey, data.DB), ",",
 					strconv.Itoa(archive.Database.RepoKey), ",",
 					data.Name, ",",
-					"", ",",
-					"", ".",
+					"\"\"", ",",
+					"\"\"",
 				)
 			}
 		}
@@ -562,14 +568,14 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 func setUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...string) error {
 	metricVec, err := metric.GetMetricWithLabelValues(labels...)
 	if err != nil {
-		log.Printf("[ERROR] Metric initialization failed, %v.", err)
+		log.Printf("[ERROR] Metric initialization failed, %v", err)
 		return err
 	}
 	// The situation should be handled by the prometheus libraries.
 	// But, anything is possible.
 	if metricVec == nil {
 		err := errors.New("metric is nil")
-		log.Printf("[ERROR] %v.", err)
+		log.Printf("[ERROR] %v", err)
 		return err
 	}
 	metricVec.Set(value)

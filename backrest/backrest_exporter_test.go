@@ -59,7 +59,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 			args{"", "", []string{""}, false},
 			`Forty two`,
 			1,
-			"[ERROR] Parse JSON failed, invalid character 'F' looking for beginning of value"},
+			"[ERROR] pgBackRest error: Forty two"},
 		{"GetPgBackRestInfoZeroDataReturn",
 			args{"", "", []string{""}, false},
 			`[]`,
