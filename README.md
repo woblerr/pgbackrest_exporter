@@ -76,19 +76,29 @@ Flags:
                               Full path to additional pgBackRest configuration files.
   --backrest.stanza-include="" ...  
                               Specific stanza for collecting metrics. Can be specified several times.
+  --backrest.stanza-exclude="" ...  
+                              Specific stanza to exclude from collecting metrics. Can be specified several times.
   --verbose.info              Enable additional metrics labels.
 ```
 
 #### Additional description of flags.
 
-Custom `config` and/or custom `config-include-path` for `pgbackrest` command can be specified via `--backrest.config` and `--backrest.config-include-path` flags. 
-Full paths must be specified. For example, `--backrest.config=/tmp/pgbackrest.conf` and/or `--backrest.config-include-path=/tmp/pgbackrest/conf.d`.
+Custom `config` and/or custom `config-include-path` for `pgbackrest` command can be specified via `--backrest.config` and `--backrest.config-include-path` flags. Full paths must be specified.<br>
+For example, `--backrest.config=/tmp/pgbackrest.conf` and/or `--backrest.config-include-path=/tmp/pgbackrest/conf.d`.
 
-Custom `stanza` for collecting metrics can be specified via `--backrest.stanza-include` flag. 
-You can specify several stanzas. For example, `--backrest.stanza-include=demo1 --backrest.stanza-include=demo2`.
+Custom `stanza` for collecting metrics can be specified via `--backrest.stanza-include` flag. You can specify several stanzas.<br>
+For example, `--backrest.stanza-include=demo1 --backrest.stanza-include=demo2`.<br>
 For this case, metrics will be collected only for `demo1` and `demo2` stanzas.
 
-When flag `--verbose.info` is specified - WALMin and WALMax are added as metric labels.
+Custom `stanza` to exclude from collecting metrics can be specified via `--backrest.stanza-exclude` flag. You can specify several stanzas.<br>
+For example, `--backrest.stanza-exclude=demo1 --backrest.stanza-exclude=demo2`.<br>
+For this case, metrics **will not be collected** for `demo1` and `demo2` stanzas.<br>
+If the same stanza is specified for include and exclude flags, then metrics for this stanza will not be collected. 
+The flag `--backrest.stanza-exclude` has a higher priority.<br>
+For example, `--backrest.stanza-include=demo1 --backrest.stanza-exclude=demo1`.<br>
+For this case, metrics **will not be collected** for `demo1` stanza.
+
+When flag `--verbose.info` is specified - WALMin and WALMax are added as metric labels.<br>
 This creates new different time series on each WAL archiving.
 
 ### Building and running docker
@@ -109,7 +119,8 @@ Environment variables supported by this image:
 * all environment variables from [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest#docker-pgbackrest)  image;
 * `EXPORTER_ENDPOINT` - metrics endpoint, default `/metrics`;
 * `EXPORTER_PORT` - port for prometheus metrics to listen on, default `9854`;
-* `STANZA` - specific stanza for collecting metrics, default `""`;
+* `STANZA_INCLUDE` - specific stanza for collecting metrics, default `""`;
+* `STANZA_EXCLUDE` - specific stanza to exclude from collecting metrics, default `""`;
 * `COLLECT_INTERVAL` - collecting metrics interval in seconds, default `600`;
 
 You will need to mount the necessary directories or files inside the container.
@@ -145,7 +156,7 @@ For specific stanza:
 ```bash
 docker run -d \
     --name pgbackrest_exporter \
-    -e STANZA=demo \
+    -e STANZA_INCLUDE=demo \
     -p 9854:9854 \
     -v  /etc/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf \
     pgbackrest_exporter
@@ -157,15 +168,26 @@ you can run containers on different ports:
 ```bash
 docker run -d \
     --name pgbackrest_exporter_demo1 \
-    -e STANZA=demo1 \
+    -e STANZA_INCLUDE=demo1 \
     -p 9854:9854 \
     -v  /etc/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf \
     pgbackrest_exporter
 
 docker run -d \
     --name pgbackrest_exporter_demo2 \
-    -e STANZA=demo2 \
+    -e STANZA_INCLUDE=demo2 \
     -p 9855:9854 \
+    -v  /etc/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf \
+    pgbackrest_exporter
+```
+
+To exclude specific stanza:
+
+```bash
+docker run -d \
+    --name pgbackrest_exporter \
+    -e STANZA_EXCLUDE=demo \
+    -p 9854:9854 \
     -v  /etc/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf \
     pgbackrest_exporter
 ```
