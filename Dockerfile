@@ -14,7 +14,8 @@ FROM ghcr.io/woblerr/pgbackrest:${BACKREST_VERSION}
 ARG REPO_BUILD_TAG
 ENV EXPORTER_ENDPOINT="/metrics" \
     EXPORTER_PORT="9854" \
-    STANZA="" \
+    STANZA_INCLUDE="" \
+    STANZA_EXCLUDE="" \
     COLLECT_INTERVAL="600"
 COPY --from=builder /build/pgbackrest_exporter /etc/pgbackrest/pgbackrest_exporter
 RUN chmod 755 /etc/pgbackrest/pgbackrest_exporter
@@ -25,6 +26,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 CMD /etc/pgbackrest/pgbackrest_exporter \
         --prom.endpoint=${EXPORTER_ENDPOINT} \
         --prom.port=${EXPORTER_PORT} \
-        --backrest.stanza-include=${STANZA} \
+        --backrest.stanza-include=${STANZA_INCLUDE} \
+        --backrest.stanza-exclude=${STANZA_EXCLUDE} \
         --collect.interval=${COLLECT_INTERVAL}
 EXPOSE ${EXPORTER_PORT}
