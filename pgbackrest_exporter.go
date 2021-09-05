@@ -41,6 +41,10 @@ func main() {
 			"backrest.stanza-include",
 			"Specific stanza for collecting metrics. Can be specified several times.",
 		).Default("").PlaceHolder("\"\"").Strings()
+		backrestExcludeStanza = kingpin.Flag(
+			"backrest.stanza-exclude",
+			"Specific stanza to exclude from collecting metrics. Can be specified several times.",
+		).Default("").PlaceHolder("\"\"").Strings()
 		verboseInfo = kingpin.Flag(
 			"verbose.info",
 			"Enable additional metrics labels.",
@@ -74,6 +78,11 @@ func main() {
 			log.Printf("[INFO] Collecting metrics for specific stanza %s", stanza)
 		}
 	}
+	if !reflect.DeepEqual(*backrestExcludeStanza, []string{""}) {
+		for _, stanza := range *backrestExcludeStanza {
+			log.Printf("[INFO] Exclude collecting metrics for specific stanza %s", stanza)
+		}
+	}
 	// Setup parameters for exporter.
 	backrest.SetPromPortandPath(*promPort, *promPath)
 	log.Printf("[INFO] Use port %s and HTTP endpoint %s", *promPort, *promPath)
@@ -87,6 +96,7 @@ func main() {
 			*backrestCustomConfig,
 			*backrestCustomConfigIncludePath,
 			*backrestIncludeStanza,
+			*backrestExcludeStanza,
 			*verboseInfo,
 		)
 		// Sleep for 'collection.interval' seconds.

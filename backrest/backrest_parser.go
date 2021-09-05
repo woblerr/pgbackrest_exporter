@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"os/exec"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -606,4 +607,17 @@ func compareLastBackups(backups *lastBackupsStruct, currentBackup time.Time, bac
 			backups.incr = currentBackup
 		}
 	}
+}
+
+func stanzaNotInExclude(stanza string, listExclude []string) bool {
+	// Сheck that exclude list is empty.
+	// If so, no excluding stanzas are set during startup.
+	if !reflect.DeepEqual(listExclude, []string{""}) {
+		for _, val := range listExclude {
+			if stanza == val {
+				return false
+			}
+		}
+	}
+	return true
 }
