@@ -74,7 +74,8 @@ Flags:
   --backrest.config=""        Full path to pgBackRest configuration file.
   --backrest.config-include-path=""  
                               Full path to additional pgBackRest configuration files.
-  --backrest.stanza="" ...    Specific stanza for collecting metrics. Can be specified several times.
+  --backrest.stanza-include="" ...  
+                              Specific stanza for collecting metrics. Can be specified several times.
   --verbose.info              Enable additional metrics labels.
 ```
 
@@ -83,8 +84,8 @@ Flags:
 Custom `config` and/or custom `config-include-path` for `pgbackrest` command can be specified via `--backrest.config` and `--backrest.config-include-path` flags. 
 Full paths must be specified. For example, `--backrest.config=/tmp/pgbackrest.conf` and/or `--backrest.config-include-path=/tmp/pgbackrest/conf.d`.
 
-Custom `stanza` for collecting metrics can be specified via `--backrest.stanza` flag. 
-You can specify several stanzas. For example, `--backrest.stanza=demo1 --backrest.stanza=demo2`.
+Custom `stanza` for collecting metrics can be specified via `--backrest.stanza-include` flag. 
+You can specify several stanzas. For example, `--backrest.stanza-include=demo1 --backrest.stanza-include=demo2`.
 For this case, metrics will be collected only for `demo1` and `demo2` stanzas.
 
 When flag `--verbose.info` is specified - WALMin and WALMax are added as metric labels.

@@ -37,8 +37,8 @@ func main() {
 			"backrest.config-include-path",
 			"Full path to additional pgBackRest configuration files.",
 		).Default("").String()
-		backrestStanza = kingpin.Flag(
-			"backrest.stanza",
+		backrestIncludeStanza = kingpin.Flag(
+			"backrest.stanza-include",
 			"Specific stanza for collecting metrics. Can be specified several times.",
 		).Default("").PlaceHolder("\"\"").Strings()
 		verboseInfo = kingpin.Flag(
@@ -69,8 +69,8 @@ func main() {
 	if *backrestCustomConfigIncludePath != "" {
 		log.Printf("[INFO] Custom path to additional pgBackRest configuration files %s", *backrestCustomConfigIncludePath)
 	}
-	if !reflect.DeepEqual(*backrestStanza, []string{""}) {
-		for _, stanza := range *backrestStanza {
+	if !reflect.DeepEqual(*backrestIncludeStanza, []string{""}) {
+		for _, stanza := range *backrestIncludeStanza {
 			log.Printf("[INFO] Collecting metrics for specific stanza %s", stanza)
 		}
 	}
@@ -86,7 +86,7 @@ func main() {
 		backrest.GetPgBackRestInfo(
 			*backrestCustomConfig,
 			*backrestCustomConfigIncludePath,
-			*backrestStanza,
+			*backrestIncludeStanza,
 			*verboseInfo,
 		)
 		// Sleep for 'collection.interval' seconds.

@@ -25,6 +25,6 @@ ENTRYPOINT ["/entrypoint.sh"]
 CMD /etc/pgbackrest/pgbackrest_exporter \
         --prom.endpoint=${EXPORTER_ENDPOINT} \
         --prom.port=${EXPORTER_PORT} \
-        --backrest.stanza=${STANZA} \
+        --backrest.stanza-include=${STANZA} \
         --collect.interval=${COLLECT_INTERVAL}
 EXPOSE ${EXPORTER_PORT}
