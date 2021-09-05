@@ -614,7 +614,7 @@ func stanzaNotInExclude(stanza string, listExclude []string) bool {
 	// If so, no excluding stanzas are set during startup.
 	if !reflect.DeepEqual(listExclude, []string{""}) {
 		for _, val := range listExclude {
-			if stanza == val {
+			if val == stanza {
 				return false
 			}
 		}
