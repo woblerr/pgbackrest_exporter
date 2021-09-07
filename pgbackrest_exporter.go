@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"reflect"
+	"strings"
 	"syscall"
 	"time"
 
@@ -73,12 +73,12 @@ func main() {
 	if *backrestCustomConfigIncludePath != "" {
 		log.Printf("[INFO] Custom path to additional pgBackRest configuration files %s", *backrestCustomConfigIncludePath)
 	}
-	if !reflect.DeepEqual(*backrestIncludeStanza, []string{""}) {
+	if strings.Join(*backrestIncludeStanza, "") != "" {
 		for _, stanza := range *backrestIncludeStanza {
 			log.Printf("[INFO] Collecting metrics for specific stanza %s", stanza)
 		}
 	}
-	if !reflect.DeepEqual(*backrestExcludeStanza, []string{""}) {
+	if strings.Join(*backrestExcludeStanza, "") != "" {
 		for _, stanza := range *backrestExcludeStanza {
 			log.Printf("[INFO] Exclude collecting metrics for specific stanza %s", stanza)
 		}
