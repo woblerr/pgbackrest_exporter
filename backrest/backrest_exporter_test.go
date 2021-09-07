@@ -32,6 +32,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 		config            string
 		configIncludePath string
 		stanzas           []string
+		stanzasExclude    []string
 		verbose           bool
 	}
 	tests := []struct {
@@ -42,7 +43,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 		testText   string
 	}{
 		{"GetPgBackRestInfoGoodDataReturn",
-			args{"", "", []string{""}, false},
+			args{"", "", []string{""}, []string{""}, false},
 			`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 				`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
 				`"backup":[{"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
@@ -56,20 +57,25 @@ func TestGetPgBackRestInfo(t *testing.T) {
 			0,
 			""},
 		{"GetPgBackRestInfoBadDataReturn",
-			args{"", "", []string{""}, false},
+			args{"", "", []string{""}, []string{""}, false},
 			`Forty two`,
 			1,
 			"[ERROR] pgBackRest error: Forty two"},
 		{"GetPgBackRestInfoZeroDataReturn",
-			args{"", "", []string{""}, false},
+			args{"", "", []string{""}, []string{""}, false},
 			`[]`,
 			0,
 			"[WARN] No backup data returned"},
 		{"GetPgBackRestInfoJsonUnmarshalFail",
-			args{"", "", []string{""}, false},
+			args{"", "", []string{""}, []string{""}, false},
 			`[{}`,
 			0,
 			"[ERROR] Parse JSON failed, unexpected end of JSON input"},
+		{"GetPgBackRestInfoEqualIncludeExcludeLists",
+			args{"", "", []string{"demo"}, []string{"demo"}, false},
+			`[{}`,
+			0,
+			"[WARN] Stanza demo is specified in include and exclude lists"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -84,6 +90,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 				tt.args.config,
 				tt.args.configIncludePath,
 				tt.args.stanzas,
+				tt.args.stanzasExclude,
 				tt.args.verbose,
 			)
 			if !strings.Contains(out.String(), tt.testText) {

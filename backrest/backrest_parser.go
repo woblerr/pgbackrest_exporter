@@ -6,6 +6,7 @@ import (
 	"log"
 	"os/exec"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -606,4 +607,17 @@ func compareLastBackups(backups *lastBackupsStruct, currentBackup time.Time, bac
 			backups.incr = currentBackup
 		}
 	}
+}
+
+func stanzaNotInExclude(stanza string, listExclude []string) bool {
+	// Сheck that exclude list is empty.
+	// If so, no excluding stanzas are set during startup.
+	if strings.Join(listExclude, "") != "" {
+		for _, val := range listExclude {
+			if val == stanza {
+				return false
+			}
+		}
+	}
+	return true
 }

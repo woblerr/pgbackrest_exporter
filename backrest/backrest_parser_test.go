@@ -492,6 +492,38 @@ func TestCompareLastBackups(t *testing.T) {
 	}
 }
 
+func TestStanzaNotInExclude(t *testing.T) {
+	type args struct {
+		stanza      string
+		listExclude []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{"stanzaNotInExcludeEmptyListExclude",
+			args{"", []string{""}},
+			true},
+		{"stanzaNotInExcludeEmptyListExcludeNotEmptyStanza",
+			args{"demo", []string{""}},
+			true},
+		{"stanzaNotInExcludeStanzaNotInExcludeList",
+			args{"demo", []string{"demo-test", "test"}},
+			true},
+		{"stanzaNotInExcludeStanzaInExcludeList",
+			args{"demo", []string{"demo", "test"}},
+			false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := stanzaNotInExclude(tt.args.stanza, tt.args.listExclude); got != tt.want {
+				t.Errorf("\nVariables do not match:\n%v\nwant:\n%v", got, tt.want)
+			}
+		})
+	}
+}
+
 func fakeSetUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...string) error {
 	return errors.New("сustorm error for test")
 }

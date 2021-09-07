@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"reflect"
+	"strings"
 	"syscall"
 	"time"
 
@@ -37,9 +37,13 @@ func main() {
 			"backrest.config-include-path",
 			"Full path to additional pgBackRest configuration files.",
 		).Default("").String()
-		backrestStanza = kingpin.Flag(
-			"backrest.stanza",
+		backrestIncludeStanza = kingpin.Flag(
+			"backrest.stanza-include",
 			"Specific stanza for collecting metrics. Can be specified several times.",
+		).Default("").PlaceHolder("\"\"").Strings()
+		backrestExcludeStanza = kingpin.Flag(
+			"backrest.stanza-exclude",
+			"Specific stanza to exclude from collecting metrics. Can be specified several times.",
 		).Default("").PlaceHolder("\"\"").Strings()
 		verboseInfo = kingpin.Flag(
 			"verbose.info",
@@ -69,9 +73,14 @@ func main() {
 	if *backrestCustomConfigIncludePath != "" {
 		log.Printf("[INFO] Custom path to additional pgBackRest configuration files %s", *backrestCustomConfigIncludePath)
 	}
-	if !reflect.DeepEqual(*backrestStanza, []string{""}) {
-		for _, stanza := range *backrestStanza {
+	if strings.Join(*backrestIncludeStanza, "") != "" {
+		for _, stanza := range *backrestIncludeStanza {
 			log.Printf("[INFO] Collecting metrics for specific stanza %s", stanza)
+		}
+	}
+	if strings.Join(*backrestExcludeStanza, "") != "" {
+		for _, stanza := range *backrestExcludeStanza {
+			log.Printf("[INFO] Exclude collecting metrics for specific stanza %s", stanza)
 		}
 	}
 	// Setup parameters for exporter.
@@ -86,7 +95,8 @@ func main() {
 		backrest.GetPgBackRestInfo(
 			*backrestCustomConfig,
 			*backrestCustomConfigIncludePath,
-			*backrestStanza,
+			*backrestIncludeStanza,
+			*backrestExcludeStanza,
 			*verboseInfo,
 		)
 		// Sleep for 'collection.interval' seconds.
