@@ -4,7 +4,7 @@ BRANCH=$(subst /,-,$(BRANCH_FULL))
 GIT_REV=$(shell git describe --abbrev=7 --always)
 SERVICE_CONF_DIR = /etc/systemd/system
 HTTP_PORT = 9854
-BACKREST_VERSION = 2.34
+BACKREST_VERSION = 2.35
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 test:
