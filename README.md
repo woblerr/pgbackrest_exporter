@@ -11,15 +11,15 @@ The metrics are collected based on result of `pgbackrest info --output json` com
 All metrics are collected for `pgBackRest >= v2.32`.
 For earlier versions, some metrics may not be collected or have insignificant label values.
 
-For example, the `pgbackrest_exporter_repo_status` metric will be absent for `pgBackRest <= v2.31`.
+For example, the `pgbackrest_repo_status` metric will be absent for `pgBackRest <= v2.31`.
 And for other metrics lable will be `repo_key="0"`.
 
 ## Collected metrics
 
 The metrics provided by the client.
 
-* `pgbackrest_exporter_stanza_status` - current stanza status.
-* `pgbackrest_exporter_repo_status` - current repository status.
+* `pgbackrest_stanza_status` - current stanza status.
+* `pgbackrest_repo_status` - current repository status.
 
     Values description for stanza and repo statuses:
     - 0: ok,
@@ -31,20 +31,20 @@ The metrics provided by the client.
     - 6: requested backup not found,
     - 99: other.
 
-* `pgbackrest_exporter_backup_info` - backup info.
+* `pgbackrest_backup_info` - backup info.
     
     Values description:
      - 1 - info about backup is exist.
 
-* `pgbackrest_exporter_backup_duration` - backup duration in seconds.
-* `pgbackrest_exporter_backup_database_size` - full uncompressed size of the database.
-* `pgbackrest_exporter_backup_database_backup_size` - amount of data in the database to actually backup.
-* `pgbackrest_exporter_backup_repo_backup_set_size` - full compressed files size to restore the database from backup.
-* `pgbackrest_exporter_backup_repo_backup_size` - compressed files size in backup.
-* `pgbackrest_exporter_backup_full_time_since_last_completion` - seconds since the last completed full backup.
-* `pgbackrest_exporter_backup_diff_time_since_last_completion` - seconds since the last completed full or differential backup.
-* `pgbackrest_exporter_backup_incr_time_since_last_completion` - seconds since the last completed full, differential or incremental backup.
-* `pgbackrest_exporter_wal_archive_status` - current WAL archive status.
+* `pgbackrest_backup_duration_seconds` - backup duration in seconds.
+* `pgbackrest_backup_size_bytes` - full uncompressed size of the database.
+* `pgbackrest_backup_delta_bytes` - amount of data in the database to actually backup.
+* `pgbackrest_backup_repo_size_bytes` - full compressed files size to restore the database from backup.
+* `pgbackrest_backup_repo_delta_bytes` - compressed files size in backup.
+* `pgbackrest_backup_full_since_last_completion_seconds` - seconds since the last completed full backup.
+* `pgbackrest_backup_diff_since_last_completion_seconds` - seconds since the last completed full or differential backup.
+* `pgbackrest_backup_incr_since_last_completion_seconds` - seconds since the last completed full, differential or incremental backup.
+* `pgbackrest_wal_archive_status` - current WAL archive status.
 
     Values description:
     - 0 - any one of WALMin and WALMax have empty value, there is no correct information about WAL archiving,
