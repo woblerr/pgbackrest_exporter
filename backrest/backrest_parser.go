@@ -46,11 +46,11 @@ var (
 			"backup_type",
 			"database_id",
 			"pg_version",
+			"prior",
 			"repo_key",
 			"stanza",
-			"prior",
-			"wal_archive_min",
-			"wal_archive_max"})
+			"wal_archive_max",
+			"wal_archive_min"})
 	pgbrStanzaBackupDurationMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_duration_seconds",
 		Help: "Backup duration.",
@@ -152,8 +152,8 @@ var (
 			"pg_version",
 			"repo_key",
 			"stanza",
-			"wal_archive_min",
-			"wal_archive_max"})
+			"wal_archive_max",
+			"wal_archive_min"})
 	execCommand = exec.Command
 )
 
@@ -296,11 +296,11 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 			backup.Type,
 			strconv.Itoa(backup.Database.ID),
 			getPGVersion(backup.Database.ID, backup.Database.RepoKey, data.DB),
+			backup.Prior,
 			strconv.Itoa(backup.Database.RepoKey),
 			data.Name,
-			backup.Prior,
-			backup.Archive.StartWAL,
 			backup.Archive.StopWAL,
+			backup.Archive.StartWAL,
 		)
 		if err != nil {
 			log.Println(
@@ -312,11 +312,11 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				backup.Type, ",",
 				strconv.Itoa(backup.Database.ID), ",",
 				getPGVersion(backup.Database.ID, backup.Database.RepoKey, data.DB), ",",
+				backup.Prior, ",",
 				strconv.Itoa(backup.Database.RepoKey), ",",
 				data.Name, ",",
-				backup.Prior, ",",
-				backup.Archive.StartWAL, ",",
-				backup.Archive.StopWAL,
+				backup.Archive.StopWAL, ",",
+				backup.Archive.StartWAL,
 			)
 		}
 		// Backup durations in seconds.
@@ -505,8 +505,8 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 					getPGVersion(archive.Database.ID, archive.Database.RepoKey, data.DB),
 					strconv.Itoa(archive.Database.RepoKey),
 					data.Name,
-					archive.WALMin,
 					archive.WALMax,
+					archive.WALMin,
 				)
 				if err != nil {
 					log.Println(
@@ -517,8 +517,8 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 						getPGVersion(archive.Database.ID, archive.Database.RepoKey, data.DB), ",",
 						strconv.Itoa(archive.Database.RepoKey), ",",
 						data.Name, ",",
-						archive.WALMin, ",",
-						archive.WALMax,
+						archive.WALMax, ",",
+						archive.WALMin,
 					)
 				}
 			} else {
