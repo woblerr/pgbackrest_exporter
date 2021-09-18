@@ -19,7 +19,12 @@ And for other metrics lable will be `repo_key="0"`.
 The metrics provided by the client.
 
 * `pgbackrest_stanza_status` - current stanza status.
+
+    Labels: stanza.
+
 * `pgbackrest_repo_status` - current repository status.
+
+    Labels: cipher, repo_key, stanza.
 
     Values description for stanza and repo statuses:
     - 0: ok,
@@ -32,19 +37,47 @@ The metrics provided by the client.
     - 99: other.
 
 * `pgbackrest_backup_info` - backup info.
-    
+
+    Labels: backrest_ver, backup_name, backup_type, database_id, pg_version, prior, repo_key, stanza, wal_archive_max, wal_archive_min.
+
     Values description:
      - 1 - info about backup is exist.
 
 * `pgbackrest_backup_duration_seconds` - backup duration in seconds.
+
+    Labels: backup_name, backup_type, database_id, repo_key, stanza, start_time, stop_time.
+
 * `pgbackrest_backup_size_bytes` - full uncompressed size of the database.
+
+    Labels: backup_name, backup_type, database_id, repo_key, stanza.
+
 * `pgbackrest_backup_delta_bytes` - amount of data in the database to actually backup.
+
+    Labels: backup_name, backup_type, database_id, repo_key, stanza.
+
 * `pgbackrest_backup_repo_size_bytes` - full compressed files size to restore the database from backup.
+
+    Labels: backup_name, backup_type, database_id, repo_key, stanza.
+
 * `pgbackrest_backup_repo_delta_bytes` - compressed files size in backup.
+
+    Labels: backup_name, backup_type, database_id, repo_key, stanza.
+
 * `pgbackrest_backup_full_since_last_completion_seconds` - seconds since the last completed full backup.
+
+    Labels: stanza.
+
 * `pgbackrest_backup_diff_since_last_completion_seconds` - seconds since the last completed full or differential backup.
+
+    Labels: stanza.
+
 * `pgbackrest_backup_incr_since_last_completion_seconds` - seconds since the last completed full, differential or incremental backup.
+
+    Labels: stanza.
+
 * `pgbackrest_wal_archive_status` - current WAL archive status.
+
+    Labels: database_id, pg_version, repo_key, stanza, wal_archive_max, wal_archive_min.
 
     Values description:
     - 0 - any one of WALMin and WALMax have empty value, there is no correct information about WAL archiving,
