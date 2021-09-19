@@ -27,21 +27,21 @@ The metrics provided by the client.
     Labels: cipher, repo_key, stanza.
 
     Values description for stanza and repo statuses:
-    - 0: ok,
-    - 1: missing stanza path,
-    - 2: no valid backups,
-    - 3: missing stanza data,
-    - 4: different across repos,
-    - 5: database mismatch across repos,
-    - 6: requested backup not found,
-    - 99: other.
+    - `0`: ok,
+    - `1`: missing stanza path,
+    - `2`: no valid backups,
+    - `3`: missing stanza data,
+    - `4`: different across repos,
+    - `5`: database mismatch across repos,
+    - `6`: requested backup not found,
+    - `99`: other.
 
 * `pgbackrest_backup_info` - backup info.
 
     Labels: backrest_ver, backup_name, backup_type, database_id, pg_version, prior, repo_key, stanza, wal_archive_max, wal_archive_min.
 
     Values description:
-     - 1 - info about backup is exist.
+     - `1` - info about backup is exist.
 
 * `pgbackrest_backup_duration_seconds` - backup duration in seconds.
 
@@ -80,8 +80,8 @@ The metrics provided by the client.
     Labels: database_id, pg_version, repo_key, stanza, wal_archive_max, wal_archive_min.
 
     Values description:
-    - 0 - any one of WALMin and WALMax have empty value, there is no correct information about WAL archiving,
-    - 1 - both WALMin and WALMax have no empty values, there is correct information about WAL archiving.
+    - `0` - any one of WALMin and WALMax have empty value, there is no correct information about WAL archiving,
+    - `1` - both WALMin and WALMax have no empty values, there is correct information about WAL archiving.
 
 ## Getting Started
 ### Building and running
