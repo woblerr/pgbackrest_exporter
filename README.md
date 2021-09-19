@@ -38,7 +38,7 @@ The metrics provided by the client.
 
 * `pgbackrest_backup_info` - backup info.
 
-    Labels: backrest_ver, backup_name, backup_type, database_id, pg_version, prior, repo_key, stanza, wal_archive_max, wal_archive_min.
+    Labels: backrest_ver, backup_name, backup_type, database_id, pg_version, prior, repo_key, stanza, wal_start, wal_stop.
 
     Values description:
      - `1` - info about backup is exist.
@@ -77,7 +77,7 @@ The metrics provided by the client.
 
 * `pgbackrest_wal_archive_status` - current WAL archive status.
 
-    Labels: database_id, pg_version, repo_key, stanza, wal_archive_max, wal_archive_min.
+    Labels: database_id, pg_version, repo_key, stanza, wal_max, wal_min.
 
     Values description:
     - `0` - any one of WALMin and WALMax have empty value, there is no correct information about WAL archiving,

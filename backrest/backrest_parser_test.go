@@ -40,7 +40,7 @@ pgbackrest_backup_full_since_last_completion_seconds{stanza="demo"} 9.2233720368
 pgbackrest_backup_incr_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
 # HELP pgbackrest_backup_info Backup info.
 # TYPE pgbackrest_backup_info gauge
-pgbackrest_backup_info{backrest_ver="2.34",backup_name="20210607-092423F",backup_type="full",database_id="1",pg_version="13",prior="",repo_key="1",stanza="demo",wal_archive_max="000000010000000000000002",wal_archive_min="000000010000000000000002"} 1
+pgbackrest_backup_info{backrest_ver="2.34",backup_name="20210607-092423F",backup_type="full",database_id="1",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
 # HELP pgbackrest_backup_repo_delta_bytes Compressed files size in backup.
 # TYPE pgbackrest_backup_repo_delta_bytes gauge
 pgbackrest_backup_repo_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
@@ -68,7 +68,7 @@ pgbackrest_stanza_status{stanza="demo"} 0
 				templateStanza("000000010000000000000004", "000000010000000000000001"),
 				false,
 				templateMetrics +
-					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_archive_max="",wal_archive_min=""} 1` +
+					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="",wal_min=""} 1` +
 					"\n",
 				setUpMetricValue,
 			},
@@ -78,7 +78,7 @@ pgbackrest_stanza_status{stanza="demo"} 0
 				templateStanza("000000010000000000000004", "000000010000000000000001"),
 				true,
 				templateMetrics +
-					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_archive_max="000000010000000000000004",wal_archive_min="000000010000000000000001"} 1` +
+					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="000000010000000000000004",wal_min="000000010000000000000001"} 1` +
 					"\n",
 				setUpMetricValue,
 			},
@@ -88,7 +88,7 @@ pgbackrest_stanza_status{stanza="demo"} 0
 				templateStanza("", "000000010000000000000001"),
 				false,
 				templateMetrics +
-					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_archive_max="",wal_archive_min=""} 0` +
+					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="",wal_min=""} 0` +
 					"\n",
 				setUpMetricValue,
 			},
@@ -154,7 +154,7 @@ pgbackrest_backup_full_since_last_completion_seconds{stanza="demo"} 9.2233720368
 pgbackrest_backup_incr_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
 # HELP pgbackrest_backup_info Backup info.
 # TYPE pgbackrest_backup_info gauge
-pgbackrest_backup_info{backrest_ver="2.34",backup_name="20210607-092423F",backup_type="full",database_id="1",pg_version="13",prior="",repo_key="0",stanza="demo",wal_archive_max="000000010000000000000002",wal_archive_min="000000010000000000000002"} 1
+pgbackrest_backup_info{backrest_ver="2.34",backup_name="20210607-092423F",backup_type="full",database_id="1",pg_version="13",prior="",repo_key="0",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
 # HELP pgbackrest_backup_repo_delta_bytes Compressed files size in backup.
 # TYPE pgbackrest_backup_repo_delta_bytes gauge
 pgbackrest_backup_repo_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo"} 2.969514e+06
@@ -179,7 +179,7 @@ pgbackrest_stanza_status{stanza="demo"} 0
 				templateStanzaRepoAbsent("000000010000000000000004", "000000010000000000000001"),
 				false,
 				templateMetrics +
-					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="0",stanza="demo",wal_archive_max="",wal_archive_min=""} 1` +
+					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="0",stanza="demo",wal_max="",wal_min=""} 1` +
 					"\n",
 				setUpMetricValue,
 			},

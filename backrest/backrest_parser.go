@@ -49,8 +49,8 @@ var (
 			"prior",
 			"repo_key",
 			"stanza",
-			"wal_archive_max",
-			"wal_archive_min"})
+			"wal_start",
+			"wal_stop"})
 	pgbrStanzaBackupDurationMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_duration_seconds",
 		Help: "Backup duration.",
@@ -152,8 +152,8 @@ var (
 			"pg_version",
 			"repo_key",
 			"stanza",
-			"wal_archive_max",
-			"wal_archive_min"})
+			"wal_max",
+			"wal_min"})
 	execCommand = exec.Command
 )
 
@@ -299,8 +299,8 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 			backup.Prior,
 			strconv.Itoa(backup.Database.RepoKey),
 			data.Name,
-			backup.Archive.StopWAL,
 			backup.Archive.StartWAL,
+			backup.Archive.StopWAL,
 		)
 		if err != nil {
 			log.Println(
@@ -315,8 +315,8 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				backup.Prior, ",",
 				strconv.Itoa(backup.Database.RepoKey), ",",
 				data.Name, ",",
-				backup.Archive.StopWAL, ",",
-				backup.Archive.StartWAL,
+				backup.Archive.StartWAL, ",",
+				backup.Archive.StopWAL,
 			)
 		}
 		// Backup durations in seconds.
