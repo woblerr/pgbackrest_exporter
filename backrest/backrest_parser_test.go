@@ -23,41 +23,41 @@ func TestGetMetrics(t *testing.T) {
 		testText            string
 		setUpMetricValueFun setUpMetricValueFunType
 	}
-	templateMetrics := `# HELP pgbackrest_exporter_backup_database_backup_size Amount of data in the database to actually backup.
-# TYPE pgbackrest_exporter_backup_database_backup_size gauge
-pgbackrest_exporter_backup_database_backup_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
-# HELP pgbackrest_exporter_backup_database_size Full uncompressed size of the database.
-# TYPE pgbackrest_exporter_backup_database_size gauge
-pgbackrest_exporter_backup_database_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
-# HELP pgbackrest_exporter_backup_diff_time_since_last_completion Seconds since the last completed full or differential backup.
-# TYPE pgbackrest_exporter_backup_diff_time_since_last_completion gauge
-pgbackrest_exporter_backup_diff_time_since_last_completion{stanza="demo"} 9.223372036854776e+09
-# HELP pgbackrest_exporter_backup_duration Backup duration in seconds.
-# TYPE pgbackrest_exporter_backup_duration gauge
-pgbackrest_exporter_backup_duration{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo",start_time="2021-06-07 12:24:23",stop_time="2021-06-07 12:24:26"} 3
-# HELP pgbackrest_exporter_backup_full_time_since_last_completion Seconds since the last completed full backup.
-# TYPE pgbackrest_exporter_backup_full_time_since_last_completion gauge
-pgbackrest_exporter_backup_full_time_since_last_completion{stanza="demo"} 9.223372036854776e+09
-# HELP pgbackrest_exporter_backup_incr_time_since_last_completion Seconds since the last completed full, differential or incremental backup.
-# TYPE pgbackrest_exporter_backup_incr_time_since_last_completion gauge
-pgbackrest_exporter_backup_incr_time_since_last_completion{stanza="demo"} 9.223372036854776e+09
-# HELP pgbackrest_exporter_backup_info Backup info.
-# TYPE pgbackrest_exporter_backup_info gauge
-pgbackrest_exporter_backup_info{backrest_ver="2.34",backup_name="20210607-092423F",backup_type="full",database_id="1",pg_version="13",prior="",repo_key="1",stanza="demo",wal_archive_max="000000010000000000000002",wal_archive_min="000000010000000000000002"} 1
-# HELP pgbackrest_exporter_backup_repo_backup_set_size Full compressed files size to restore the database from backup.
-# TYPE pgbackrest_exporter_backup_repo_backup_set_size gauge
-pgbackrest_exporter_backup_repo_backup_set_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
-# HELP pgbackrest_exporter_backup_repo_backup_size Compressed files size in backup.
-# TYPE pgbackrest_exporter_backup_repo_backup_size gauge
-pgbackrest_exporter_backup_repo_backup_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
-# HELP pgbackrest_exporter_repo_status Current repository status.
-# TYPE pgbackrest_exporter_repo_status gauge
-pgbackrest_exporter_repo_status{cipher="none",repo_key="1",stanza="demo"} 0
-# HELP pgbackrest_exporter_stanza_status Current stanza status.
-# TYPE pgbackrest_exporter_stanza_status gauge
-pgbackrest_exporter_stanza_status{stanza="demo"} 0
-# HELP pgbackrest_exporter_wal_archive_status Current WAL archive status.
-# TYPE pgbackrest_exporter_wal_archive_status gauge
+	templateMetrics := `# HELP pgbackrest_backup_delta_bytes Amount of data in the database to actually backup.
+# TYPE pgbackrest_backup_delta_bytes gauge
+pgbackrest_backup_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
+# HELP pgbackrest_backup_diff_since_last_completion_seconds Seconds since the last completed full or differential backup.
+# TYPE pgbackrest_backup_diff_since_last_completion_seconds gauge
+pgbackrest_backup_diff_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
+# HELP pgbackrest_backup_duration_seconds Backup duration.
+# TYPE pgbackrest_backup_duration_seconds gauge
+pgbackrest_backup_duration_seconds{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo",start_time="2021-06-07 12:24:23",stop_time="2021-06-07 12:24:26"} 3
+# HELP pgbackrest_backup_full_since_last_completion_seconds Seconds since the last completed full backup.
+# TYPE pgbackrest_backup_full_since_last_completion_seconds gauge
+pgbackrest_backup_full_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
+# HELP pgbackrest_backup_incr_since_last_completion_seconds Seconds since the last completed full, differential or incremental backup.
+# TYPE pgbackrest_backup_incr_since_last_completion_seconds gauge
+pgbackrest_backup_incr_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
+# HELP pgbackrest_backup_info Backup info.
+# TYPE pgbackrest_backup_info gauge
+pgbackrest_backup_info{backrest_ver="2.34",backup_name="20210607-092423F",backup_type="full",database_id="1",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
+# HELP pgbackrest_backup_repo_delta_bytes Compressed files size in backup.
+# TYPE pgbackrest_backup_repo_delta_bytes gauge
+pgbackrest_backup_repo_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
+# HELP pgbackrest_backup_repo_size_bytes Full compressed files size to restore the database from backup.
+# TYPE pgbackrest_backup_repo_size_bytes gauge
+pgbackrest_backup_repo_size_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
+# HELP pgbackrest_backup_size_bytes Full uncompressed size of the database.
+# TYPE pgbackrest_backup_size_bytes gauge
+pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
+# HELP pgbackrest_repo_status Current repository status.
+# TYPE pgbackrest_repo_status gauge
+pgbackrest_repo_status{cipher="none",repo_key="1",stanza="demo"} 0
+# HELP pgbackrest_stanza_status Current stanza status.
+# TYPE pgbackrest_stanza_status gauge
+pgbackrest_stanza_status{stanza="demo"} 0
+# HELP pgbackrest_wal_archive_status Current WAL archive status.
+# TYPE pgbackrest_wal_archive_status gauge
 `
 	tests := []struct {
 		name string
@@ -68,7 +68,7 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 				templateStanza("000000010000000000000004", "000000010000000000000001"),
 				false,
 				templateMetrics +
-					`pgbackrest_exporter_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_archive_max="",wal_archive_min=""} 1` +
+					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="",wal_min=""} 1` +
 					"\n",
 				setUpMetricValue,
 			},
@@ -78,7 +78,7 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 				templateStanza("000000010000000000000004", "000000010000000000000001"),
 				true,
 				templateMetrics +
-					`pgbackrest_exporter_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_archive_max="000000010000000000000004",wal_archive_min="000000010000000000000001"} 1` +
+					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="000000010000000000000004",wal_min="000000010000000000000001"} 1` +
 					"\n",
 				setUpMetricValue,
 			},
@@ -88,7 +88,7 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 				templateStanza("", "000000010000000000000001"),
 				false,
 				templateMetrics +
-					`pgbackrest_exporter_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_archive_max="",wal_archive_min=""} 0` +
+					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="",wal_min=""} 0` +
 					"\n",
 				setUpMetricValue,
 			},
@@ -137,38 +137,38 @@ func TestGetMetricsRepoAbsent(t *testing.T) {
 		testText            string
 		setUpMetricValueFun setUpMetricValueFunType
 	}
-	templateMetrics := `# HELP pgbackrest_exporter_backup_database_backup_size Amount of data in the database to actually backup.
-# TYPE pgbackrest_exporter_backup_database_backup_size gauge
-pgbackrest_exporter_backup_database_backup_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo"} 2.4316343e+07
-# HELP pgbackrest_exporter_backup_database_size Full uncompressed size of the database.
-# TYPE pgbackrest_exporter_backup_database_size gauge
-pgbackrest_exporter_backup_database_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo"} 2.4316343e+07
-# HELP pgbackrest_exporter_backup_diff_time_since_last_completion Seconds since the last completed full or differential backup.
-# TYPE pgbackrest_exporter_backup_diff_time_since_last_completion gauge
-pgbackrest_exporter_backup_diff_time_since_last_completion{stanza="demo"} 9.223372036854776e+09
-# HELP pgbackrest_exporter_backup_duration Backup duration in seconds.
-# TYPE pgbackrest_exporter_backup_duration gauge
-pgbackrest_exporter_backup_duration{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo",start_time="2021-06-07 12:24:23",stop_time="2021-06-07 12:24:26"} 3
-# HELP pgbackrest_exporter_backup_full_time_since_last_completion Seconds since the last completed full backup.
-# TYPE pgbackrest_exporter_backup_full_time_since_last_completion gauge
-pgbackrest_exporter_backup_full_time_since_last_completion{stanza="demo"} 9.223372036854776e+09
-# HELP pgbackrest_exporter_backup_incr_time_since_last_completion Seconds since the last completed full, differential or incremental backup.
-# TYPE pgbackrest_exporter_backup_incr_time_since_last_completion gauge
-pgbackrest_exporter_backup_incr_time_since_last_completion{stanza="demo"} 9.223372036854776e+09
-# HELP pgbackrest_exporter_backup_info Backup info.
-# TYPE pgbackrest_exporter_backup_info gauge
-pgbackrest_exporter_backup_info{backrest_ver="2.34",backup_name="20210607-092423F",backup_type="full",database_id="1",pg_version="13",prior="",repo_key="0",stanza="demo",wal_archive_max="000000010000000000000002",wal_archive_min="000000010000000000000002"} 1
-# HELP pgbackrest_exporter_backup_repo_backup_set_size Full compressed files size to restore the database from backup.
-# TYPE pgbackrest_exporter_backup_repo_backup_set_size gauge
-pgbackrest_exporter_backup_repo_backup_set_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo"} 2.969514e+06
-# HELP pgbackrest_exporter_backup_repo_backup_size Compressed files size in backup.
-# TYPE pgbackrest_exporter_backup_repo_backup_size gauge
-pgbackrest_exporter_backup_repo_backup_size{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo"} 2.969514e+06
-# HELP pgbackrest_exporter_stanza_status Current stanza status.
-# TYPE pgbackrest_exporter_stanza_status gauge
-pgbackrest_exporter_stanza_status{stanza="demo"} 0
-# HELP pgbackrest_exporter_wal_archive_status Current WAL archive status.
-# TYPE pgbackrest_exporter_wal_archive_status gauge
+	templateMetrics := `# HELP pgbackrest_backup_delta_bytes Amount of data in the database to actually backup.
+# TYPE pgbackrest_backup_delta_bytes gauge
+pgbackrest_backup_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo"} 2.4316343e+07
+# HELP pgbackrest_backup_diff_since_last_completion_seconds Seconds since the last completed full or differential backup.
+# TYPE pgbackrest_backup_diff_since_last_completion_seconds gauge
+pgbackrest_backup_diff_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
+# HELP pgbackrest_backup_duration_seconds Backup duration.
+# TYPE pgbackrest_backup_duration_seconds gauge
+pgbackrest_backup_duration_seconds{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo",start_time="2021-06-07 12:24:23",stop_time="2021-06-07 12:24:26"} 3
+# HELP pgbackrest_backup_full_since_last_completion_seconds Seconds since the last completed full backup.
+# TYPE pgbackrest_backup_full_since_last_completion_seconds gauge
+pgbackrest_backup_full_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
+# HELP pgbackrest_backup_incr_since_last_completion_seconds Seconds since the last completed full, differential or incremental backup.
+# TYPE pgbackrest_backup_incr_since_last_completion_seconds gauge
+pgbackrest_backup_incr_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
+# HELP pgbackrest_backup_info Backup info.
+# TYPE pgbackrest_backup_info gauge
+pgbackrest_backup_info{backrest_ver="2.34",backup_name="20210607-092423F",backup_type="full",database_id="1",pg_version="13",prior="",repo_key="0",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
+# HELP pgbackrest_backup_repo_delta_bytes Compressed files size in backup.
+# TYPE pgbackrest_backup_repo_delta_bytes gauge
+pgbackrest_backup_repo_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo"} 2.969514e+06
+# HELP pgbackrest_backup_repo_size_bytes Full compressed files size to restore the database from backup.
+# TYPE pgbackrest_backup_repo_size_bytes gauge
+pgbackrest_backup_repo_size_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo"} 2.969514e+06
+# HELP pgbackrest_backup_size_bytes Full uncompressed size of the database.
+# TYPE pgbackrest_backup_size_bytes gauge
+pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo"} 2.4316343e+07
+# HELP pgbackrest_stanza_status Current stanza status.
+# TYPE pgbackrest_stanza_status gauge
+pgbackrest_stanza_status{stanza="demo"} 0
+# HELP pgbackrest_wal_archive_status Current WAL archive status.
+# TYPE pgbackrest_wal_archive_status gauge
 `
 	tests := []struct {
 		name string
@@ -179,7 +179,7 @@ pgbackrest_exporter_stanza_status{stanza="demo"} 0
 				templateStanzaRepoAbsent("000000010000000000000004", "000000010000000000000001"),
 				false,
 				templateMetrics +
-					`pgbackrest_exporter_wal_archive_status{database_id="1",pg_version="13",repo_key="0",stanza="demo",wal_archive_max="",wal_archive_min=""} 1` +
+					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="0",stanza="demo",wal_max="",wal_min=""} 1` +
 					"\n",
 				setUpMetricValue,
 			},

@@ -23,12 +23,12 @@ type lastBackupsStruct struct {
 
 var (
 	pgbrStanzaStatusMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_exporter_stanza_status",
+		Name: "pgbackrest_stanza_status",
 		Help: "Current stanza status.",
 	},
 		[]string{"stanza"})
 	pgbrRepoStatusMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_exporter_repo_status",
+		Name: "pgbackrest_repo_status",
 		Help: "Current repository status.",
 	},
 		[]string{
@@ -37,7 +37,7 @@ var (
 			"stanza",
 		})
 	pgbrStanzaBackupInfoMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_exporter_backup_info",
+		Name: "pgbackrest_backup_info",
 		Help: "Backup info.",
 	},
 		[]string{
@@ -46,14 +46,14 @@ var (
 			"backup_type",
 			"database_id",
 			"pg_version",
+			"prior",
 			"repo_key",
 			"stanza",
-			"prior",
-			"wal_archive_min",
-			"wal_archive_max"})
+			"wal_start",
+			"wal_stop"})
 	pgbrStanzaBackupDurationMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_exporter_backup_duration",
-		Help: "Backup duration in seconds.",
+		Name: "pgbackrest_backup_duration_seconds",
+		Help: "Backup duration.",
 	},
 		[]string{
 			"backup_name",
@@ -63,9 +63,11 @@ var (
 			"stanza",
 			"start_time",
 			"stop_time"})
-	// The 'database size' is the full uncompressed size of the database.
+	// The 'database size' for text pgBackRest output
+	// (or "backup":"info":"size" for json pgBackRest output)
+	// is the full uncompressed size of the database.
 	pgbrStanzaBackupDatabaseSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_exporter_backup_database_size",
+		Name: "pgbackrest_backup_size_bytes",
 		Help: "Full uncompressed size of the database.",
 	},
 		[]string{
@@ -74,10 +76,12 @@ var (
 			"database_id",
 			"repo_key",
 			"stanza"})
-	// The 'database backup size' is the amount of data in the database
+	// The 'database backup size' for text pgBackRest output
+	// (or "backup":"info":"delta" for json pgBackRest output)
+	// is the amount of data in the database
 	// to actually backup (these will be the same for full backups).
 	pgbrStanzaBackupDatabaseBackupSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_exporter_backup_database_backup_size",
+		Name: "pgbackrest_backup_delta_bytes",
 		Help: "Amount of data in the database to actually backup.",
 	},
 		[]string{
@@ -86,13 +90,15 @@ var (
 			"database_id",
 			"repo_key",
 			"stanza"})
-	// The 'backup set size' includes all the files from this backup and
+	// The 'backup set size' for text pgBackRest output
+	// (or "backup":"info":"repository":"size" for json pgBackRest output)
+	// includes all the files from this backup and
 	// any referenced backups in the repository that are required
 	// to restore the database from this backup.
 	// Repository 'backup set size' reflect compressed file sizes
 	// if compression is enabled in pgBackRest or the filesystem.
 	pgbrStanzaBackupRepoBackupSetSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_exporter_backup_repo_backup_set_size",
+		Name: "pgbackrest_backup_repo_size_bytes",
 		Help: "Full compressed files size to restore the database from backup.",
 	},
 		[]string{
@@ -101,12 +107,14 @@ var (
 			"database_id",
 			"repo_key",
 			"stanza"})
-	// The 'backup size' includes only the files in this backup
+	// The 'backup size' for text pgBackRest output
+	// (or "backup":"info":"repository":"delta" for json pgBackRest output)
+	// includes only the files in this backup
 	// (these will also be the same for full backups).
 	// Repository 'backup size' reflect compressed file sizes
 	// if compression is enabled in pgBackRest or the filesystem.
 	pgbrStanzaBackupRepoBackupSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_exporter_backup_repo_backup_size",
+		Name: "pgbackrest_backup_repo_delta_bytes",
 		Help: "Compressed files size in backup.",
 	},
 		[]string{
@@ -116,14 +124,14 @@ var (
 			"repo_key",
 			"stanza"})
 	pgbrStanzaBackupLastFullMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_exporter_backup_full_time_since_last_completion",
+		Name: "pgbackrest_backup_full_since_last_completion_seconds",
 		Help: "Seconds since the last completed full backup.",
 	},
 		[]string{"stanza"})
 	// Differential backup is always based on last full,
 	// if the last backup was full, the metric will take full backup value.
 	pgbrStanzaBackupLastDiffMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_exporter_backup_diff_time_since_last_completion",
+		Name: "pgbackrest_backup_diff_since_last_completion_seconds",
 		Help: "Seconds since the last completed full or differential backup.",
 	},
 		[]string{"stanza"})
@@ -131,12 +139,12 @@ var (
 	// if the last backup was full or differential, the metric will take
 	// full or differential backup value.
 	pgbrStanzaBackupLastIncrMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_exporter_backup_incr_time_since_last_completion",
+		Name: "pgbackrest_backup_incr_since_last_completion_seconds",
 		Help: "Seconds since the last completed full, differential or incremental backup.",
 	},
 		[]string{"stanza"})
 	pgbrWALArchivingMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_exporter_wal_archive_status",
+		Name: "pgbackrest_wal_archive_status",
 		Help: "Current WAL archive status.",
 	},
 		[]string{
@@ -144,8 +152,8 @@ var (
 			"pg_version",
 			"repo_key",
 			"stanza",
-			"wal_archive_min",
-			"wal_archive_max"})
+			"wal_max",
+			"wal_min"})
 	execCommand = exec.Command
 )
 
@@ -251,7 +259,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 	)
 	if err != nil {
 		log.Println(
-			"[ERROR] Metric pgbackrest_exporter_stanza_status set up failed;",
+			"[ERROR] Metric pgbackrest_stanza_status set up failed;",
 			"value:", float64(data.Status.Code), ";",
 			"labels:",
 			data.Name,
@@ -268,7 +276,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 		)
 		if err != nil {
 			log.Println(
-				"[ERROR] Metric pgbackrest_exporter_repo_status set up failed;",
+				"[ERROR] Metric pgbackrest_repo_status set up failed;",
 				"value:", float64(repo.Status.Code), ";",
 				"labels:",
 				repo.Cipher, ",",
@@ -288,15 +296,15 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 			backup.Type,
 			strconv.Itoa(backup.Database.ID),
 			getPGVersion(backup.Database.ID, backup.Database.RepoKey, data.DB),
+			backup.Prior,
 			strconv.Itoa(backup.Database.RepoKey),
 			data.Name,
-			backup.Prior,
 			backup.Archive.StartWAL,
 			backup.Archive.StopWAL,
 		)
 		if err != nil {
 			log.Println(
-				"[ERROR] Metric pgbackrest_exporter_backup_info set up failed;",
+				"[ERROR] Metric pgbackrest_backup_info set up failed;",
 				"value:", 1, ";",
 				"labels:",
 				backup.BackrestInfo.Version, ",",
@@ -304,9 +312,9 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				backup.Type, ",",
 				strconv.Itoa(backup.Database.ID), ",",
 				getPGVersion(backup.Database.ID, backup.Database.RepoKey, data.DB), ",",
+				backup.Prior, ",",
 				strconv.Itoa(backup.Database.RepoKey), ",",
 				data.Name, ",",
-				backup.Prior, ",",
 				backup.Archive.StartWAL, ",",
 				backup.Archive.StopWAL,
 			)
@@ -325,7 +333,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 		)
 		if err != nil {
 			log.Println(
-				"[ERROR] Metric pgbackrest_exporter_backup_duration set up failed;",
+				"[ERROR] Metric pgbackrest_backup_duration_seconds set up failed;",
 				"value:",
 				time.Unix(backup.Timestamp.Stop, 0).Sub(time.Unix(backup.Timestamp.Start, 0)).Seconds(),
 				";",
@@ -351,7 +359,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 		)
 		if err != nil {
 			log.Println(
-				"[ERROR] Metric pgbackrest_exporter_backup_database_size set up failed;",
+				"[ERROR] Metric pgbackrest_backup_size_bytes set up failed;",
 				"value:", float64(backup.Info.Size), ";",
 				"labels:",
 				backup.Label, ",",
@@ -373,7 +381,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 		)
 		if err != nil {
 			log.Println(
-				"[ERROR] Metric pgbackrest_exporter_backup_database_backup_size set up failed;",
+				"[ERROR] Metric pgbackrest_backup_delta_bytes set up failed;",
 				"value:", float64(backup.Info.Delta), ";",
 				"labels:",
 				backup.Label, ",",
@@ -395,7 +403,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 		)
 		if err != nil {
 			log.Println(
-				"[ERROR] Metric pgbackrest_exporter_backup_repo_backup_set_size set up failed;",
+				"[ERROR] Metric pgbackrest_backup_repo_size_bytes set up failed;",
 				"value:", float64(backup.Info.Repository.Size), ";",
 				"labels:",
 				backup.Label, ",",
@@ -417,7 +425,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 		)
 		if err != nil {
 			log.Println(
-				"[ERROR] Metric pgbackrest_exporter_backup_repo_backup_size set up failed;",
+				"[ERROR] Metric pgbackrest_backup_repo_delta_bytes set up failed;",
 				"value:", float64(backup.Info.Repository.Delta), ";",
 				"labels:",
 				backup.Label, ",",
@@ -446,7 +454,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 		)
 		if err != nil {
 			log.Println(
-				"[ERROR] Metric pgbackrest_exporter_backup_full_time_since_last_completion set up failed;",
+				"[ERROR] Metric pgbackrest_backup_full_since_last_completion_seconds set up failed;",
 				"value:", time.Unix(currentUnixTime, 0).Sub(lastBackups.full).Seconds(), ";",
 				"labels:",
 				data.Name,
@@ -460,7 +468,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 		)
 		if err != nil {
 			log.Println(
-				"[ERROR] Metric pgbackrest_exporter_backup_diff_time_since_last_completion set up failed;",
+				"[ERROR] Metric pgbackrest_backup_diff_since_last_completion_seconds set up failed;",
 				"value:", time.Unix(currentUnixTime, 0).Sub(lastBackups.diff).Seconds(), ";",
 				"labels:",
 				data.Name,
@@ -474,7 +482,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 		)
 		if err != nil {
 			log.Println(
-				"[ERROR] Metric pgbackrest_exporter_backup_incr_time_since_last_completion set up failed;",
+				"[ERROR] Metric pgbackrest_backup_incr_since_last_completion_seconds set up failed;",
 				"value:", time.Unix(currentUnixTime, 0).Sub(lastBackups.incr).Seconds(), ";",
 				"labels:",
 				data.Name,
@@ -497,20 +505,20 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 					getPGVersion(archive.Database.ID, archive.Database.RepoKey, data.DB),
 					strconv.Itoa(archive.Database.RepoKey),
 					data.Name,
-					archive.WALMin,
 					archive.WALMax,
+					archive.WALMin,
 				)
 				if err != nil {
 					log.Println(
-						"[ERROR] Metric pgbackrest_exporter_wal_archive_status set up failed;",
+						"[ERROR] Metric pgbackrest_wal_archive_status set up failed;",
 						"value:", 1, ";",
 						"labels:",
 						strconv.Itoa(archive.Database.ID), ",",
 						getPGVersion(archive.Database.ID, archive.Database.RepoKey, data.DB), ",",
 						strconv.Itoa(archive.Database.RepoKey), ",",
 						data.Name, ",",
-						archive.WALMin, ",",
-						archive.WALMax,
+						archive.WALMax, ",",
+						archive.WALMin,
 					)
 				}
 			} else {
@@ -526,7 +534,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				)
 				if err != nil {
 					log.Println(
-						"[ERROR] Metric pgbackrest_exporter_wal_archive_status set up failed;",
+						"[ERROR] Metric pgbackrest_wal_archive_status set up failed;",
 						"value:", 1, ";",
 						"labels:",
 						strconv.Itoa(archive.Database.ID), ",",
@@ -551,7 +559,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 			)
 			if err != nil {
 				log.Println(
-					"[ERROR] Metric pgbackrest_exporter_wal_archive_status set up failed;",
+					"[ERROR] Metric pgbackrest_wal_archive_status set up failed;",
 					"value:", 0, ";",
 					"labels:",
 					strconv.Itoa(archive.Database.ID), ",",
