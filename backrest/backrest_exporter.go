@@ -23,6 +23,15 @@ func SetPromPortandPath(port, endpoint string) {
 func StartPromEndpoint() {
 	go func() {
 		http.Handle(promEndpoint, promhttp.Handler())
+		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte(`<html>
+			<head><title>pgBackRest exporter</title></head>
+			<body>
+			<h1>pgBackRest exporter</h1>
+			<p><a href='` + promEndpoint + `'>Metrics</a></p>
+			</body>
+			</html>`))
+		})
 		log.Fatalf("[ERROR] Run HTTP endpoint failed, %v", http.ListenAndServe(":"+promPort, nil))
 	}()
 }

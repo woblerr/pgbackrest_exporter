@@ -19,7 +19,7 @@ linters-settings:
     locale: US
   lll:
     line-length: 140
-  
+
 linters:
   enable:
     - megacheck
@@ -56,4 +56,7 @@ issues:
     - text: "at least one file in a package should have a package comment"
       linters:
         - stylecheck
+    - text: "G104: Errors unhandled"
+      linters:
+        - gosec
   exclude-use-default: false
