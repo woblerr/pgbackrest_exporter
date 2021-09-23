@@ -1,6 +1,7 @@
 package backrest
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"log"
@@ -213,16 +214,24 @@ func getAllInfoData(config, configIncludePath, stanza string) ([]byte, error) {
 		returnConfigExecArgs(config, configIncludePath),
 		returnConfigStanzaArgs(stanza),
 	}
-	// Finally arguments for exec command
+	// Finally arguments for exec command.
 	concatArgs := concatExecArgs(args)
-	out, err := execCommand(app, concatArgs...).CombinedOutput()
-	// If error occurs - write error from pgBackRest to log and
+	cmd := execCommand(app, concatArgs...)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	// If stderr from pgBackRest is not empty,
+	// write message from pgBackRest to log.
+	if stderr.Len() > 0 {
+		log.Printf("[ERROR] pgBackRest message: %v", stderr.String())
+	}
+	// If error occurs,
 	// return nil for stanza data.
 	if err != nil {
-		log.Printf("[ERROR] pgBackRest error: %v", string(out))
 		return nil, err
 	}
-	return out, err
+	return stdout.Bytes(), err
 }
 
 func parseResult(output []byte) ([]stanza, error) {
