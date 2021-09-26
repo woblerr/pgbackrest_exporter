@@ -655,3 +655,78 @@ func parseDate(value string) time.Time {
 	}
 	return valueReturn
 }
+
+func TestGetExporterMetrics(t *testing.T) {
+	type args struct {
+		exporterVer         string
+		testText            string
+		setUpMetricValueFun setUpMetricValueFunType
+	}
+	templateMetrics := `# HELP pgbackrest_exporter_info Information about pgBackRest exporter.
+# TYPE pgbackrest_exporter_info gauge
+pgbackrest_exporter_info{version="unknown"} 1
+`
+	tests := []struct {
+		name string
+		args args
+	}{
+		{"GetExporterInfoGood",
+			args{
+				`unknown`,
+				templateMetrics,
+				setUpMetricValue,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			getExporterMetrics(tt.args.exporterVer, tt.args.setUpMetricValueFun)
+			reg := prometheus.NewRegistry()
+			reg.MustRegister(pgbrExporterInfoMetric)
+			metricFamily, err := reg.Gather()
+			if err != nil {
+				fmt.Println(err)
+			}
+			out := &bytes.Buffer{}
+			for _, mf := range metricFamily {
+				if _, err := expfmt.MetricFamilyToText(out, mf); err != nil {
+					panic(err)
+				}
+			}
+			if tt.args.testText != out.String() {
+				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", tt.args.testText, out.String())
+			}
+		})
+	}
+}
+
+func TestGetExporterInfoErrors(t *testing.T) {
+	type args struct {
+		exporterVer         string
+		setUpMetricValueFun setUpMetricValueFunType
+		errorsCount         int
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{"GetExporterInfoLogError",
+			args{
+				`unknown`,
+				fakeSetUpMetricValue,
+				1,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out := &bytes.Buffer{}
+			log.SetOutput(out)
+			getExporterMetrics(tt.args.exporterVer, tt.args.setUpMetricValueFun)
+			errorsOutputCount := strings.Count(out.String(), "[ERROR]")
+			if tt.args.errorsCount != errorsOutputCount {
+				t.Errorf("\nVariables do not match:\n%d\nwant:\n%d", tt.args.errorsCount, errorsOutputCount)
+			}
+		})
+	}
+}
