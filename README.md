@@ -83,6 +83,10 @@ The metrics provided by the client.
     - `0` - any one of WALMin and WALMax have empty value, there is no correct information about WAL archiving,
     - `1` - both WALMin and WALMax have no empty values, there is correct information about WAL archiving.
 
+* `pgbackrest_exporter_info` - information about pgBackRest exporter.
+
+    Labels: version.
+
 ## Getting Started
 ### Building and running
 

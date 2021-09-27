@@ -17,6 +17,12 @@ build:
 	@make test
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -trimpath -ldflags "-X main.version=$(BRANCH)-$(GIT_REV)" -o $(APP_NAME) $(APP_NAME).go
 
+.PHONY: build-arm
+build-arm:
+	@echo "Build $(APP_NAME)"
+	@make test
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -mod=vendor -trimpath -ldflags "-X main.version=$(BRANCH)-$(GIT_REV)" -o $(APP_NAME) $(APP_NAME).go
+
 .PHONY: build-darwin
 build-darwin:
 	@echo "Build $(APP_NAME)"

@@ -88,6 +88,10 @@ func main() {
 	log.Printf("[INFO] Use port %s and HTTP endpoint %s", *promPort, *promPath)
 	// Start exporter.
 	backrest.StartPromEndpoint()
+	// Set up exporter info metric.
+	// There is no need to reset metric every time,
+	// it is set up once at startup.
+	backrest.GetExporterInfo(version)
 	for {
 		// Reset metrics.
 		backrest.ResetMetrics()
