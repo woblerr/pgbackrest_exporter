@@ -8,8 +8,8 @@ run:
 linters-settings:
   govet:
     check-shadowing: true
-  golint:
-    min-confidence: 0.1
+  revive:
+    confidence: 0.1
   maligned:
     suggest-new: true
   goconst:
