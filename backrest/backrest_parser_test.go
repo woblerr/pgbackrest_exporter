@@ -32,6 +32,9 @@ pgbackrest_backup_diff_since_last_completion_seconds{stanza="demo"} 9.2233720368
 # HELP pgbackrest_backup_duration_seconds Backup duration.
 # TYPE pgbackrest_backup_duration_seconds gauge
 pgbackrest_backup_duration_seconds{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo",start_time="2021-06-07 12:24:23",stop_time="2021-06-07 12:24:26"} 3
+# HELP pgbackrest_backup_error_status Backup error status.
+# TYPE pgbackrest_backup_error_status gauge
+pgbackrest_backup_error_status{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 1
 # HELP pgbackrest_backup_full_since_last_completion_seconds Seconds since the last completed full backup.
 # TYPE pgbackrest_backup_full_since_last_completion_seconds gauge
 pgbackrest_backup_full_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
@@ -40,7 +43,7 @@ pgbackrest_backup_full_since_last_completion_seconds{stanza="demo"} 9.2233720368
 pgbackrest_backup_incr_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
 # HELP pgbackrest_backup_info Backup info.
 # TYPE pgbackrest_backup_info gauge
-pgbackrest_backup_info{backrest_ver="2.34",backup_name="20210607-092423F",backup_type="full",database_id="1",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
+pgbackrest_backup_info{backrest_ver="2.36",backup_name="20210607-092423F",backup_type="full",database_id="1",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
 # HELP pgbackrest_backup_repo_delta_bytes Compressed files size in backup.
 # TYPE pgbackrest_backup_repo_delta_bytes gauge
 pgbackrest_backup_repo_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
@@ -65,7 +68,7 @@ pgbackrest_stanza_status{stanza="demo"} 0
 	}{
 		{"getMetricsVerboseFalse",
 			args{
-				templateStanza("000000010000000000000004", "000000010000000000000001"),
+				templateStanza("000000010000000000000004", "000000010000000000000001", true),
 				false,
 				templateMetrics +
 					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="",wal_min=""} 1` +
@@ -75,7 +78,7 @@ pgbackrest_stanza_status{stanza="demo"} 0
 		},
 		{"getMetricsVerboseTrue",
 			args{
-				templateStanza("000000010000000000000004", "000000010000000000000001"),
+				templateStanza("000000010000000000000004", "000000010000000000000001", true),
 				true,
 				templateMetrics +
 					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="000000010000000000000004",wal_min="000000010000000000000001"} 1` +
@@ -85,7 +88,7 @@ pgbackrest_stanza_status{stanza="demo"} 0
 		},
 		{"getMetricsWithoutWal",
 			args{
-				templateStanza("", "000000010000000000000001"),
+				templateStanza("", "000000010000000000000001", true),
 				false,
 				templateMetrics +
 					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="",wal_min=""} 0` +
@@ -108,6 +111,7 @@ pgbackrest_stanza_status{stanza="demo"} 0
 				pgbrStanzaBackupDatabaseBackupSizeMetric,
 				pgbrStanzaBackupRepoBackupSetSizeMetric,
 				pgbrStanzaBackupRepoBackupSizeMetric,
+				pgbrStanzaBackupErrorMetric,
 				pgbrStanzaBackupLastFullMetric,
 				pgbrStanzaBackupLastDiffMetric,
 				pgbrStanzaBackupLastIncrMetric,
@@ -146,6 +150,9 @@ pgbackrest_backup_diff_since_last_completion_seconds{stanza="demo"} 9.2233720368
 # HELP pgbackrest_backup_duration_seconds Backup duration.
 # TYPE pgbackrest_backup_duration_seconds gauge
 pgbackrest_backup_duration_seconds{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo",start_time="2021-06-07 12:24:23",stop_time="2021-06-07 12:24:26"} 3
+# HELP pgbackrest_backup_error_status Backup error status.
+# TYPE pgbackrest_backup_error_status gauge
+pgbackrest_backup_error_status{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo"} 0
 # HELP pgbackrest_backup_full_since_last_completion_seconds Seconds since the last completed full backup.
 # TYPE pgbackrest_backup_full_since_last_completion_seconds gauge
 pgbackrest_backup_full_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
@@ -154,7 +161,7 @@ pgbackrest_backup_full_since_last_completion_seconds{stanza="demo"} 9.2233720368
 pgbackrest_backup_incr_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
 # HELP pgbackrest_backup_info Backup info.
 # TYPE pgbackrest_backup_info gauge
-pgbackrest_backup_info{backrest_ver="2.34",backup_name="20210607-092423F",backup_type="full",database_id="1",pg_version="13",prior="",repo_key="0",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
+pgbackrest_backup_info{backrest_ver="2.36",backup_name="20210607-092423F",backup_type="full",database_id="1",pg_version="13",prior="",repo_key="0",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
 # HELP pgbackrest_backup_repo_delta_bytes Compressed files size in backup.
 # TYPE pgbackrest_backup_repo_delta_bytes gauge
 pgbackrest_backup_repo_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo"} 2.969514e+06
@@ -176,7 +183,7 @@ pgbackrest_stanza_status{stanza="demo"} 0
 	}{
 		{"getMetricsVerboseFalse",
 			args{
-				templateStanzaRepoAbsent("000000010000000000000004", "000000010000000000000001"),
+				templateStanzaRepoAbsent("000000010000000000000004", "000000010000000000000001", false),
 				false,
 				templateMetrics +
 					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="0",stanza="demo",wal_max="",wal_min=""} 1` +
@@ -199,6 +206,102 @@ pgbackrest_stanza_status{stanza="demo"} 0
 				pgbrStanzaBackupDatabaseBackupSizeMetric,
 				pgbrStanzaBackupRepoBackupSetSizeMetric,
 				pgbrStanzaBackupRepoBackupSizeMetric,
+				pgbrStanzaBackupErrorMetric,
+				pgbrStanzaBackupLastFullMetric,
+				pgbrStanzaBackupLastDiffMetric,
+				pgbrStanzaBackupLastIncrMetric,
+				pgbrWALArchivingMetric,
+			)
+			metricFamily, err := reg.Gather()
+			if err != nil {
+				fmt.Println(err)
+			}
+			out := &bytes.Buffer{}
+			for _, mf := range metricFamily {
+				if _, err := expfmt.MetricFamilyToText(out, mf); err != nil {
+					panic(err)
+				}
+			}
+			if tt.args.testText != out.String() {
+				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", tt.args.testText, out.String())
+			}
+		})
+	}
+}
+
+func TestGetMetricsErrorAbsent(t *testing.T) {
+	type args struct {
+		data                stanza
+		verbose             bool
+		testText            string
+		setUpMetricValueFun setUpMetricValueFunType
+	}
+	templateMetrics := `# HELP pgbackrest_backup_delta_bytes Amount of data in the database to actually backup.
+# TYPE pgbackrest_backup_delta_bytes gauge
+pgbackrest_backup_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
+# HELP pgbackrest_backup_diff_since_last_completion_seconds Seconds since the last completed full or differential backup.
+# TYPE pgbackrest_backup_diff_since_last_completion_seconds gauge
+pgbackrest_backup_diff_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
+# HELP pgbackrest_backup_duration_seconds Backup duration.
+# TYPE pgbackrest_backup_duration_seconds gauge
+pgbackrest_backup_duration_seconds{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo",start_time="2021-06-07 12:24:23",stop_time="2021-06-07 12:24:26"} 3
+# HELP pgbackrest_backup_full_since_last_completion_seconds Seconds since the last completed full backup.
+# TYPE pgbackrest_backup_full_since_last_completion_seconds gauge
+pgbackrest_backup_full_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
+# HELP pgbackrest_backup_incr_since_last_completion_seconds Seconds since the last completed full, differential or incremental backup.
+# TYPE pgbackrest_backup_incr_since_last_completion_seconds gauge
+pgbackrest_backup_incr_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
+# HELP pgbackrest_backup_info Backup info.
+# TYPE pgbackrest_backup_info gauge
+pgbackrest_backup_info{backrest_ver="2.34",backup_name="20210607-092423F",backup_type="full",database_id="1",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
+# HELP pgbackrest_backup_repo_delta_bytes Compressed files size in backup.
+# TYPE pgbackrest_backup_repo_delta_bytes gauge
+pgbackrest_backup_repo_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
+# HELP pgbackrest_backup_repo_size_bytes Full compressed files size to restore the database from backup.
+# TYPE pgbackrest_backup_repo_size_bytes gauge
+pgbackrest_backup_repo_size_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
+# HELP pgbackrest_backup_size_bytes Full uncompressed size of the database.
+# TYPE pgbackrest_backup_size_bytes gauge
+pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
+# HELP pgbackrest_repo_status Current repository status.
+# TYPE pgbackrest_repo_status gauge
+pgbackrest_repo_status{cipher="none",repo_key="1",stanza="demo"} 0
+# HELP pgbackrest_stanza_status Current stanza status.
+# TYPE pgbackrest_stanza_status gauge
+pgbackrest_stanza_status{stanza="demo"} 0
+# HELP pgbackrest_wal_archive_status Current WAL archive status.
+# TYPE pgbackrest_wal_archive_status gauge
+`
+	tests := []struct {
+		name string
+		args args
+	}{
+		{"getMetricsErrorAbsent",
+			args{
+				templateStanzaErrorAbsent("000000010000000000000004", "000000010000000000000001"),
+				false,
+				templateMetrics +
+					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="",wal_min=""} 1` +
+					"\n",
+				setUpMetricValue,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ResetMetrics()
+			getMetrics(tt.args.data, tt.args.verbose, curretnUnixTimeForTests, tt.args.setUpMetricValueFun)
+			reg := prometheus.NewRegistry()
+			reg.MustRegister(
+				pgbrStanzaStatusMetric,
+				pgbrRepoStatusMetric,
+				pgbrStanzaBackupInfoMetric,
+				pgbrStanzaBackupDurationMetric,
+				pgbrStanzaBackupDatabaseSizeMetric,
+				pgbrStanzaBackupDatabaseBackupSizeMetric,
+				pgbrStanzaBackupRepoBackupSetSizeMetric,
+				pgbrStanzaBackupRepoBackupSizeMetric,
+				pgbrStanzaBackupErrorMetric,
 				pgbrStanzaBackupLastFullMetric,
 				pgbrStanzaBackupLastDiffMetric,
 				pgbrStanzaBackupLastIncrMetric,
@@ -234,50 +337,50 @@ func TestGetMetricsErrors(t *testing.T) {
 	}{
 		{"getMetricsVerboseFalseLogError",
 			args{
-				templateStanza("000000010000000000000004", "000000010000000000000001"),
+				templateStanza("000000010000000000000004", "000000010000000000000001", true),
 				false,
 				fakeSetUpMetricValue,
-				12,
+				13,
 			},
 		},
 		{"getMetricsVerboseTrueLogError",
 			args{
-				templateStanza("000000010000000000000004", "000000010000000000000001"),
+				templateStanza("000000010000000000000004", "000000010000000000000001", true),
 				true,
 				fakeSetUpMetricValue,
-				12,
+				13,
 			},
 		},
 		{"getMetricsWithoutWalLogError",
 			args{
-				templateStanza("", "000000010000000000000001"),
+				templateStanza("", "000000010000000000000001", true),
+				false,
+				fakeSetUpMetricValue,
+				13,
+			},
+		},
+		{"getMetricsVerboseFalseLogErrorRepoAbsent",
+			args{
+				templateStanzaRepoAbsent("000000010000000000000004", "000000010000000000000001", false),
 				false,
 				fakeSetUpMetricValue,
 				12,
 			},
 		},
-		{"getMetricsVerboseFalseLogErrorRepoAbsent",
-			args{
-				templateStanzaRepoAbsent("000000010000000000000004", "000000010000000000000001"),
-				false,
-				fakeSetUpMetricValue,
-				11,
-			},
-		},
 		{"getMetricsVerboseTrueLogErrorRepoAbsent",
 			args{
-				templateStanzaRepoAbsent("000000010000000000000004", "000000010000000000000001"),
+				templateStanzaRepoAbsent("000000010000000000000004", "000000010000000000000001", false),
 				true,
 				fakeSetUpMetricValue,
-				11,
+				12,
 			},
 		},
 		{"getMetricsWithoutWalLogErrorRepoAbsent",
 			args{
-				templateStanzaRepoAbsent("", "000000010000000000000001"),
+				templateStanzaRepoAbsent("", "000000010000000000000001", false),
 				false,
 				fakeSetUpMetricValue,
-				11,
+				12,
 			},
 		},
 	}
@@ -529,7 +632,7 @@ func fakeSetUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...
 }
 
 //nolint:unparam
-func templateStanza(walMax, walMin string) stanza {
+func templateStanza(walMax, walMin string, errorStatus bool) stanza {
 	return stanza{
 		[]archive{
 			{databaseID{1, 1}, "13-1", walMax, walMin},
@@ -542,8 +645,9 @@ func templateStanza(walMax, walMin string) stanza {
 				struct {
 					Format  int    "json:\"format\""
 					Version string "json:\"version\""
-				}{5, "2.34"},
+				}{5, "2.36"},
 				databaseID{1, 1},
+				&errorStatus,
 				backupInfo{
 					24316343,
 					struct {
@@ -593,7 +697,7 @@ func templateStanza(walMax, walMin string) stanza {
 }
 
 //nolint:unparam
-func templateStanzaRepoAbsent(walMax, walMin string) stanza {
+func templateStanzaRepoAbsent(walMax, walMin string, errorStatus bool) stanza {
 	return stanza{
 		[]archive{
 			{databaseID{1, 0}, "13-1", walMax, walMin},
@@ -606,8 +710,9 @@ func templateStanzaRepoAbsent(walMax, walMin string) stanza {
 				struct {
 					Format  int    "json:\"format\""
 					Version string "json:\"version\""
-				}{5, "2.34"},
+				}{5, "2.36"},
 				databaseID{1, 0},
+				&errorStatus,
 				backupInfo{
 					24316343,
 					struct {
@@ -632,6 +737,72 @@ func templateStanzaRepoAbsent(walMax, walMin string) stanza {
 		},
 		"demo",
 		[]repo{},
+		status{
+			0,
+			struct {
+				Backup struct {
+					Held bool "json:\"held\""
+				} "json:\"backup\""
+			}{
+				struct {
+					Held bool "json:\"held\""
+				}{false},
+			},
+			"ok",
+		},
+	}
+}
+
+//nolint:unparam
+func templateStanzaErrorAbsent(walMax, walMin string) stanza {
+	var errorStatus *bool
+	return stanza{
+		[]archive{
+			{databaseID{1, 1}, "13-1", walMax, walMin},
+		},
+		[]backup{
+			{struct {
+				StartWAL string "json:\"start\""
+				StopWAL  string "json:\"stop\""
+			}{"000000010000000000000002", "000000010000000000000002"},
+				struct {
+					Format  int    "json:\"format\""
+					Version string "json:\"version\""
+				}{5, "2.34"},
+				databaseID{1, 1},
+				errorStatus,
+				backupInfo{
+					24316343,
+					struct {
+						Delta int64 "json:\"delta\""
+						Size  int64 "json:\"size\""
+					}{2969514, 2969514},
+					24316343,
+				},
+				"20210607-092423F",
+				"",
+				[]string{""},
+				struct {
+					Start int64 "json:\"start\""
+					Stop  int64 "json:\"stop\""
+				}{1623057863, 1623057866},
+				"full",
+			},
+		},
+		"none",
+		[]db{
+			{1, 1, 6970977677138971135, "13"},
+		},
+		"demo",
+		[]repo{
+			{"none",
+				1,
+				struct {
+					Code    int    "json:\"code\""
+					Message string "json:\"message\""
+				}{0, "ok"},
+			},
+		},
 		status{
 			0,
 			struct {

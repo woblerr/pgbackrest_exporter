@@ -195,10 +195,10 @@ func ResetMetrics() {
 	pgbrStanzaBackupDatabaseBackupSizeMetric.Reset()
 	pgbrStanzaBackupRepoBackupSetSizeMetric.Reset()
 	pgbrStanzaBackupRepoBackupSizeMetric.Reset()
+	pgbrStanzaBackupErrorMetric.Reset()
 	pgbrStanzaBackupLastFullMetric.Reset()
 	pgbrStanzaBackupLastDiffMetric.Reset()
 	pgbrStanzaBackupLastIncrMetric.Reset()
-	pgbrStanzaBackupErrorMetric.Reset()
 	pgbrWALArchivingMetric.Reset()
 }
 
