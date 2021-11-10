@@ -53,7 +53,7 @@ type databaseID struct {
 //        "version": "string"
 //    },
 //    "database": {},
-//	  "error": bool,
+//    "error": bool,
 //    "info": {},
 //    "label": "string",
 //    "prior": "string",
