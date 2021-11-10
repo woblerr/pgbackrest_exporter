@@ -114,6 +114,16 @@ var (
 			"database_id",
 			"repo_key",
 			"stanza"})
+	pgbrStanzaBackupErrorMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_backup_error_status",
+		Help: "Backup error status.",
+	},
+		[]string{
+			"backup_name",
+			"backup_type",
+			"database_id",
+			"repo_key",
+			"stanza"})
 	pgbrStanzaBackupLastFullMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_full_since_last_completion_seconds",
 		Help: "Seconds since the last completed full backup.",
@@ -185,6 +195,7 @@ func ResetMetrics() {
 	pgbrStanzaBackupDatabaseBackupSizeMetric.Reset()
 	pgbrStanzaBackupRepoBackupSetSizeMetric.Reset()
 	pgbrStanzaBackupRepoBackupSizeMetric.Reset()
+	pgbrStanzaBackupErrorMetric.Reset()
 	pgbrStanzaBackupLastFullMetric.Reset()
 	pgbrStanzaBackupLastDiffMetric.Reset()
 	pgbrStanzaBackupLastIncrMetric.Reset()

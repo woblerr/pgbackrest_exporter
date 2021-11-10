@@ -309,6 +309,34 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				data.Name,
 			)
 		}
+		// Backup error status.
+		// Use *bool type for backup.Error field.
+		// Information about error in backup (page checksum error) has appeared since pgBackRest v2.36.
+		// In versions < v2.36 this field is missing and the metric does not need to be collected.
+		// json.Unmarshal() will return nil when the error information is  missing.
+		if backup.Error != nil {
+			err = setUpMetricValueFun(
+				pgbrStanzaBackupErrorMetric,
+				convertBoolToFloat64(*backup.Error),
+				backup.Label,
+				backup.Type,
+				strconv.Itoa(backup.Database.ID),
+				strconv.Itoa(backup.Database.RepoKey),
+				data.Name,
+			)
+			if err != nil {
+				log.Println(
+					"[ERROR] Metric pgbackrest_backup_error_status set up failed;",
+					"value:", convertBoolToFloat64(*backup.Error), ";",
+					"labels:",
+					backup.Label, ",",
+					backup.Type, ",",
+					strconv.Itoa(backup.Database.ID), ",",
+					strconv.Itoa(backup.Database.RepoKey), ",",
+					data.Name,
+				)
+			}
+		}
 		compareLastBackups(
 			&lastBackups,
 			time.Unix(backup.Timestamp.Stop, 0),
@@ -518,4 +546,12 @@ func getExporterMetrics(exporterVer string, setUpMetricValueFun setUpMetricValue
 			exporterVer,
 		)
 	}
+}
+
+// Convert bool to float64.
+func convertBoolToFloat64(value bool) float64 {
+	if value {
+		return 1
+	}
+	return 0
 }

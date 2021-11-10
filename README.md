@@ -8,12 +8,6 @@ Prometheus exporter for [pgBackRest](https://pgbackrest.org/).
 
 The metrics are collected based on result of `pgbackrest info --output json` command. By default, the metrics are collected for all stanzas received by command. You can specify stanzas to collect metrics. You need to run exporter on the same host where pgBackRest was installed or inside Docker.
 
-All metrics are collected for `pgBackRest >= v2.32`.
-For earlier versions, some metrics may not be collected or have insignificant label values.
-
-For example, the `pgbackrest_repo_status` metric will be absent for `pgBackRest <= v2.31`.
-And for other metrics lable will be `repo_key="0"`.
-
 ## Collected metrics
 
 The metrics provided by the client.
@@ -63,6 +57,14 @@ The metrics provided by the client.
 
     Labels: backup_name, backup_type, database_id, repo_key, stanza.
 
+* `pgbackrest_backup_error_status` - backup error status.
+
+    Labels: backup_name, backup_type, database_id, repo_key, stanza.
+
+    Values description:
+    - `0` - backup doesn't contain page checksum errors,
+    - `1` - backup contains one or more page checksum errors. To display the list of errors, you need manually run the command like `pgbackrest info --stanza stanza --set backup_name --repo repo_key`.
+
 * `pgbackrest_backup_full_since_last_completion_seconds` - seconds since the last completed full backup.
 
     Labels: stanza.
@@ -86,6 +88,19 @@ The metrics provided by the client.
 * `pgbackrest_exporter_info` - information about pgBackRest exporter.
 
     Labels: version.
+
+## Compatibility with pgBackRest versions
+
+All metrics are collected for `pgBackRest >= v2.36`.
+
+For earlier versions, some metrics may not be collected or have insignificant label values:
+* `pgBackRest < v2.36`
+
+    The following metric will be absent: `pgbackrest_backup_error_status`.
+
+* `pgBackRest < v2.32`
+
+    The following metric will be absent: `pgbackrest_repo_status`. For other metrics lable will be `repo_key="0"`.
 
 ## Getting Started
 ### Building and running
@@ -139,7 +154,7 @@ When flag `--verbose.info` is specified - WALMin and WALMax are added as metric 
 This creates new different time series on each WAL archiving.
 
 ### Building and running docker
-By default, pgBackRest version is `2.35`. Another version can be specified via arguments.
+By default, pgBackRest version is `2.36`. Another version can be specified via arguments.
 For base image used [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest) image.
 
 ```bash

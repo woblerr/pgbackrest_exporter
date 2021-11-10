@@ -53,6 +53,7 @@ type databaseID struct {
 //        "version": "string"
 //    },
 //    "database": {},
+//    "error": bool,
 //    "info": {},
 //    "label": "string",
 //    "prior": "string",
@@ -73,6 +74,7 @@ type backup struct {
 		Version string `json:"version"`
 	} `json:"backrest"`
 	Database  databaseID `json:"database"`
+	Error     *bool      `json:"error"`
 	Info      backupInfo `json:"info"`
 	Label     string     `json:"label"`
 	Prior     string     `json:"prior"`
