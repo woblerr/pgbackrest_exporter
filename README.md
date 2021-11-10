@@ -154,7 +154,7 @@ When flag `--verbose.info` is specified - WALMin and WALMax are added as metric 
 This creates new different time series on each WAL archiving.
 
 ### Building and running docker
-By default, pgBackRest version is `2.35`. Another version can be specified via arguments.
+By default, pgBackRest version is `2.36`. Another version can be specified via arguments.
 For base image used [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest) image.
 
 ```bash

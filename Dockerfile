@@ -1,4 +1,4 @@
-ARG BACKREST_VERSION="2.35"
+ARG BACKREST_VERSION="2.36"
 ARG REPO_BUILD_TAG="unknown"
 
 FROM golang:1.17-buster AS builder
