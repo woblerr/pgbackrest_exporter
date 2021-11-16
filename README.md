@@ -285,3 +285,17 @@ sudo systemctl enable pgbackrest_exporter.service
 sudo systemctl restart pgbackrest_exporter.service
 systemctl -l status pgbackrest_exporter.service
 ```
+
+### Running tests
+
+Run the unit tests:
+
+```bash
+make test
+```
+
+Run the end-to-end tests:
+
+```bash
+make test-e2e
+```
