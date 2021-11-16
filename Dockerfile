@@ -17,8 +17,7 @@ ENV EXPORTER_ENDPOINT="/metrics" \
     STANZA_INCLUDE="" \
     STANZA_EXCLUDE="" \
     COLLECT_INTERVAL="600"
-COPY --from=builder /build/pgbackrest_exporter /etc/pgbackrest/pgbackrest_exporter
-RUN chmod 755 /etc/pgbackrest/pgbackrest_exporter
+COPY --from=builder --chmod=755 /build/pgbackrest_exporter /etc/pgbackrest/pgbackrest_exporter
 LABEL \
     org.opencontainers.image.version="${REPO_BUILD_TAG}" \
     org.opencontainers.image.source="https://github.com/woblerr/pgbackrest_exporter"
