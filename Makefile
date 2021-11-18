@@ -1,15 +1,28 @@
-APP_NAME = pgbackrest_exporter
-BRANCH_FULL=$(shell git rev-parse --abbrev-ref HEAD)
-BRANCH=$(subst /,-,$(BRANCH_FULL))
-GIT_REV=$(shell git describe --abbrev=7 --always)
-SERVICE_CONF_DIR = /etc/systemd/system
-HTTP_PORT = 9854
-BACKREST_VERSION = 2.36
-ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+APP_NAME := pgbackrest_exporter
+BRANCH_FULL := $(shell git rev-parse --abbrev-ref HEAD)
+BRANCH := $(subst /,-,$(BRANCH_FULL))
+GIT_REV := $(shell git describe --abbrev=7 --always)
+SERVICE_CONF_DIR := /etc/systemd/system
+HTTP_PORT := 9854
+BACKREST_VERSION := 2.36
+ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+DOCKER_CONTAINER_E2E := $(shell docker ps -a -q -f name=$(APP_NAME)_e2e)
+HTTP_PORT_E2E := $(shell echo $$((10000 + ($$RANDOM % 10000))))
 
+.PHONY: test
 test:
 	@echo "Run tests for $(APP_NAME)"
 	go test -mod=vendor -timeout=60s -count 1  ./...
+
+.PHONY: test-e2e
+test-e2e:
+	@echo "Run end-to-end tests for $(APP_NAME)"
+	@if [ -n "$(DOCKER_CONTAINER_E2E)" ]; then docker rm -f "$(DOCKER_CONTAINER_E2E)"; fi;
+	docker build --pull -f e2e_tests/Dockerfile --build-arg BACKREST_VERSION=$(BACKREST_VERSION) -t $(APP_NAME)_e2e .
+	docker run -d -p $(HTTP_PORT_E2E):$(HTTP_PORT) --name=$(APP_NAME)_e2e $(APP_NAME)_e2e
+	@sleep 30
+	$(ROOT_DIR)/e2e_tests/run_e2e.sh $(HTTP_PORT_E2E)
+	docker rm -f $(APP_NAME)_e2e
 
 .PHONY: build
 build:
@@ -76,4 +89,3 @@ define service-remove
 	systemctl daemon-reload
 	systemctl reset-failed
 endef
-
