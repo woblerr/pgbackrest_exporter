@@ -1,14 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PORT="${1}"
+[[ -z ${PORT} ]] && exit 1
 
-get_metrics() {
-    local exporter_url="http://localhost:${1}/metrics"
-    cnt=$(curl -s ${exporter_url} | grep -E "${2}" | wc -l | tr -d ' ')
-    echo "${cnt}"
-}
-
-# Format: regex | repetitions
+EXPORTER_URL="http://localhost:${PORT}/metrics"
+# A simple test to check the number of metrics.
+# Format: regex for metric | repetitions.
 declare -a REGEX_LIST=(
     '^pgbackrest_backup_delta_bytes{.*}|3'
     '^pgbackrest_backup_duration_seconds{.*}|3'
@@ -29,12 +26,12 @@ declare -a REGEX_LIST=(
     '^pgbackrest_wal_archive_status{.*,repo_key="2",.*}|1'
 )
 
-# Check results
+# Check results.
 for i in "${REGEX_LIST[@]}"
 do
     regex=$(echo ${i} | cut -f1 -d'|')
     cnt=$(echo ${i} | cut -f2 -d'|')
-    metric_cnt=$(get_metrics "${PORT}" "${regex}") 
+    metric_cnt=$(curl -s ${EXPORTER_URL} | grep -E "${regex}" | wc -l | tr -d ' ')
     if [[ ${metric_cnt} != ${cnt} ]]; then
         echo "[ERROR] on regex '${regex}': get=${metric_cnt}, want=${cnt}"
         exit 1
