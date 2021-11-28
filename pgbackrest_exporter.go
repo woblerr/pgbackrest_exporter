@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -9,6 +8,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
+	"github.com/prometheus/common/promlog"
+	"github.com/prometheus/common/promlog/flag"
 	"github.com/woblerr/pgbackrest_exporter/backrest"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
@@ -50,48 +53,70 @@ func main() {
 			"Enable additional metrics labels.",
 		).Default("false").Bool()
 	)
+	// Set logger config.
+	promlogConfig := &promlog.Config{}
+	// Add flags log.level and log.format from promlog package.
+	flag.AddFlags(kingpin.CommandLine, promlogConfig)
+	// Add short help flag.
+	kingpin.HelpFlag.Short('h')
 	// Load command line arguments.
 	kingpin.Parse()
 	// Setup signal catching.
 	sigs := make(chan os.Signal, 1)
 	// Catch  listed signals.
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	// Set logger.
+	logger := promlog.New(promlogConfig)
 	// Method invoked upon seeing signal.
-	go func() {
+	go func(logger log.Logger) {
 		s := <-sigs
-		log.Printf("[WARN] RECEIVED SIGNAL %s", s)
-		log.Printf("[WARN] Stopping  %s", filepath.Base(os.Args[0]))
+		level.Warn(logger).Log(
+			"msg", "Stopping exporter",
+			"name", filepath.Base(os.Args[0]),
+			"signal", s)
 		os.Exit(1)
-	}()
-	log.Printf("[INFO] Starting %s", filepath.Base(os.Args[0]))
-	log.Printf("[INFO] Version %s", version)
-	log.Printf("[INFO] Verbose info %t", *verboseInfo)
-	log.Printf("[INFO] Collecting metrics every %d seconds", *collectionInterval)
+	}(logger)
+	level.Info(logger).Log(
+		"msg", "Starting exporter",
+		"name", filepath.Base(os.Args[0]),
+		"version", version,
+		"verbose.info", *verboseInfo)
 	if *backrestCustomConfig != "" {
-		log.Printf("[INFO] Custom pgBackRest configuration file %s", *backrestCustomConfig)
+		level.Info(logger).Log(
+			"mgs", "Custom pgBackRest configuration file",
+			"file", *backrestCustomConfig)
 	}
 	if *backrestCustomConfigIncludePath != "" {
-		log.Printf("[INFO] Custom path to additional pgBackRest configuration files %s", *backrestCustomConfigIncludePath)
+		level.Info(logger).Log(
+			"mgs", "Custom path to additional pgBackRest configuration files",
+			"path", *backrestCustomConfigIncludePath)
 	}
 	if strings.Join(*backrestIncludeStanza, "") != "" {
 		for _, stanza := range *backrestIncludeStanza {
-			log.Printf("[INFO] Collecting metrics for specific stanza %s", stanza)
+			level.Info(logger).Log(
+				"mgs", "Collecting metrics for specific stanza",
+				"stanza", stanza)
 		}
 	}
 	if strings.Join(*backrestExcludeStanza, "") != "" {
 		for _, stanza := range *backrestExcludeStanza {
-			log.Printf("[INFO] Exclude collecting metrics for specific stanza %s", stanza)
+			level.Info(logger).Log(
+				"mgs", "Exclude collecting metrics for specific stanza",
+				"stanza", stanza)
 		}
 	}
 	// Setup parameters for exporter.
 	backrest.SetPromPortandPath(*promPort, *promPath)
-	log.Printf("[INFO] Use port %s and HTTP endpoint %s", *promPort, *promPath)
+	level.Info(logger).Log(
+		"mgs", "Use port and HTTP endpoint",
+		"port", *promPort,
+		"endpoint", *promPath)
 	// Start exporter.
-	backrest.StartPromEndpoint()
+	backrest.StartPromEndpoint(logger)
 	// Set up exporter info metric.
 	// There is no need to reset metric every time,
 	// it is set up once at startup.
-	backrest.GetExporterInfo(version)
+	backrest.GetExporterInfo(version, logger)
 	for {
 		// Reset metrics.
 		backrest.ResetMetrics()
@@ -102,6 +127,7 @@ func main() {
 			*backrestIncludeStanza,
 			*backrestExcludeStanza,
 			*verboseInfo,
+			logger,
 		)
 		// Sleep for 'collection.interval' seconds.
 		time.Sleep(time.Duration(*collectionInterval) * time.Second)

@@ -1,10 +1,12 @@
 package backrest
 
 import (
-	"log"
 	"net/http"
+	"os"
 	"time"
 
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -169,8 +171,8 @@ func SetPromPortandPath(port, endpoint string) {
 }
 
 // StartPromEndpoint run HTTP endpoint
-func StartPromEndpoint() {
-	go func() {
+func StartPromEndpoint(logger log.Logger) {
+	go func(logger log.Logger) {
 		http.Handle(promEndpoint, promhttp.Handler())
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<html>
@@ -181,8 +183,11 @@ func StartPromEndpoint() {
 			</body>
 			</html>`))
 		})
-		log.Fatalf("[ERROR] Run HTTP endpoint failed, %v", http.ListenAndServe(":"+promPort, nil))
-	}()
+		if err := http.ListenAndServe(":"+promPort, nil); err != nil {
+			level.Error(logger).Log("msg", "Run HTTP endpoint failed", "err", err)
+			os.Exit(1)
+		}
+	}(logger)
 }
 
 // ResetMetrics reset metrics
@@ -203,7 +208,7 @@ func ResetMetrics() {
 }
 
 // GetPgBackRestInfo get and parse pgBackRest info and set metrics
-func GetPgBackRestInfo(config, configIncludePath string, stanzas []string, stanzasExclude []string, verbose bool) {
+func GetPgBackRestInfo(config, configIncludePath string, stanzas []string, stanzasExclude []string, verbose bool, logger log.Logger) {
 	// To calculate the time elapsed since the last completed full, differential or incremental backup.
 	// For all stanzas values are calculated relative to one value.
 	currentUnixTime := time.Now().Unix()
@@ -213,31 +218,31 @@ func GetPgBackRestInfo(config, configIncludePath string, stanzas []string, stanz
 		// Check that stanza from the include list is not in the exclude list.
 		// If stanza not set - checking for entry into the exclude list will be performed later.
 		if stanzaNotInExclude(stanza, stanzasExclude) {
-			stanzaData, err := getAllInfoData(config, configIncludePath, stanza)
+			stanzaData, err := getAllInfoData(config, configIncludePath, stanza, logger)
 			if err != nil {
-				log.Printf("[ERROR] Get data from pgBackRest failed, %v", err)
+				level.Error(logger).Log("msg", "Get data from pgBackRest failed", "err", err)
 			}
 			parseStanzaData, err := parseResult(stanzaData)
 			if err != nil {
-				log.Printf("[ERROR] Parse JSON failed, %v", err)
+				level.Error(logger).Log("msg", "Parse JSON failed", "err", err)
 			}
 			if len(parseStanzaData) == 0 {
-				log.Printf("[WARN] No backup data returned")
+				level.Warn(logger).Log("msg", "No backup data returned")
 			}
 			for _, singleStanza := range parseStanzaData {
 				// If stanza is in the exclude list, skip it.
 				if stanzaNotInExclude(singleStanza.Name, stanzasExclude) {
-					getMetrics(singleStanza, verbose, currentUnixTime, setUpMetricValue)
+					getMetrics(singleStanza, verbose, currentUnixTime, setUpMetricValue, logger)
 				}
 			}
 		} else {
-			log.Printf("[WARN] Stanza %s is specified in include and exclude lists", stanza)
+			level.Warn(logger).Log("msg", "Stanza is specified in include and exclude lists", "stanza", stanza)
 		}
 
 	}
 }
 
 // GetExporterInfo set exporter info metric
-func GetExporterInfo(exporterVersion string) {
-	getExporterMetrics(exporterVersion, setUpMetricValue)
+func GetExporterInfo(exporterVersion string, logger log.Logger) {
+	getExporterMetrics(exporterVersion, setUpMetricValue, logger)
 }
