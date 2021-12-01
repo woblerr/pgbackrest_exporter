@@ -505,7 +505,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				)
 				if err != nil {
 					level.Error(logger).Log(
-						"Metric pgbackrest_wal_archive_status set up failed",
+						"msg", "Metric pgbackrest_wal_archive_status set up failed",
 						"err", err,
 					)
 				}
@@ -537,7 +537,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				)
 				if err != nil {
 					level.Error(logger).Log(
-						"Metric pgbackrest_wal_archive_status set up failed",
+						"msg", "Metric pgbackrest_wal_archive_status set up failed",
 						"err", err,
 					)
 				}
@@ -570,7 +570,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 			)
 			if err != nil {
 				level.Error(logger).Log(
-					"Metric pgbackrest_wal_archive_status set up failed",
+					"msg", "Metric pgbackrest_wal_archive_status set up failed",
 					"err", err,
 				)
 			}
@@ -645,7 +645,7 @@ func getExporterMetrics(exporterVer string, setUpMetricValueFun setUpMetricValue
 	)
 	if err != nil {
 		level.Error(logger).Log(
-			"Metric pgbackrest_exporter_info set up failed",
+			"msg", "Metric pgbackrest_exporter_info set up failed",
 			"err", err,
 		)
 	}
