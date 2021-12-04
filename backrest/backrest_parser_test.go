@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
 )
@@ -100,7 +101,7 @@ pgbackrest_stanza_status{stanza="demo"} 0
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ResetMetrics()
-			getMetrics(tt.args.data, tt.args.verbose, curretnUnixTimeForTests, tt.args.setUpMetricValueFun)
+			getMetrics(tt.args.data, tt.args.verbose, curretnUnixTimeForTests, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaStatusMetric,
@@ -195,7 +196,7 @@ pgbackrest_stanza_status{stanza="demo"} 0
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ResetMetrics()
-			getMetrics(tt.args.data, tt.args.verbose, curretnUnixTimeForTests, tt.args.setUpMetricValueFun)
+			getMetrics(tt.args.data, tt.args.verbose, curretnUnixTimeForTests, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaStatusMetric,
@@ -290,7 +291,7 @@ pgbackrest_stanza_status{stanza="demo"} 0
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ResetMetrics()
-			getMetrics(tt.args.data, tt.args.verbose, curretnUnixTimeForTests, tt.args.setUpMetricValueFun)
+			getMetrics(tt.args.data, tt.args.verbose, curretnUnixTimeForTests, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaStatusMetric,
@@ -324,12 +325,13 @@ pgbackrest_stanza_status{stanza="demo"} 0
 	}
 }
 
-func TestGetMetricsErrors(t *testing.T) {
+func TestGetMetricsErrorsAndDebugs(t *testing.T) {
 	type args struct {
 		data                stanza
 		verbose             bool
 		setUpMetricValueFun setUpMetricValueFunType
 		errorsCount         int
+		debugsCount         int
 	}
 	tests := []struct {
 		name string
@@ -341,6 +343,7 @@ func TestGetMetricsErrors(t *testing.T) {
 				false,
 				fakeSetUpMetricValue,
 				13,
+				13,
 			},
 		},
 		{"getMetricsVerboseTrueLogError",
@@ -348,6 +351,7 @@ func TestGetMetricsErrors(t *testing.T) {
 				templateStanza("000000010000000000000004", "000000010000000000000001", true),
 				true,
 				fakeSetUpMetricValue,
+				13,
 				13,
 			},
 		},
@@ -357,6 +361,7 @@ func TestGetMetricsErrors(t *testing.T) {
 				false,
 				fakeSetUpMetricValue,
 				13,
+				13,
 			},
 		},
 		{"getMetricsVerboseFalseLogErrorRepoAbsent",
@@ -364,6 +369,7 @@ func TestGetMetricsErrors(t *testing.T) {
 				templateStanzaRepoAbsent("000000010000000000000004", "000000010000000000000001", false),
 				false,
 				fakeSetUpMetricValue,
+				12,
 				12,
 			},
 		},
@@ -373,6 +379,7 @@ func TestGetMetricsErrors(t *testing.T) {
 				true,
 				fakeSetUpMetricValue,
 				12,
+				12,
 			},
 		},
 		{"getMetricsWithoutWalLogErrorRepoAbsent",
@@ -381,17 +388,21 @@ func TestGetMetricsErrors(t *testing.T) {
 				false,
 				fakeSetUpMetricValue,
 				12,
+				12,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			out := &bytes.Buffer{}
-			log.SetOutput(out)
-			getMetrics(tt.args.data, tt.args.verbose, curretnUnixTimeForTests, tt.args.setUpMetricValueFun)
-			errorsOutputCount := strings.Count(out.String(), "[ERROR]")
-			if tt.args.errorsCount != errorsOutputCount {
-				t.Errorf("\nVariables do not match:\n%d\nwant:\n%d", tt.args.errorsCount, errorsOutputCount)
+			lc := log.NewLogfmtLogger(out)
+			getMetrics(tt.args.data, tt.args.verbose, curretnUnixTimeForTests, tt.args.setUpMetricValueFun, lc)
+			errorsOutputCount := strings.Count(out.String(), "level=error")
+			debugssOutputCount := strings.Count(out.String(), "level=debug")
+			if tt.args.errorsCount != errorsOutputCount || tt.args.debugsCount != debugssOutputCount {
+				t.Errorf("\nVariables do not match:\nerrors=%d, debugs=%d\nwant:\nerrors=%d, debugs=%d",
+					tt.args.errorsCount, tt.args.debugsCount,
+					errorsOutputCount, debugssOutputCount)
 			}
 		})
 	}
@@ -851,7 +862,7 @@ pgbackrest_exporter_info{version="unknown"} 1
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			getExporterMetrics(tt.args.exporterVer, tt.args.setUpMetricValueFun)
+			getExporterMetrics(tt.args.exporterVer, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(pgbrExporterInfoMetric)
 			metricFamily, err := reg.Gather()
@@ -871,11 +882,12 @@ pgbackrest_exporter_info{version="unknown"} 1
 	}
 }
 
-func TestGetExporterInfoErrors(t *testing.T) {
+func TestGetExporterInfoErrorsAndDebugs(t *testing.T) {
 	type args struct {
 		exporterVer         string
 		setUpMetricValueFun setUpMetricValueFunType
 		errorsCount         int
+		debugsCount         int
 	}
 	tests := []struct {
 		name string
@@ -886,17 +898,22 @@ func TestGetExporterInfoErrors(t *testing.T) {
 				`unknown`,
 				fakeSetUpMetricValue,
 				1,
+				1,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			out := &bytes.Buffer{}
-			log.SetOutput(out)
-			getExporterMetrics(tt.args.exporterVer, tt.args.setUpMetricValueFun)
-			errorsOutputCount := strings.Count(out.String(), "[ERROR]")
-			if tt.args.errorsCount != errorsOutputCount {
-				t.Errorf("\nVariables do not match:\n%d\nwant:\n%d", tt.args.errorsCount, errorsOutputCount)
+			logger := log.NewLogfmtLogger(out)
+			lc := log.With(logger, level.AllowInfo())
+			getExporterMetrics(tt.args.exporterVer, tt.args.setUpMetricValueFun, lc)
+			errorsOutputCount := strings.Count(out.String(), "level=error")
+			debugsOutputCount := strings.Count(out.String(), "level=debug")
+			if tt.args.errorsCount != errorsOutputCount || tt.args.debugsCount != debugsOutputCount {
+				t.Errorf("\nVariables do not match:\nerrors=%d, debugs=%d\nwant:\nerrors=%d, debugs=%d",
+					tt.args.errorsCount, tt.args.debugsCount,
+					errorsOutputCount, debugsOutputCount)
 			}
 		})
 	}
