@@ -10,11 +10,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/exporter-toolkit/web"
 )
 
 var (
 	promPort               string
 	promEndpoint           string
+	promTLSConfigPath      string
 	pgbrStanzaStatusMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_stanza_status",
 		Help: "Current stanza status.",
@@ -164,10 +166,12 @@ var (
 		[]string{"version"})
 )
 
-// SetPromPortandPath sets HTTP endpoint parameters from command line arguments 'port' and 'endpoint'
-func SetPromPortandPath(port, endpoint string) {
+// SetPromPortandPath sets HTTP endpoint parameters
+// from command line arguments 'port', 'endpoint' and 'tlsConfigPath'
+func SetPromPortandPath(port, endpoint, tlsConfigPath string) {
 	promPort = port
 	promEndpoint = endpoint
+	promTLSConfigPath = tlsConfigPath
 }
 
 // StartPromEndpoint run HTTP endpoint
@@ -183,7 +187,8 @@ func StartPromEndpoint(logger log.Logger) {
 			</body>
 			</html>`))
 		})
-		if err := http.ListenAndServe(":"+promPort, nil); err != nil {
+		server := &http.Server{Addr: ":" + promPort}
+		if err := web.ListenAndServe(server, promTLSConfigPath, logger); err != nil {
 			level.Error(logger).Log("msg", "Run HTTP endpoint failed", "err", err)
 			os.Exit(1)
 		}
