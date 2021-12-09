@@ -114,7 +114,9 @@ func main() {
 	level.Info(logger).Log(
 		"mgs", "Use port and HTTP endpoint",
 		"port", *promPort,
-		"endpoint", *promPath)
+		"endpoint", *promPath,
+		"web-config", *promTLSConfigFile,
+	)
 	// Start exporter.
 	backrest.StartPromEndpoint(logger)
 	// Set up exporter info metric.
