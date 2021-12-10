@@ -3,17 +3,20 @@ package backrest
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/go-kit/log"
+	"github.com/prometheus/common/promlog"
 )
 
 var (
 	mockStdout, mockStderr string
 	mockExit               int
+	logger                 = getLogger()
 )
 
 func TestSetPromPortandPath(t *testing.T) {
@@ -72,31 +75,31 @@ func TestGetPgBackRestInfo(t *testing.T) {
 				`{"held":false}},"message":"ok"}}]`,
 			`WARN: environment contains invalid option 'test'`,
 			0,
-			"[ERROR] pgBackRest message: WARN: environment contains invalid option 'test'"},
+			`msg="pgBackRest message" err="WARN: environment contains invalid option 'test'`},
 		{"GetPgBackRestInfoBadDataReturn",
 			args{"", "", []string{""}, []string{""}, false},
 			``,
-			`ERROR: [029]: missing '=' in key/value at line 9: test`,
+			`msg="pgBackRest message" err="ERROR: [029]: missing '=' in key/value at line 9: test"`,
 			29,
-			"[ERROR] Get data from pgBackRest failed, exit status 29"},
+			`msg="Get data from pgBackRest failed" err="exit status 29`},
 		{"GetPgBackRestInfoZeroDataReturn",
 			args{"", "", []string{""}, []string{""}, false},
 			`[]`,
 			``,
 			0,
-			"[WARN] No backup data returned"},
+			`msg="No backup data returned"`},
 		{"GetPgBackRestInfoJsonUnmarshalFail",
 			args{"", "", []string{""}, []string{""}, false},
 			`[{}`,
 			``,
 			0,
-			"[ERROR] Parse JSON failed, unexpected end of JSON input"},
+			`msg="Parse JSON failed" err="unexpected end of JSON input"`},
 		{"GetPgBackRestInfoEqualIncludeExcludeLists",
 			args{"", "", []string{"demo"}, []string{"demo"}, false},
 			``,
 			``,
 			0,
-			"[WARN] Stanza demo is specified in include and exclude lists"},
+			`msg="Stanza is specified in include and exclude lists" stanza=demo`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -107,13 +110,14 @@ func TestGetPgBackRestInfo(t *testing.T) {
 			mockExit = tt.mockExit
 			defer func() { execCommand = exec.Command }()
 			out := &bytes.Buffer{}
-			log.SetOutput(out)
+			lc := log.NewLogfmtLogger(out)
 			GetPgBackRestInfo(
 				tt.args.config,
 				tt.args.configIncludePath,
 				tt.args.stanzas,
 				tt.args.stanzasExclude,
 				tt.args.verbose,
+				lc,
 			)
 			if !strings.Contains(out.String(), tt.testText) {
 				t.Errorf("\nVariable do not match:\n%s\nwant:\n%s", tt.testText, out.String())
@@ -142,4 +146,23 @@ func TestExecCommandHelper(t *testing.T) {
 	fmt.Fprintf(os.Stderr, "%s", os.Getenv("STDERR"))
 	i, _ := strconv.Atoi(os.Getenv("EXIT_STATUS"))
 	os.Exit(i)
+}
+
+// Set logger for tests.
+// If it's necessary to capture the logs output in the test,
+// a separate logger is used inside the test.
+// The info logging level is used.
+func getLogger() log.Logger {
+	var err error
+	logLevel := &promlog.AllowedLevel{}
+	err = logLevel.Set("info")
+	if err != nil {
+		panic(err)
+	}
+	promlogConfig := &promlog.Config{}
+	promlogConfig.Level = logLevel
+	if err != nil {
+		panic(err)
+	}
+	return promlog.New(promlogConfig)
 }
