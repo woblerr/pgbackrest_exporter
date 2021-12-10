@@ -123,6 +123,7 @@ Flags:
       --prom.port="9854"      Port for prometheus metrics to listen on.
       --prom.endpoint="/metrics"  
                               Endpoint used for metrics.
+      --prom.web-config=""    [EXPERIMENTAL] Path to config yaml file that can enable TLS or authentication.
       --collect.interval=600  Collecting metrics interval in seconds.
       --backrest.config=""    Full path to pgBackRest configuration file.
       --backrest.config-include-path=""  
@@ -157,6 +158,9 @@ When flag `--verbose.info` is specified - WALMin and WALMax are added as metric 
 This creates new different time series on each WAL archiving.
 
 When `--log.level=debug` is specified - information of values and labels for metrics is printing to the log.
+
+The flag `--prom.web-config` allows to specify the path to the configuration for TLS and/or basic authentication.<br>
+The description of TLS configuration and basic authentication can be found at [exporter-toolkit/web](https://github.com/prometheus/exporter-toolkit/blob/v0.7.1/docs/web-configuration.md).
 
 ### Building and running docker
 By default, pgBackRest version is `2.36`. Another version can be specified via arguments.
