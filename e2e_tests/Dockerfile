@@ -15,7 +15,8 @@ ARG REPO_BUILD_TAG
 ARG PG_VERSION
 ENV BACKREST_USER="postgres" \
     BACKREST_GROUP="postgres" \
-    EXPORTER_PORT="9854"
+    EXPORTER_PORT="9854" \
+    EXPORTER_CONFIG=""
 RUN apt-get update -y \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y \
         curl \
@@ -39,8 +40,10 @@ COPY --chown=${BACKREST_USER}:${BACKREST_GROUP} \
         ./e2e_tests/postgresql.auto.conf \
         /var/lib/postgresql/${PG_VERSION}/main/postgresql.auto.conf
 COPY ./e2e_tests/pgbackrest.conf /etc/pgbackrest/pgbackrest.conf
-COPY --chmod=755 ./e2e_tests/prepare_e2e.sh /e2e_tests/prepare_e2e.sh
+COPY --chown=${BACKREST_USER}:${BACKREST_GROUP} --chmod=400 ./e2e_tests/server.* /e2e_tests/
+COPY --chown=${BACKREST_USER}:${BACKREST_GROUP} --chmod=644 ./e2e_tests/web_config_*.yml /e2e_tests/
+COPY --chown=${BACKREST_USER}:${BACKREST_GROUP} --chmod=755 ./e2e_tests/prepare_e2e.sh /e2e_tests/prepare_e2e.sh
 COPY --from=builder --chmod=755 /build/pgbackrest_exporter /etc/pgbackrest/pgbackrest_exporter
 ENTRYPOINT ["/entrypoint.sh"]
-CMD /e2e_tests/prepare_e2e.sh
+CMD /e2e_tests/prepare_e2e.sh ${EXPORTER_CONFIG}
 EXPOSE ${EXPORTER_PORT}

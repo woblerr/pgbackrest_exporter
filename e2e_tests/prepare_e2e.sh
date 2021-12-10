@@ -3,11 +3,14 @@
 # Exit on errors and on command pipe failures.
 set -e
 
+EXPORTER_CONFIG="${1}"
+
 PG_CLUSTER="main"
 PG_DATABASE="test_db"
 PG_BIN="/usr/lib/postgresql/13/bin"
 PG_DATA="/var/lib/postgresql/13/${PG_CLUSTER}"
 BACKREST_STANZA="demo"
+EXPORTER_BIN="/etc/pgbackrest/pgbackrest_exporter"
 
 # Enable checksums.
 ${PG_BIN}/pg_checksums -e -D ${PG_DATA}
@@ -28,4 +31,8 @@ echo "currupt" >> ${db_file}
 # Create diff backup with corrupted databse file in repo1.
 pgbackrest backup --stanza ${BACKREST_STANZA} --type diff  --repo 2 --log-level-console warn
 # Run pgbackrest_exporter.
-/etc/pgbackrest/pgbackrest_exporter
+if [[ ! -z ${EXPORTER_CONFIG} ]]; then
+    $(${EXPORTER_BIN} --prom.web-config=${EXPORTER_CONFIG})
+else
+    $(${EXPORTER_BIN})
+fi
