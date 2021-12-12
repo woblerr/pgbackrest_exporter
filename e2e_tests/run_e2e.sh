@@ -1,9 +1,42 @@
 #!/usr/bin/env bash
 
-PORT="${1}"
-[[ -z ${PORT} ]] && exit 1
+PORT="${1:-9854}"
+EXPORTER_TLS="${2:-false}"
+EXPORTER_AUTH="${3:-false}"
 
-EXPORTER_URL="http://localhost:${PORT}/metrics"
+# Users for test basic auth.
+AUTH_USER="test"
+AUTH_PASSWORD="test"
+
+# Use http or https.
+case ${EXPORTER_TLS} in
+    "false")
+        EXPORTER_URL="http://localhost:${PORT}/metrics"
+        CURL_FLAGS=""
+        ;;
+    "true")
+        EXPORTER_URL="https://localhost:${PORT}/metrics"
+        CURL_FLAGS="-k"
+        ;;
+    *)
+        echo "[ERROR] incorect value: get=${EXPORTER_TLS}, want=true or false"
+        exit 1
+        ;;
+esac
+
+# Use basic auth or not.
+case ${EXPORTER_AUTH} in
+    "false")
+        ;;
+    "true")
+        CURL_FLAGS+=" -u ${AUTH_USER}:${AUTH_PASSWORD}"
+        ;;
+    *)
+        echo "[ERROR] incorect value: get=${EXPORTER_AUTH}, want=true or false"
+        exit 1
+        ;;
+esac    
+
 # A simple test to check the number of metrics.
 # Format: regex for metric | repetitions.
 declare -a REGEX_LIST=(
@@ -31,7 +64,7 @@ for i in "${REGEX_LIST[@]}"
 do
     regex=$(echo ${i} | cut -f1 -d'|')
     cnt=$(echo ${i} | cut -f2 -d'|')
-    metric_cnt=$(curl -s ${EXPORTER_URL} | grep -E "${regex}" | wc -l | tr -d ' ')
+    metric_cnt=$(curl -s ${CURL_FLAGS} ${EXPORTER_URL} | grep -E "${regex}" | wc -l | tr -d ' ')
     if [[ ${metric_cnt} != ${cnt} ]]; then
         echo "[ERROR] on regex '${regex}': get=${metric_cnt}, want=${cnt}"
         exit 1

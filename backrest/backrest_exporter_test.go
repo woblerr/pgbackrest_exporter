@@ -21,11 +21,12 @@ var (
 
 func TestSetPromPortandPath(t *testing.T) {
 	var (
-		testPort    = "9854"
-		testEndpoit = "/metrics"
+		testPort          = "9854"
+		testEndpoit       = "/metrics"
+		testTLSConfigPath = ""
 	)
-	SetPromPortandPath(testPort, testEndpoit)
-	if testPort != promPort || testEndpoit != promEndpoint {
+	SetPromPortandPath(testPort, testEndpoit, testTLSConfigPath)
+	if testPort != promPort || testEndpoit != promEndpoint || testTLSConfigPath != promTLSConfigPath {
 		t.Errorf("\nVariables do not match: %s,\nwant: %s;\nendpoint: %s,\nwant: %s", testPort, promPort, testEndpoit, promEndpoint)
 	}
 }

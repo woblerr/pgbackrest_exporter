@@ -1,0 +1,5 @@
+tls_server_config:
+  cert_file: "/e2e_tests/server.crt"
+  key_file: "/e2e_tests/server.key"
+basic_auth_users:
+  test: $2y$10$9Gw4GwavGCIf0hSPc549e.8x.nhNgMCAkDOWrgTppOg31s7hHTQoi

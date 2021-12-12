@@ -28,6 +28,10 @@ func main() {
 			"prom.endpoint",
 			"Endpoint used for metrics.",
 		).Default("/metrics").String()
+		promTLSConfigFile = kingpin.Flag(
+			"prom.web-config",
+			"[EXPERIMENTAL] Path to config yaml file that can enable TLS or authentication.",
+		).Default("").String()
 		collectionInterval = kingpin.Flag(
 			"collect.interval",
 			"Collecting metrics interval in seconds.",
@@ -106,11 +110,13 @@ func main() {
 		}
 	}
 	// Setup parameters for exporter.
-	backrest.SetPromPortandPath(*promPort, *promPath)
+	backrest.SetPromPortandPath(*promPort, *promPath, *promTLSConfigFile)
 	level.Info(logger).Log(
 		"mgs", "Use port and HTTP endpoint",
 		"port", *promPort,
-		"endpoint", *promPath)
+		"endpoint", *promPath,
+		"web-config", *promTLSConfigFile,
+	)
 	// Start exporter.
 	backrest.StartPromEndpoint(logger)
 	// Set up exporter info metric.
