@@ -19,7 +19,7 @@ test:
 test-e2e:
 	@echo "Run end-to-end tests for $(APP_NAME)"
 	@if [ -n "$(DOCKER_CONTAINER_E2E)" ]; then docker rm -f "$(DOCKER_CONTAINER_E2E)"; fi;
-	docker build --pull -f e2e_tests/Dockerfile --build-arg BACKREST_VERSION=$(BACKREST_VERSION) -t $(APP_NAME)_e2e .
+	DOCKER_BUILDKIT=1 docker build --pull -f e2e_tests/Dockerfile --build-arg BACKREST_VERSION=$(BACKREST_VERSION) -t $(APP_NAME)_e2e .
 	$(call e2e_basic)
 	$(call e2e_tls_auth,/e2e_tests/web_config_empty.yml,false,false)
 	$(call e2e_tls_auth,/e2e_tests/web_config_TLS_noAuth.yml,true,false)
@@ -47,7 +47,7 @@ build-darwin:
 .PHONY: dist
 dist:
 	- @mkdir -p dist
-	docker build -f Dockerfile.artifacts --progress=plain -t pgbackrest_exporter_dist .
+	DOCKER_BUILDKIT=1 docker build -f Dockerfile.artifacts --progress=plain -t pgbackrest_exporter_dist .
 	- @docker rm -f pgbackrest_exporter_dist 2>/dev/null || exit 0
 	docker run -d --name=pgbackrest_exporter_dist pgbackrest_exporter_dist
 	docker cp pgbackrest_exporter_dist:/artifacts dist/
@@ -57,7 +57,7 @@ dist:
 docker:
 	@echo "Build $(APP_NAME) docker container"
 	@echo "Version $(BRANCH)-$(GIT_REV)"
-	docker build --pull -f Dockerfile --build-arg REPO_BUILD_TAG=$(BRANCH)-$(GIT_REV) --build-arg BACKREST_VERSION=$(BACKREST_VERSION) -t $(APP_NAME) .
+	DOCKER_BUILDKIT=1 docker build --pull -f Dockerfile --build-arg REPO_BUILD_TAG=$(BRANCH)-$(GIT_REV) --build-arg BACKREST_VERSION=$(BACKREST_VERSION) -t $(APP_NAME) .
 
 .PHONY: prepare-service
 prepare-service:
