@@ -52,6 +52,10 @@ jobs:
       - name: Available platforms
         run: echo ${{ steps.buildx.outputs.platforms }}
 
+      - name: Run end-to-end tests
+        run: |
+          make test-e2e
+
       - name: Build and push master image to ghcr.io and Docker Hub
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         env:
