@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 APP_NAME := pgbackrest_exporter
 BRANCH_FULL := $(shell git rev-parse --abbrev-ref HEAD)
 BRANCH := $(subst /,-,$(BRANCH_FULL))
