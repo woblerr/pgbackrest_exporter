@@ -100,7 +100,7 @@ For earlier versions, some metrics may not be collected or have insignificant la
 
 * `pgBackRest < v2.32`
 
-    The following metric will be absent: `pgbackrest_repo_status`. For other metrics lable will be `repo_key="0"`.
+    The following metric will be absent: `pgbackrest_repo_status`. For other metrics label will be `repo_key="0"`.
 
 ## Getting Started
 ### Building and running
