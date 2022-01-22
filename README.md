@@ -163,7 +163,7 @@ The flag `--prom.web-config` allows to specify the path to the configuration for
 The description of TLS configuration and basic authentication can be found at [exporter-toolkit/web](https://github.com/prometheus/exporter-toolkit/blob/v0.7.1/docs/web-configuration.md).
 
 ### Building and running docker
-By default, pgBackRest version is `2.36`. Another version can be specified via arguments.
+By default, pgBackRest version is `2.37`. Another version can be specified via arguments.
 For base image used [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest) image.
 
 ```bash
