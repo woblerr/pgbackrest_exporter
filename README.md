@@ -163,7 +163,7 @@ The flag `--prom.web-config` allows to specify the path to the configuration for
 The description of TLS configuration and basic authentication can be found at [exporter-toolkit/web](https://github.com/prometheus/exporter-toolkit/blob/v0.7.1/docs/web-configuration.md).
 
 ### Building and running docker
-By default, pgBackRest version is `2.36`. Another version can be specified via arguments.
+By default, pgBackRest version is `2.37`. Another version can be specified via arguments.
 For base image used [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest) image.
 
 ```bash
@@ -250,6 +250,35 @@ docker run -d \
     -e STANZA_EXCLUDE=demo \
     -p 9854:9854 \
     -v  /etc/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf \
+    pgbackrest_exporter
+```
+
+To communicate with pgBackRest TLS server you need correct pgBackRest config, for example:
+
+```ini
+[demo]
+pg1-path=/var/lib/postgresql/13/main
+
+[global]
+repo1-host=backup
+repo1-host-ca-file=/etc/pgbackrest/cert/pgbackrest-test-ca.crt
+repo1-host-cert-file=/etc/pgbackrest/cert/pgbackrest-test-client.crt
+repo1-host-key-file=/etc/pgbackrest/cert/pgbackrest-test-client.key
+repo1-host-type=tls
+repo1-retention-diff=2
+repo1-retention-full=2
+```
+
+And run:
+
+```bash
+docker run -d \
+    --name pgbackrest_exporter \
+    -e BACKREST_UID=1001 \
+    -e BACKREST_GID=1001 \
+    -p 9854:9854 \
+    -v /etc/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf \
+    -v /etc/pgbackrest/cert:/etc/pgbackrest/cert \
     pgbackrest_exporter
 ```
 ### Running as systemd service
