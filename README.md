@@ -252,6 +252,35 @@ docker run -d \
     -v  /etc/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf \
     pgbackrest_exporter
 ```
+
+To communicate with pgBackRest TLS server you need correct pgBackRest config, for example:
+
+```ini
+[demo]
+pg1-path=/var/lib/postgresql/13/main
+
+[global]
+repo1-host=backup
+repo1-host-ca-file=/etc/pgbackrest/cert/pgbackrest-test-ca.crt
+repo1-host-cert-file=/etc/pgbackrest/cert/pgbackrest-test-client.crt
+repo1-host-key-file=/etc/pgbackrest/cert/pgbackrest-test-client.key
+repo1-host-type=tls
+repo1-retention-diff=2
+repo1-retention-full=2
+```
+
+And run:
+
+```bash
+docker run -d \
+    --name pgbackrest_exporter \
+    -e BACKREST_UID=1001 \
+    -e BACKREST_GID=1001 \
+    -p 9854:9854 \
+    -v /etc/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf \
+    -v /etc/pgbackrest/cert:/etc/pgbackrest/cert \
+    pgbackrest_exporter
+```
 ### Running as systemd service
 
 * Register `pgbackrest_exporter` (already builded, if not - exec `make build` before) as a systemd service:
