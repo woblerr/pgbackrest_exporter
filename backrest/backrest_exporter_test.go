@@ -58,7 +58,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 				`"backup":[{"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
 				`"backrest":{"format":5,"version":"2.34"},"database":{"id":1,"repo-key":1},` +
 				`"info":{"delta":24316343,"repository":{"delta":2969512,"size":2969512},"size":24316343},` +
-				`"label":"20210614-213200F","prior":null,"reference":null,"timestamp":{"start":1623706320,` +
+				`"label":"20210614-213200F","lsn":{"start":"0/2000028","stop":"0/2000100"},"prior":null,"reference":null,"timestamp":{"start":1623706320,` +
 				`"stop":1623706322},"type":"full"}],"cipher":"none","db":[{"id":1,"repo-key":1,` +
 				`"system-id":6970977677138971135,"version":"13"}],"name":"demo","repo":[{"cipher":"none",` +
 				`"key":1,"status":{"code":0,"message":"ok"}}],"status":{"code":0,"lock":{"backup":` +
@@ -73,7 +73,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 				`"backup":[{"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
 				`"backrest":{"format":5,"version":"2.34"},"database":{"id":1,"repo-key":1},` +
 				`"info":{"delta":24316343,"repository":{"delta":2969512,"size":2969512},"size":24316343},` +
-				`"label":"20210614-213200F","prior":null,"reference":null,"timestamp":{"start":1623706320,` +
+				`"label":"20210614-213200F","lsn":{"start":"0/2000028","stop":"0/2000100"},"prior":null,"reference":null,"timestamp":{"start":1623706320,` +
 				`"stop":1623706322},"type":"full"}],"cipher":"none","db":[{"id":1,"repo-key":1,` +
 				`"system-id":6970977677138971135,"version":"13"}],"name":"demo","repo":[{"cipher":"none",` +
 				`"key":1,"status":{"code":0,"message":"ok"}}],"status":{"code":0,"lock":{"backup":` +

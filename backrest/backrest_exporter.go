@@ -40,6 +40,8 @@ var (
 			"backup_name",
 			"backup_type",
 			"database_id",
+			"lsn_start",
+			"lsn_stop",
 			"pg_version",
 			"prior",
 			"repo_key",

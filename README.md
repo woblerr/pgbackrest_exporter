@@ -91,9 +91,14 @@ The metrics provided by the client.
 
 ## Compatibility with pgBackRest versions
 
-All metrics are collected for `pgBackRest >= v2.36`.
+All metrics are collected for `pgBackRest >= v2.38`.
 
 For earlier versions, some metrics may not be collected or have insignificant label values:
+
+* `pgBackRest < v2.38`
+
+    For `pgbackrest_backup_info` metric labels will be `lsn_start=""` and `lsn_stop=""`.
+
 * `pgBackRest < v2.36`
 
     The following metric will be absent: `pgbackrest_backup_error_status`.
@@ -163,7 +168,7 @@ The flag `--prom.web-config` allows to specify the path to the configuration for
 The description of TLS configuration and basic authentication can be found at [exporter-toolkit/web](https://github.com/prometheus/exporter-toolkit/blob/v0.7.1/docs/web-configuration.md).
 
 ### Building and running docker
-By default, pgBackRest version is `2.37`. Another version can be specified via arguments.
+By default, pgBackRest version is `2.38`. Another version can be specified via arguments.
 For base image used [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest) image.
 
 ```bash
