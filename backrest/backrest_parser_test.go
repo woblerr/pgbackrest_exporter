@@ -543,6 +543,33 @@ func TestReturnConfigStanzaArgs(t *testing.T) {
 	}
 }
 
+func TestReturnConfigBackupTypeArgs(t *testing.T) {
+	type args struct {
+		backupType string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{"returnBackupTypeExecArgsEmpty",
+			args{""},
+			[]string{},
+		},
+		{"returnBackupTypeExecArgsNotEmpty",
+			args{"full"},
+			[]string{"--type", "full"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := returnConfigBackupTypeArgs(tt.args.backupType); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestConcatExecArgs(t *testing.T) {
 	type args struct {
 		slices [][]string
