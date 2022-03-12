@@ -91,9 +91,14 @@ The metrics provided by the client.
 
 ## Compatibility with pgBackRest versions
 
-All metrics are collected for `pgBackRest >= v2.36`.
+All metrics are collected for `pgBackRest >= v2.38`.
 
 For earlier versions, some metrics may not be collected or have insignificant label values:
+
+* `pgBackRest < v2.38`
+
+    For `pgbackrest_backup_info` metric labels will be `lsn_start=""` and `lsn_stop=""`.
+
 * `pgBackRest < v2.36`
 
     The following metric will be absent: `pgbackrest_backup_error_status`.
