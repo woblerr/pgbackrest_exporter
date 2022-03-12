@@ -32,7 +32,7 @@ The metrics provided by the client.
 
 * `pgbackrest_backup_info` - backup info.
 
-    Labels: backrest_ver, backup_name, backup_type, database_id, pg_version, prior, repo_key, stanza, wal_start, wal_stop.
+    Labels: backrest_ver, backup_name, backup_type, database_id, lsn_start, lsn_stop, pg_version, prior, repo_key, stanza, wal_start, wal_stop.
 
     Values description:
      - `1` - info about backup is exist.
@@ -124,22 +124,23 @@ Available configuration flags:
 usage: pgbackrest_exporter [<flags>]
 
 Flags:
-  -h, --help                  Show context-sensitive help (also try --help-long and --help-man).
-      --prom.port="9854"      Port for prometheus metrics to listen on.
+  -h, --help                     Show context-sensitive help (also try --help-long and --help-man).
+      --prom.port="9854"         Port for prometheus metrics to listen on.
       --prom.endpoint="/metrics"  
-                              Endpoint used for metrics.
-      --prom.web-config=""    [EXPERIMENTAL] Path to config yaml file that can enable TLS or authentication.
-      --collect.interval=600  Collecting metrics interval in seconds.
-      --backrest.config=""    Full path to pgBackRest configuration file.
+                                 Endpoint used for metrics.
+      --prom.web-config=""       [EXPERIMENTAL] Path to config yaml file that can enable TLS or authentication.
+      --collect.interval=600     Collecting metrics interval in seconds.
+      --backrest.config=""       Full path to pgBackRest configuration file.
       --backrest.config-include-path=""  
-                              Full path to additional pgBackRest configuration files.
+                                 Full path to additional pgBackRest configuration files.
       --backrest.stanza-include="" ...  
-                              Specific stanza for collecting metrics. Can be specified several times.
+                                 Specific stanza for collecting metrics. Can be specified several times.
       --backrest.stanza-exclude="" ...  
-                              Specific stanza to exclude from collecting metrics. Can be specified several times.
-      --verbose.info          Enable additional metrics labels.
-      --log.level=info        Only log messages with the given severity or above. One of: [debug, info, warn, error]
-      --log.format=logfmt     Output format of log messages. One of: [logfmt, json]
+                                 Specific stanza to exclude from collecting metrics. Can be specified several times.
+      --backrest.backup-type=""  Specific backup type for collecting metrics. One of: [full, incr, diff].
+      --verbose.info             Enable additional metrics labels.
+      --log.level=info           Only log messages with the given severity or above. One of: [debug, info, warn, error]
+      --log.format=logfmt        Output format of log messages. One of: [logfmt, json]
 ```
 
 #### Additional description of flags.
@@ -167,6 +168,12 @@ When `--log.level=debug` is specified - information of values and labels for met
 The flag `--prom.web-config` allows to specify the path to the configuration for TLS and/or basic authentication.<br>
 The description of TLS configuration and basic authentication can be found at [exporter-toolkit/web](https://github.com/prometheus/exporter-toolkit/blob/v0.7.1/docs/web-configuration.md).
 
+Custom `backup type` for collecting metrics can be specified via `--backrest.backup-type` flag. Valid values: `full`, `incr` or `diff`.<br>
+For example, `--backrest.backup-type=full`.<br>
+For this case, metrics will be collected only for `full` backups.<br>
+This flag works for `pgBackRest >= v2.38`.<br>
+For earlier pgBackRest versions there will be an error like: `option 'type' not valid for command 'info'`.
+
 ### Building and running docker
 By default, pgBackRest version is `2.38`. Another version can be specified via arguments.
 For base image used [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest) image.
@@ -188,6 +195,7 @@ Environment variables supported by this image:
 * `STANZA_INCLUDE` - specific stanza for collecting metrics, default `""`;
 * `STANZA_EXCLUDE` - specific stanza to exclude from collecting metrics, default `""`;
 * `COLLECT_INTERVAL` - collecting metrics interval in seconds, default `600`;
+* `BACKUP_TYPE` - specific backup type for collecting metrics, default `""`.
 
 You will need to mount the necessary directories or files inside the container.
 
@@ -253,6 +261,17 @@ To exclude specific stanza:
 docker run -d \
     --name pgbackrest_exporter \
     -e STANZA_EXCLUDE=demo \
+    -p 9854:9854 \
+    -v  /etc/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf \
+    pgbackrest_exporter
+```
+
+For specific backup type:
+
+```bash
+docker run -d \
+    --name pgbackrest_exporter \
+    -e BACKUP_TYPE=full \
     -p 9854:9854 \
     -v  /etc/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf \
     pgbackrest_exporter

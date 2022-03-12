@@ -54,7 +54,7 @@ func main() {
 		).Default("").PlaceHolder("\"\"").Strings()
 		backrestBackupType = kingpin.Flag(
 			"backrest.backup-type",
-			"Specific backup type for collecting metrics.",
+			"Specific backup type for collecting metrics. One of: [full, incr, diff].",
 		).Default("").String()
 		verboseInfo = kingpin.Flag(
 			"verbose.info",
