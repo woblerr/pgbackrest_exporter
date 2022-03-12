@@ -56,6 +56,10 @@ type databaseID struct {
 //    "error": bool,
 //    "info": {},
 //    "label": "string",
+//    "lsn": {
+//        "start": "string,
+//        "stop": "string"
+//    },
 //    "prior": "string",
 //    "reference": "string",
 //    "timestamp": {
@@ -73,12 +77,16 @@ type backup struct {
 		Format  int    `json:"format"`
 		Version string `json:"version"`
 	} `json:"backrest"`
-	Database  databaseID `json:"database"`
-	Error     *bool      `json:"error"`
-	Info      backupInfo `json:"info"`
-	Label     string     `json:"label"`
-	Prior     string     `json:"prior"`
-	Reference []string   `json:"reference"`
+	Database databaseID `json:"database"`
+	Error    *bool      `json:"error"`
+	Info     backupInfo `json:"info"`
+	Label    string     `json:"label"`
+	Lsn      struct {
+		StartLSN string `json:"start"`
+		StopLSN  string `json:"stop"`
+	} `json:"lsn"`
+	Prior     string   `json:"prior"`
+	Reference []string `json:"reference"`
 	Timestamp struct {
 		Start int64 `json:"start"`
 		Stop  int64 `json:"stop"`
