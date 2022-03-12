@@ -65,6 +65,21 @@ func returnConfigStanzaArgs(stanza string) []string {
 	return stanzaArgs
 }
 
+// Option 'type' cannot be set multiple times for info command.
+// It's pgBackRest restriction.
+func returnConfigBackupTypeArgs(backupType string) []string {
+	var backupTypeArgs []string
+	switch {
+	case backupType == "":
+		// Backup type not set. No return parameters.
+		backupTypeArgs = []string{}
+	default:
+		// Use specific backup type.
+		backupTypeArgs = []string{"--type", backupType}
+	}
+	return backupTypeArgs
+}
+
 func concatExecArgs(slices [][]string) []string {
 	tmp := []string{}
 	for _, s := range slices {
@@ -73,12 +88,13 @@ func concatExecArgs(slices [][]string) []string {
 	return tmp
 }
 
-func getAllInfoData(config, configIncludePath, stanza string, logger log.Logger) ([]byte, error) {
+func getAllInfoData(config, configIncludePath, stanza string, backupType string, logger log.Logger) ([]byte, error) {
 	app := "pgbackrest"
 	args := [][]string{
 		returnDefaultExecArgs(),
 		returnConfigExecArgs(config, configIncludePath),
 		returnConfigStanzaArgs(stanza),
+		returnConfigBackupTypeArgs(backupType),
 	}
 	// Finally arguments for exec command.
 	concatArgs := concatExecArgs(args)

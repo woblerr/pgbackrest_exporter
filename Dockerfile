@@ -16,7 +16,8 @@ ENV EXPORTER_ENDPOINT="/metrics" \
     EXPORTER_PORT="9854" \
     STANZA_INCLUDE="" \
     STANZA_EXCLUDE="" \
-    COLLECT_INTERVAL="600"
+    COLLECT_INTERVAL="600" \
+    BACKUP_TYPE=""
 COPY --from=builder --chmod=755 /build/pgbackrest_exporter /etc/pgbackrest/pgbackrest_exporter
 LABEL \
     org.opencontainers.image.version="${REPO_BUILD_TAG}" \
@@ -25,7 +26,8 @@ ENTRYPOINT ["/entrypoint.sh"]
 CMD /etc/pgbackrest/pgbackrest_exporter \
         --prom.endpoint=${EXPORTER_ENDPOINT} \
         --prom.port=${EXPORTER_PORT} \
+        --collect.interval=${COLLECT_INTERVAL} \
         --backrest.stanza-include=${STANZA_INCLUDE} \
         --backrest.stanza-exclude=${STANZA_EXCLUDE} \
-        --collect.interval=${COLLECT_INTERVAL}
+        --backrest.backup-type=${BACKUP_TYPE}
 EXPOSE ${EXPORTER_PORT}

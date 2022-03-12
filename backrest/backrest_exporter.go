@@ -215,7 +215,7 @@ func ResetMetrics() {
 }
 
 // GetPgBackRestInfo get and parse pgBackRest info and set metrics
-func GetPgBackRestInfo(config, configIncludePath string, stanzas []string, stanzasExclude []string, verbose bool, logger log.Logger) {
+func GetPgBackRestInfo(config, configIncludePath string, stanzas []string, stanzasExclude []string, backupType string, verbose bool, logger log.Logger) {
 	// To calculate the time elapsed since the last completed full, differential or incremental backup.
 	// For all stanzas values are calculated relative to one value.
 	currentUnixTime := time.Now().Unix()
@@ -225,7 +225,7 @@ func GetPgBackRestInfo(config, configIncludePath string, stanzas []string, stanz
 		// Check that stanza from the include list is not in the exclude list.
 		// If stanza not set - checking for entry into the exclude list will be performed later.
 		if stanzaNotInExclude(stanza, stanzasExclude) {
-			stanzaData, err := getAllInfoData(config, configIncludePath, stanza, logger)
+			stanzaData, err := getAllInfoData(config, configIncludePath, stanza, backupType, logger)
 			if err != nil {
 				level.Error(logger).Log("msg", "Get data from pgBackRest failed", "err", err)
 			}

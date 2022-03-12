@@ -52,6 +52,10 @@ func main() {
 			"backrest.stanza-exclude",
 			"Specific stanza to exclude from collecting metrics. Can be specified several times.",
 		).Default("").PlaceHolder("\"\"").Strings()
+		backrestBackupType = kingpin.Flag(
+			"backrest.backup-type",
+			"Specific backup type for collecting metrics. One of: [full, incr, diff].",
+		).Default("").String()
 		verboseInfo = kingpin.Flag(
 			"verbose.info",
 			"Enable additional metrics labels.",
@@ -109,6 +113,11 @@ func main() {
 				"stanza", stanza)
 		}
 	}
+	if *backrestBackupType != "" {
+		level.Info(logger).Log(
+			"mgs", "Collecting metrics for specific backup type",
+			"type", *backrestBackupType)
+	}
 	// Setup parameters for exporter.
 	backrest.SetPromPortandPath(*promPort, *promPath, *promTLSConfigFile)
 	level.Info(logger).Log(
@@ -132,6 +141,7 @@ func main() {
 			*backrestCustomConfigIncludePath,
 			*backrestIncludeStanza,
 			*backrestExcludeStanza,
+			*backrestBackupType,
 			*verboseInfo,
 			logger,
 		)

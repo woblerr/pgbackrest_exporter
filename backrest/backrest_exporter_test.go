@@ -41,6 +41,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 		configIncludePath string
 		stanzas           []string
 		stanzasExclude    []string
+		backupType        string
 		verbose           bool
 	}
 	tests := []struct {
@@ -52,7 +53,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 		testText   string
 	}{
 		{"GetPgBackRestInfoGoodDataReturn",
-			args{"", "", []string{""}, []string{""}, false},
+			args{"", "", []string{""}, []string{""}, "", false},
 			`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 				`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
 				`"backup":[{"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
@@ -67,7 +68,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 			0,
 			""},
 		{"GetPgBackRestInfoGoodDataReturnWithWarn",
-			args{"", "", []string{""}, []string{""}, false},
+			args{"", "", []string{""}, []string{""}, "", false},
 			`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 				`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
 				`"backup":[{"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
@@ -82,25 +83,25 @@ func TestGetPgBackRestInfo(t *testing.T) {
 			0,
 			`msg="pgBackRest message" err="WARN: environment contains invalid option 'test'`},
 		{"GetPgBackRestInfoBadDataReturn",
-			args{"", "", []string{""}, []string{""}, false},
+			args{"", "", []string{""}, []string{""}, "", false},
 			``,
 			`msg="pgBackRest message" err="ERROR: [029]: missing '=' in key/value at line 9: test"`,
 			29,
 			`msg="Get data from pgBackRest failed" err="exit status 29`},
 		{"GetPgBackRestInfoZeroDataReturn",
-			args{"", "", []string{""}, []string{""}, false},
+			args{"", "", []string{""}, []string{""}, "", false},
 			`[]`,
 			``,
 			0,
 			`msg="No backup data returned"`},
 		{"GetPgBackRestInfoJsonUnmarshalFail",
-			args{"", "", []string{""}, []string{""}, false},
+			args{"", "", []string{""}, []string{""}, "", false},
 			`[{}`,
 			``,
 			0,
 			`msg="Parse JSON failed" err="unexpected end of JSON input"`},
 		{"GetPgBackRestInfoEqualIncludeExcludeLists",
-			args{"", "", []string{"demo"}, []string{"demo"}, false},
+			args{"", "", []string{"demo"}, []string{"demo"}, "", false},
 			``,
 			``,
 			0,
@@ -121,6 +122,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 				tt.args.configIncludePath,
 				tt.args.stanzas,
 				tt.args.stanzasExclude,
+				tt.args.backupType,
 				tt.args.verbose,
 				lc,
 			)
