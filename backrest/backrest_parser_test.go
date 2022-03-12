@@ -215,7 +215,6 @@ pgbackrest_stanza_status{stanza="demo"} 0
 				pgbrStanzaBackupDatabaseBackupSizeMetric,
 				pgbrStanzaBackupRepoBackupSetSizeMetric,
 				pgbrStanzaBackupRepoBackupSizeMetric,
-				pgbrStanzaBackupErrorMetric,
 				pgbrStanzaBackupLastFullMetric,
 				pgbrStanzaBackupLastDiffMetric,
 				pgbrStanzaBackupLastIncrMetric,
@@ -308,14 +307,12 @@ pgbackrest_stanza_status{stanza="demo"} 0
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaStatusMetric,
-				pgbrRepoStatusMetric,
 				pgbrStanzaBackupInfoMetric,
 				pgbrStanzaBackupDurationMetric,
 				pgbrStanzaBackupDatabaseSizeMetric,
 				pgbrStanzaBackupDatabaseBackupSizeMetric,
 				pgbrStanzaBackupRepoBackupSetSizeMetric,
 				pgbrStanzaBackupRepoBackupSizeMetric,
-				pgbrStanzaBackupErrorMetric,
 				pgbrStanzaBackupLastFullMetric,
 				pgbrStanzaBackupLastDiffMetric,
 				pgbrStanzaBackupLastIncrMetric,
