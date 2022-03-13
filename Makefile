@@ -5,7 +5,8 @@ BRANCH := $(subst /,-,$(BRANCH_FULL))
 GIT_REV := $(shell git describe --abbrev=7 --always)
 SERVICE_CONF_DIR := /etc/systemd/system
 HTTP_PORT := 9854
-BACKREST_VERSION := 2.38-v0.10
+BACKREST_VERSION := 2.38
+DOCKER_BACKREST_VERSION := v0.10
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 DOCKER_CONTAINER_E2E := $(shell docker ps -a -q -f name=$(APP_NAME)_e2e)
 HTTP_PORT_E2E := $(shell echo $$((10000 + ($$RANDOM % 10000))))
@@ -19,7 +20,7 @@ test:
 test-e2e:
 	@echo "Run end-to-end tests for $(APP_NAME)"
 	@if [ -n "$(DOCKER_CONTAINER_E2E)" ]; then docker rm -f "$(DOCKER_CONTAINER_E2E)"; fi;
-	DOCKER_BUILDKIT=1 docker build --pull -f e2e_tests/Dockerfile --build-arg BACKREST_VERSION=$(BACKREST_VERSION) -t $(APP_NAME)_e2e .
+	DOCKER_BUILDKIT=1 docker build --pull -f e2e_tests/Dockerfile --build-arg BACKREST_VERSION=$(BACKREST_VERSION)-$(DOCKER_BACKREST_VERSION) -t $(APP_NAME)_e2e .
 	$(call e2e_basic)
 	$(call e2e_tls_auth,/e2e_tests/web_config_empty.yml,false,false)
 	$(call e2e_tls_auth,/e2e_tests/web_config_TLS_noAuth.yml,true,false)
@@ -57,7 +58,13 @@ dist:
 docker:
 	@echo "Build $(APP_NAME) docker container"
 	@echo "Version $(BRANCH)-$(GIT_REV)"
-	DOCKER_BUILDKIT=1 docker build --pull -f Dockerfile --build-arg REPO_BUILD_TAG=$(BRANCH)-$(GIT_REV) --build-arg BACKREST_VERSION=$(BACKREST_VERSION) -t $(APP_NAME) .
+	DOCKER_BUILDKIT=1 docker build --pull -f Dockerfile --build-arg REPO_BUILD_TAG=$(BRANCH)-$(GIT_REV) --build-arg BACKREST_VERSION=$(BACKREST_VERSION)-$(DOCKER_BACKREST_VERSION) -t $(APP_NAME) .
+
+.PHONY: docker-alpine
+docker-alpine:
+	@echo "Build $(APP_NAME) alpine docker container"
+	@echo "Version $(BRANCH)-$(GIT_REV)"
+	DOCKER_BUILDKIT=1 docker build --pull -f Dockerfile --build-arg REPO_BUILD_TAG=$(BRANCH)-$(GIT_REV) --build-arg BACKREST_VERSION=$(BACKREST_VERSION)-alpine-$(DOCKER_BACKREST_VERSION) -t $(APP_NAME)-alpine .
 
 .PHONY: prepare-service
 prepare-service:
