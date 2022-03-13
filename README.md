@@ -182,10 +182,18 @@ For base image used [docker-pgbackrest](https://github.com/woblerr/docker-pgback
 make docker
 ```
 
+```bash
+make docker-alpine
+```
+
 or for specific pgBackRest version
 
 ```bash
 docker build -f Dockerfile --build-arg BACKREST_VERSION=2.34 -t pgbackrest_exporter .
+```
+
+```bash
+docker build -f Dockerfile --build-arg BACKREST_VERSION=2.34-alpine -t pgbackrest_exporter-alpine .
 ```
 
 Environment variables supported by this image:
