@@ -1,4 +1,5 @@
-ARG BACKREST_VERSION="2.38-v0.10"
+ARG BACKREST_VERSION="2.38"
+ARG DOCKER_BACKREST_VERSION="v0.11"
 ARG REPO_BUILD_TAG="unknown"
 
 FROM golang:1.17-buster AS builder
@@ -10,7 +11,7 @@ RUN CGO_ENABLED=0 go build \
         -ldflags "-X main.version=${REPO_BUILD_TAG}" \
         -o pgbackrest_exporter pgbackrest_exporter.go
 
-FROM ghcr.io/woblerr/pgbackrest:${BACKREST_VERSION}
+FROM ghcr.io/woblerr/pgbackrest:${BACKREST_VERSION}-${DOCKER_BACKREST_VERSION}
 ARG REPO_BUILD_TAG
 ENV EXPORTER_ENDPOINT="/metrics" \
     EXPORTER_PORT="9854" \
