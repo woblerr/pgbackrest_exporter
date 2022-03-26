@@ -175,8 +175,44 @@ This flag works for `pgBackRest >= v2.38`.<br>
 For earlier pgBackRest versions there will be an error like: `option 'type' not valid for command 'info'`.
 
 ### Building and running docker
+
 By default, pgBackRest version is `2.38`. Another version can be specified via arguments.
 For base image used [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest) image.
+
+Environment variables supported by this image:
+* all environment variables from [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest#docker-pgbackrest)  image;
+* `EXPORTER_ENDPOINT` - metrics endpoint, default `/metrics`;
+* `EXPORTER_PORT` - port for prometheus metrics to listen on, default `9854`;
+* `STANZA_INCLUDE` - specific stanza for collecting metrics, default `""`;
+* `STANZA_EXCLUDE` - specific stanza to exclude from collecting metrics, default `""`;
+* `COLLECT_INTERVAL` - collecting metrics interval in seconds, default `600`;
+* `BACKUP_TYPE` - specific backup type for collecting metrics, default `""`.
+
+#### Pull
+
+Change `tag` to the release number.
+
+* Docker Hub:
+
+```bash
+docker pull woblerr/pgbackrest_exporter:tag
+```
+
+```bash
+docker pull woblerr/pgbackrest_exporter:tag-alpine
+```
+
+* GitHub Registry:
+
+```bash
+docker pull ghcr.io/woblerr/pgbackrest_exporter:tag
+```
+
+```bash
+docker pull ghcr.io/woblerr/pgbackrest_exporter:tag-alpine
+```
+
+#### Build
 
 ```bash
 make docker
@@ -196,14 +232,7 @@ docker build -f Dockerfile --build-arg BACKREST_VERSION=2.34 -t pgbackrest_expor
 docker build -f Dockerfile --build-arg BACKREST_VERSION=2.34-alpine -t pgbackrest_exporter-alpine .
 ```
 
-Environment variables supported by this image:
-* all environment variables from [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest#docker-pgbackrest)  image;
-* `EXPORTER_ENDPOINT` - metrics endpoint, default `/metrics`;
-* `EXPORTER_PORT` - port for prometheus metrics to listen on, default `9854`;
-* `STANZA_INCLUDE` - specific stanza for collecting metrics, default `""`;
-* `STANZA_EXCLUDE` - specific stanza to exclude from collecting metrics, default `""`;
-* `COLLECT_INTERVAL` - collecting metrics interval in seconds, default `600`;
-* `BACKUP_TYPE` - specific backup type for collecting metrics, default `""`.
+#### Run
 
 You will need to mount the necessary directories or files inside the container.
 
