@@ -81,7 +81,7 @@ jobs:
           docker buildx build --push \
               --build-arg REPO_BUILD_TAG=${ref}-${sha} \
               --build-arg BACKREST_VERSION=${BACKREST_VERSION} \
-              --build-arg DOCKER_BACKREST_VERSION=$(DOCKER_BACKREST_VERSION) \
+              --build-arg DOCKER_BACKREST_VERSION=${DOCKER_BACKREST_VERSION} \
               --platform ${BUILD_PLATFORMS} \
               -t ghcr.io/${GITHUB_USER}/pgbackrest_exporter:${ref} \
               -t ${DOCKERHUB_USER}/pgbackrest_exporter:${ref} .
