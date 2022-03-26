@@ -80,7 +80,8 @@ jobs:
           echo ${DOCKERHUB_PKG} | docker login -u ${DOCKERHUB_USER} --password-stdin
           docker buildx build --push \
               --build-arg REPO_BUILD_TAG=${ref}-${sha} \
-              --build-arg BACKREST_VERSION=${BACKREST_VERSION}-${DOCKER_BACKREST_VERSION} \
+              --build-arg BACKREST_VERSION=${BACKREST_VERSION} \
+              --build-arg DOCKER_BACKREST_VERSION=$(DOCKER_BACKREST_VERSION) \
               --platform ${BUILD_PLATFORMS} \
               -t ghcr.io/${GITHUB_USER}/pgbackrest_exporter:${ref} \
               -t ${DOCKERHUB_USER}/pgbackrest_exporter:${ref} .
@@ -105,7 +106,8 @@ jobs:
           echo ${DOCKERHUB_PKG} | docker login -u ${DOCKERHUB_USER} --password-stdin
           docker buildx build --push \
               --build-arg REPO_BUILD_TAG=${ref}-${sha} \
-              --build-arg BACKREST_VERSION=${BACKREST_VERSION}-alpine-${DOCKER_BACKREST_VERSION} \
+              --build-arg BACKREST_VERSION=${BACKREST_VERSION}-alpine \
+              --build-arg DOCKER_BACKREST_VERSION=${DOCKER_BACKREST_VERSION} \
               --platform ${BUILD_PLATFORMS} \
               -t ghcr.io/${GITHUB_USER}/pgbackrest_exporter:${ref}-alpine \
               -t ${DOCKERHUB_USER}/pgbackrest_exporter:${ref}-alpine .
@@ -130,7 +132,8 @@ jobs:
           echo ${DOCKERHUB_PKG} | docker login -u ${DOCKERHUB_USER} --password-stdin
           docker buildx build --push \
               --build-arg REPO_BUILD_TAG=${build_ver} \
-              --build-arg BACKREST_VERSION=${BACKREST_VERSION}-${DOCKER_BACKREST_VERSION} \
+              --build-arg BACKREST_VERSION=${BACKREST_VERSION} \
+              --build-arg DOCKER_BACKREST_VERSION=${DOCKER_BACKREST_VERSION} \
               --platform ${BUILD_PLATFORMS} \
               -t ghcr.io/${GITHUB_USER}/pgbackrest_exporter:${ref} \
               -t ghcr.io/${GITHUB_USER}/pgbackrest_exporter:latest \
@@ -157,7 +160,8 @@ jobs:
           echo ${DOCKERHUB_PKG} | docker login -u ${DOCKERHUB_USER} --password-stdin
           docker buildx build --push \
               --build-arg REPO_BUILD_TAG=${build_ver} \
-              --build-arg BACKREST_VERSION=${BACKREST_VERSION}-alpine-${DOCKER_BACKREST_VERSION} \
+              --build-arg BACKREST_VERSION=${BACKREST_VERSION}-alpine \
+              --build-arg DOCKER_BACKREST_VERSION=${DOCKER_BACKREST_VERSION} \
               --platform ${BUILD_PLATFORMS} \
               -t ghcr.io/${GITHUB_USER}/pgbackrest_exporter:${ref}-alpine \
               -t ${DOCKERHUB_USER}/pgbackrest_exporter:${ref}-alpine .
