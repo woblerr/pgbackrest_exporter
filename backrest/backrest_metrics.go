@@ -85,7 +85,7 @@ var (
 	// if compression is enabled in pgBackRest.
 	// Before pgBackRest v2.38 - reflect compressed file sizes
 	// if compression is enabled in pgBackRest or filesystem.
-	// From pgbackRest 2.38 the logic that tried
+	// From pgbackRest v2.38 the logic that tried
 	// to determine additional file system compression was removed.
 	pgbrStanzaBackupRepoBackupSetSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_repo_size_bytes",
@@ -105,7 +105,7 @@ var (
 	// if compression is enabled in pgBackRest.
 	// Before pgBackRest v2.38 - reflect compressed file sizes
 	// if compression is enabled in pgBackRest or filesystem.
-	// From pgbackRest 2.38 the logic that tried
+	// From pgbackRest v2.38 the logic that tried
 	// to determine additional file system compression was removed.
 	pgbrStanzaBackupRepoBackupSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_repo_delta_bytes",
