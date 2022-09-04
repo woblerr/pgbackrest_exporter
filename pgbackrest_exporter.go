@@ -56,9 +56,9 @@ func main() {
 			"backrest.backup-type",
 			"Specific backup type for collecting metrics. One of: [full, incr, diff].",
 		).Default("").String()
-		verboseInfo = kingpin.Flag(
-			"verbose.info",
-			"Enable additional metrics labels.",
+		backrestVerboseWAL = kingpin.Flag(
+			"backrest.verbose-wal",
+			"Enable additional labels for WAL metrics.",
 		).Default("false").Bool()
 	)
 	// Set logger config.
@@ -87,8 +87,7 @@ func main() {
 	level.Info(logger).Log(
 		"msg", "Starting exporter",
 		"name", filepath.Base(os.Args[0]),
-		"version", version,
-		"verbose.info", *verboseInfo)
+		"version", version)
 	if *backrestCustomConfig != "" {
 		level.Info(logger).Log(
 			"mgs", "Custom pgBackRest configuration file",
@@ -118,6 +117,11 @@ func main() {
 			"mgs", "Collecting metrics for specific backup type",
 			"type", *backrestBackupType)
 	}
+	if *backrestVerboseWAL {
+		level.Info(logger).Log(
+			"mgs", "Enabling additional labels for WAL metrics",
+			"verbose.wal", *backrestVerboseWAL)
+	}
 	// Setup parameters for exporter.
 	backrest.SetPromPortandPath(*promPort, *promPath, *promTLSConfigFile)
 	level.Info(logger).Log(
@@ -142,7 +146,7 @@ func main() {
 			*backrestIncludeStanza,
 			*backrestExcludeStanza,
 			*backrestBackupType,
-			*verboseInfo,
+			*backrestVerboseWAL,
 			logger,
 		)
 		// Sleep for 'collection.interval' seconds.

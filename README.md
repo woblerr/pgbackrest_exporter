@@ -138,7 +138,7 @@ Flags:
       --backrest.stanza-exclude="" ...  
                                  Specific stanza to exclude from collecting metrics. Can be specified several times.
       --backrest.backup-type=""  Specific backup type for collecting metrics. One of: [full, incr, diff].
-      --verbose.info             Enable additional metrics labels.
+      --backrest.verbose-wal     Enable additional labels for WAL metrics.
       --log.level=info           Only log messages with the given severity or above. One of: [debug, info, warn, error]
       --log.format=logfmt        Output format of log messages. One of: [logfmt, json]
 ```
@@ -160,7 +160,7 @@ The flag `--backrest.stanza-exclude` has a higher priority.<br>
 For example, `--backrest.stanza-include=demo1 --backrest.stanza-exclude=demo1`.<br>
 For this case, metrics **will not be collected** for `demo1` stanza.
 
-When flag `--verbose.info` is specified - WALMin and WALMax are added as metric labels.<br>
+When flag `--backrest.verbose-wal` is specified - WALMin and WALMax are added as metric labels.<br>
 This creates new different time series on each WAL archiving.
 
 When `--log.level=debug` is specified - information of values and labels for metrics is printing to the log.

@@ -133,7 +133,7 @@ func getPGVersion(id, repoKey int, dbList []db) string {
 	return ""
 }
 
-func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
+func getMetrics(data stanza, verboseWAL bool, currentUnixTime int64, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
 	var err error
 	lastBackups := lastBackupsStruct{}
 	//https://github.com/pgbackrest/pgbackrest/blob/03021c6a17f1374e84ef42614fa1dd2a6be4b64d/src/command/info/info.c#L78-L94
@@ -493,11 +493,11 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 	// 0 - any one of WALMin and WALMax have empty value, there is no correct information about WAL archiving.
 	// 1 - both WALMin and WALMax have no empty values, there is correct information about WAL archiving.
 	// Verbose mode.
-	// When "verbose == true" - WALMin and WALMax are added as metric labels.
+	// When "verboseWAL == true" - WALMin and WALMax are added as metric labels.
 	// This creates new different time series on each WAL archiving which maybe is not right way.
 	for _, archive := range data.Archive {
 		if archive.WALMin != "" && archive.WALMax != "" {
-			if verbose {
+			if verboseWAL {
 				level.Debug(logger).Log(
 					"msg", "Metric pgbackrest_wal_archive_status",
 					"value", 1,
