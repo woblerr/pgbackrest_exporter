@@ -10,8 +10,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env: 
-      backrest_version: "2.39"
-      docker_backrest_version: "v0.13"
+      backrest_version: "2.41"
+      docker_backrest_version: "v0.15"
       build_platforms: "linux/amd64,linux/arm64"
     steps:
       - name: Set up go 1.17
