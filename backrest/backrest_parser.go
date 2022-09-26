@@ -16,10 +16,15 @@ import (
 
 type setUpMetricValueFunType func(metric *prometheus.GaugeVec, value float64, labels ...string) error
 
+type backupStruct struct {
+	backupLabel string
+	backupType  string
+	backupTime  time.Time
+}
 type lastBackupsStruct struct {
-	full time.Time
-	diff time.Time
-	incr time.Time
+	full backupStruct
+	diff backupStruct
+	incr backupStruct
 }
 
 var execCommand = exec.Command
@@ -52,11 +57,11 @@ func returnConfigExecArgs(config, configIncludePath string) []string {
 	return configArgs
 }
 
-func returnConfigStanzaArgs(stanza string) []string {
+func returnStanzaExecArgs(stanza string) []string {
 	var stanzaArgs []string
 	switch {
 	case stanza == "":
-		// Stanza not set. No return parametrs.
+		// Stanza not set. No return parameters.
 		stanzaArgs = []string{}
 	default:
 		// Use specific stanza.
@@ -67,7 +72,7 @@ func returnConfigStanzaArgs(stanza string) []string {
 
 // Option 'type' cannot be set multiple times for info command.
 // It's pgBackRest restriction.
-func returnConfigBackupTypeArgs(backupType string) []string {
+func returnBackupTypeExecArgs(backupType string) []string {
 	var backupTypeArgs []string
 	switch {
 	case backupType == "":
@@ -80,6 +85,20 @@ func returnConfigBackupTypeArgs(backupType string) []string {
 	return backupTypeArgs
 }
 
+//
+func returnBackupSetExecArgs(backupSetLabel string) []string {
+	var backupSetLabelArgs []string
+	switch {
+	case backupSetLabel == "":
+		// Backup label not set. No return parameters.
+		backupSetLabelArgs = []string{}
+	default:
+		//
+		backupSetLabelArgs = []string{"--set", backupSetLabel}
+	}
+	return backupSetLabelArgs
+}
+
 func concatExecArgs(slices [][]string) []string {
 	tmp := []string{}
 	for _, s := range slices {
@@ -88,13 +107,26 @@ func concatExecArgs(slices [][]string) []string {
 	return tmp
 }
 
-func getAllInfoData(config, configIncludePath, stanza string, backupType string, logger log.Logger) ([]byte, error) {
+func getAllInfoData(config, configIncludePath, stanza, backupType string, logger log.Logger) ([]byte, error) {
+	var backupLabel string
+	return getInfoData(config, configIncludePath, stanza, backupType, backupLabel, logger)
+}
+
+func getSpecificBackupInfoData(config, configIncludePath, stanza, backupLabel string, logger log.Logger) ([]byte, error) {
+	var backupType string
+	return getInfoData(config, configIncludePath, stanza, backupType, backupLabel, logger)
+}
+
+func getInfoData(config, configIncludePath, stanza, backupType, backupLabel string, logger log.Logger) ([]byte, error) {
 	app := "pgbackrest"
 	args := [][]string{
 		returnDefaultExecArgs(),
 		returnConfigExecArgs(config, configIncludePath),
-		returnConfigStanzaArgs(stanza),
-		returnConfigBackupTypeArgs(backupType),
+		returnStanzaExecArgs(stanza),
+		returnBackupTypeExecArgs(backupType),
+	}
+	if backupLabel != "" {
+		args = append(args, returnBackupSetExecArgs(backupLabel))
 	}
 	// Finally arguments for exec command.
 	concatArgs := concatExecArgs(args)
@@ -133,9 +165,12 @@ func getPGVersion(id, repoKey int, dbList []db) string {
 	return ""
 }
 
-func getMetrics(data stanza, verboseWAL bool, currentUnixTime int64, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
+func getMetrics(config, configIncludePath string, data stanza, backupDBCountLatest, verboseWAL bool, currentUnixTime int64, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
 	var err error
 	lastBackups := lastBackupsStruct{}
+	lastBackups.full.backupType = "full"
+	lastBackups.diff.backupType = "diff"
+	lastBackups.incr.backupType = "incr"
 	//https://github.com/pgbackrest/pgbackrest/blob/03021c6a17f1374e84ef42614fa1dd2a6be4b64d/src/command/info/info.c#L78-L94
 	// Stanza and repo statuses:
 	//  0: "ok",
@@ -429,23 +464,24 @@ func getMetrics(data stanza, verboseWAL bool, currentUnixTime int64, setUpMetric
 		compareLastBackups(
 			&lastBackups,
 			time.Unix(backup.Timestamp.Stop, 0),
+			backup.Label,
 			backup.Type,
 		)
 	}
 	// If full backup exists, the values of metrics for differential and
 	// incremental backups also will be set.
 	// If not - metrics won't be set.
-	if !lastBackups.full.IsZero() {
+	if !lastBackups.full.backupTime.IsZero() {
 		// Seconds since the last completed full backup.
 		level.Debug(logger).Log(
 			"msg", "Metric pgbackrest_backup_full_since_last_completion_seconds",
-			"value", time.Unix(currentUnixTime, 0).Sub(lastBackups.full).Seconds(),
+			"value", time.Unix(currentUnixTime, 0).Sub(lastBackups.full.backupTime).Seconds(),
 			"labels", data.Name,
 		)
 		err = setUpMetricValueFun(
 			pgbrStanzaBackupLastFullMetric,
 			// Trim nanoseconds.
-			time.Unix(currentUnixTime, 0).Sub(lastBackups.full).Seconds(),
+			time.Unix(currentUnixTime, 0).Sub(lastBackups.full.backupTime).Seconds(),
 			data.Name,
 		)
 		if err != nil {
@@ -457,12 +493,12 @@ func getMetrics(data stanza, verboseWAL bool, currentUnixTime int64, setUpMetric
 		// Seconds since the last completed full or differential backup.
 		level.Debug(logger).Log(
 			"msg", "Metric pgbackrest_backup_diff_since_last_completion_seconds",
-			"value", time.Unix(currentUnixTime, 0).Sub(lastBackups.diff).Seconds(),
+			"value", time.Unix(currentUnixTime, 0).Sub(lastBackups.diff.backupTime).Seconds(),
 			"labels", data.Name,
 		)
 		err = setUpMetricValueFun(
 			pgbrStanzaBackupLastDiffMetric,
-			time.Unix(currentUnixTime, 0).Sub(lastBackups.diff).Seconds(),
+			time.Unix(currentUnixTime, 0).Sub(lastBackups.diff.backupTime).Seconds(),
 			data.Name,
 		)
 		if err != nil {
@@ -474,12 +510,12 @@ func getMetrics(data stanza, verboseWAL bool, currentUnixTime int64, setUpMetric
 		// Seconds since the last completed full, differential or incremental backup.
 		level.Debug(logger).Log(
 			"msg", "Metric pgbackrest_backup_incr_since_last_completion_seconds",
-			"value", time.Unix(currentUnixTime, 0).Sub(lastBackups.incr).Seconds(),
+			"value", time.Unix(currentUnixTime, 0).Sub(lastBackups.incr.backupTime).Seconds(),
 			"labels", data.Name,
 		)
 		err = setUpMetricValueFun(
 			pgbrStanzaBackupLastIncrMetric,
-			time.Unix(currentUnixTime, 0).Sub(lastBackups.incr).Seconds(),
+			time.Unix(currentUnixTime, 0).Sub(lastBackups.incr.backupTime).Seconds(),
 			data.Name,
 		)
 		if err != nil {
@@ -487,6 +523,155 @@ func getMetrics(data stanza, verboseWAL bool, currentUnixTime int64, setUpMetric
 				"msg", "Metric pgbackrest_backup_incr_since_last_completion_seconds set up failed",
 				"err", err,
 			)
+		}
+		// If the calculation of the number of databases in latest backups is enabled.
+		if backupDBCountLatest {
+			// Try to get info fo full backup.
+			stanzaDataSpecific, err := getSpecificBackupInfoData(config, configIncludePath, data.Name, lastBackups.full.backupLabel, logger)
+			if err != nil {
+				level.Error(logger).Log(
+					"msg", "Get data from pgBackRest failed",
+					"stanza", data.Name,
+					"type", lastBackups.full.backupType,
+					"backup", lastBackups.full.backupLabel,
+					"err", err)
+			}
+			parseStanzaDataSpecific, err := parseResult(stanzaDataSpecific)
+			if err != nil {
+				level.Error(logger).Log(
+					"msg", "Parse JSON failed",
+					"stanza", data.Name,
+					"type", lastBackups.full.backupType,
+					"backup", lastBackups.full.backupLabel,
+					"err", err)
+			}
+			// In a normal situation, only one element with one backup should be returned.
+			// If more than one element or one backup is returned, there is may be a bug in pgBackRest.
+			// If it's not a bug, then this part will need to be refactoring.
+			// Use *[]struct() type for backup.DatabaseRef.
+			// Information about number of databases in specific backup has appeared since pgBackRest v2.41.
+			// In versions < v2.41 this is missing and the metric does not need to be collected.
+			// json.Unmarshal() will return nil when the error information is  missing.
+			if parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil {
+				// Number of databases in the last full backup.
+				level.Debug(logger).Log(
+					"msg", "Metric pgbackrest_backup_last_databases",
+					"value", len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
+					"labels",
+					strings.Join(
+						[]string{
+							lastBackups.full.backupType,
+							data.Name,
+						}, ",",
+					),
+				)
+				err = setUpMetricValueFun(
+					pgbrStanzaBackupLastDatabasesMetric,
+					float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
+					lastBackups.full.backupType,
+					data.Name,
+				)
+				if err != nil {
+					level.Error(logger).Log(
+						"msg", "Metric pgbackrest_backup_last_databases set up failed",
+						"err", err,
+					)
+				}
+			}
+			// If name for diff backup is equal to full, there is no point in re-receiving data.
+			if lastBackups.diff.backupLabel != lastBackups.full.backupLabel {
+				stanzaDataSpecific, err = getSpecificBackupInfoData(config, configIncludePath, data.Name, lastBackups.diff.backupLabel, logger)
+				if err != nil {
+					level.Error(logger).Log(
+						"msg", "Get data from pgBackRest failed",
+						"stanza", data.Name,
+						"type", lastBackups.diff.backupType,
+						"backup", lastBackups.diff.backupLabel,
+						"err", err)
+				}
+				parseStanzaDataSpecific, err = parseResult(stanzaDataSpecific)
+				if err != nil {
+					level.Error(logger).Log(
+						"msg", "Parse JSON failed",
+						"stanza", data.Name,
+						"type", lastBackups.diff.backupType,
+						"backup", lastBackups.diff.backupLabel,
+						"err", err)
+				}
+			}
+			if parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil {
+				// Number of databases in the last full or differential backup.
+				level.Debug(logger).Log(
+					"msg", "Metric pgbackrest_backup_last_databases",
+					"value", len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
+					"labels",
+					strings.Join(
+						[]string{
+							lastBackups.diff.backupType,
+							data.Name,
+						}, ",",
+					),
+				)
+				err = setUpMetricValueFun(
+					pgbrStanzaBackupLastDatabasesMetric,
+					float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
+					lastBackups.diff.backupType,
+					data.Name,
+				)
+				if err != nil {
+					level.Error(logger).Log(
+						"msg", "Metric pgbackrest_backup_last_databases set up failed",
+						"err", err,
+					)
+				}
+			}
+			// If name for incr backup is equal to diff, there is no point in re-receiving data.
+			if lastBackups.incr.backupLabel != lastBackups.diff.backupLabel {
+				stanzaDataSpecific, err = getSpecificBackupInfoData(config, configIncludePath, data.Name, lastBackups.incr.backupLabel, logger)
+				if err != nil {
+					level.Error(logger).Log(
+						"msg", "Get data from pgBackRest failed",
+						"stanza", data.Name,
+						"type", lastBackups.incr.backupType,
+						"backup", lastBackups.incr.backupLabel,
+						"err", err)
+				}
+				parseStanzaDataSpecific, err = parseResult(stanzaDataSpecific)
+				if err != nil {
+					level.Error(logger).Log(
+						"msg", "Parse JSON failed",
+						"stanza", data.Name,
+						"type", lastBackups.incr.backupType,
+						"backup", lastBackups.incr.backupLabel,
+						"err", err)
+				}
+			}
+			if parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil {
+				// Number of databases in the last full, differential or incremental backup.
+				level.Debug(logger).Log(
+					"msg", "Metric pgbackrest_backup_last_databases",
+					"value", len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
+					"labels",
+					strings.Join(
+						[]string{
+							lastBackups.incr.backupType,
+							data.Name,
+						}, ",",
+					),
+				)
+				err = setUpMetricValueFun(
+					pgbrStanzaBackupLastDatabasesMetric,
+					float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
+					lastBackups.incr.backupType,
+					data.Name,
+				)
+				if err != nil {
+					level.Error(logger).Log(
+						"msg", "Metric pgbackrest_backup_last_databases set up failed",
+						"err", err,
+					)
+				}
+			}
 		}
 	}
 	// WAL archive info.
@@ -598,6 +783,9 @@ func getMetrics(data stanza, verboseWAL bool, currentUnixTime int64, setUpMetric
 	}
 }
 
+func getMetricsLatest(setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
+
+}
 func setUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...string) error {
 	metricVec, err := metric.GetMetricWithLabelValues(labels...)
 	if err != nil {
@@ -613,34 +801,40 @@ func setUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...stri
 	return nil
 }
 
-func compareLastBackups(backups *lastBackupsStruct, currentBackup time.Time, backupType string) {
-	switch backupType {
+func compareLastBackups(backups *lastBackupsStruct, currentBackupTime time.Time, currentBackupLabel string, currentBackupType string) {
+	switch currentBackupType {
 	case "full":
-		if currentBackup.After(backups.full) {
-			backups.full = currentBackup
+		if currentBackupTime.After(backups.full.backupTime) {
+			backups.full.backupTime = currentBackupTime
+			backups.full.backupLabel = currentBackupLabel
 		}
-		if currentBackup.After(backups.diff) {
-			backups.diff = currentBackup
+		if currentBackupTime.After(backups.diff.backupTime) {
+			backups.diff.backupTime = currentBackupTime
+			backups.diff.backupLabel = currentBackupLabel
 		}
-		if currentBackup.After(backups.incr) {
-			backups.incr = currentBackup
+		if currentBackupTime.After(backups.incr.backupTime) {
+			backups.incr.backupTime = currentBackupTime
+			backups.incr.backupLabel = currentBackupLabel
 		}
 	case "diff":
-		if currentBackup.After(backups.diff) {
-			backups.diff = currentBackup
+		if currentBackupTime.After(backups.diff.backupTime) {
+			backups.diff.backupTime = currentBackupTime
+			backups.diff.backupLabel = currentBackupLabel
 		}
-		if currentBackup.After(backups.incr) {
-			backups.incr = currentBackup
+		if currentBackupTime.After(backups.incr.backupTime) {
+			backups.incr.backupTime = currentBackupTime
+			backups.incr.backupLabel = currentBackupLabel
 		}
 	case "incr":
-		if currentBackup.After(backups.incr) {
-			backups.incr = currentBackup
+		if currentBackupTime.After(backups.incr.backupTime) {
+			backups.incr.backupTime = currentBackupTime
+			backups.incr.backupLabel = currentBackupLabel
 		}
 	}
 }
 
 func stanzaNotInExclude(stanza string, listExclude []string) bool {
-	// Сheck that exclude list is empty.
+	// Check that exclude list is empty.
 	// If so, no excluding stanzas are set during startup.
 	if strings.Join(listExclude, "") != "" {
 		for _, val := range listExclude {

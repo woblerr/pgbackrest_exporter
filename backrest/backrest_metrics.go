@@ -147,6 +147,18 @@ var (
 		Help: "Seconds since the last completed full, differential or incremental backup.",
 	},
 		[]string{"stanza"})
+	// Differential backup is always based on last full,
+	// if the last backup was full, the metric will take full backup value.
+	// Incremental backup is always based on last full or differential,
+	// if the last backup was full or differential, the metric will take
+	// full or differential backup value.
+	pgbrStanzaBackupLastDatabasesMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_backup_last_databases",
+		Help: "Number of databases in the last full, differential or incremental backup.",
+	},
+		[]string{
+			"backup_type",
+			"stanza"})
 	pgbrWALArchivingMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_wal_archive_status",
 		Help: "Current WAL archive status.",

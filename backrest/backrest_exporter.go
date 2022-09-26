@@ -17,9 +17,9 @@ var (
 	promTLSConfigPath string
 )
 
-// SetPromPortandPath sets HTTP endpoint parameters
-// from command line arguments 'port', 'endpoint' and 'tlsConfigPath'
-func SetPromPortandPath(port, endpoint, tlsConfigPath string) {
+// SetPromPortAndPath sets HTTP endpoint parameters
+// from command line arguments 'prom.port', 'prom.endpoint' and 'prom.web-config'
+func SetPromPortAndPath(port, endpoint, tlsConfigPath string) {
 	promPort = port
 	promEndpoint = endpoint
 	promTLSConfigPath = tlsConfigPath
@@ -60,11 +60,12 @@ func ResetMetrics() {
 	pgbrStanzaBackupLastFullMetric.Reset()
 	pgbrStanzaBackupLastDiffMetric.Reset()
 	pgbrStanzaBackupLastIncrMetric.Reset()
+	pgbrStanzaBackupLastDatabasesMetric.Reset()
 	pgbrWALArchivingMetric.Reset()
 }
 
 // GetPgBackRestInfo get and parse pgBackRest info and set metrics
-func GetPgBackRestInfo(config, configIncludePath string, stanzas []string, stanzasExclude []string, backupType string, verboseWAL bool, logger log.Logger) {
+func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas []string, stanzasExclude []string, backupDBCountLatest, verboseWAL bool, logger log.Logger) {
 	// To calculate the time elapsed since the last completed full, differential or incremental backup.
 	// For all stanzas values are calculated relative to one value.
 	currentUnixTime := time.Now().Unix()
@@ -88,7 +89,7 @@ func GetPgBackRestInfo(config, configIncludePath string, stanzas []string, stanz
 			for _, singleStanza := range parseStanzaData {
 				// If stanza is in the exclude list, skip it.
 				if stanzaNotInExclude(singleStanza.Name, stanzasExclude) {
-					getMetrics(singleStanza, verboseWAL, currentUnixTime, setUpMetricValue, logger)
+					getMetrics(config, configIncludePath, singleStanza, backupDBCountLatest, verboseWAL, currentUnixTime, setUpMetricValue, logger)
 				}
 			}
 		} else {
