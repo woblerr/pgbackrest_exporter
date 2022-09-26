@@ -798,7 +798,7 @@ func setUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...stri
 	return nil
 }
 
-func compareLastBackups(backups *lastBackupsStruct, currentBackupTime time.Time, currentBackupLabel string, currentBackupType string) {
+func compareLastBackups(backups *lastBackupsStruct, currentBackupTime time.Time, currentBackupLabel, currentBackupType string) {
 	switch currentBackupType {
 	case "full":
 		if currentBackupTime.After(backups.full.backupTime) {

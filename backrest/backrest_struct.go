@@ -77,15 +77,12 @@ type backup struct {
 		Format  int    `json:"format"`
 		Version string `json:"version"`
 	} `json:"backrest"`
-	Database    databaseID `json:"database"`
-	DatabaseRef *[]struct {
-		Name string `json:"name"`
-		OID  int    `json:"oid"`
-	} `json:"database-ref"`
-	Error *bool      `json:"error"`
-	Info  backupInfo `json:"info"`
-	Label string     `json:"label"`
-	Link  *[]struct {
+	Database    databaseID     `json:"database"`
+	DatabaseRef *[]databaseRef `json:"database-ref"`
+	Error       *bool          `json:"error"`
+	Info        backupInfo     `json:"info"`
+	Label       string         `json:"label"`
+	Link        *[]struct {
 		Destination string `json:"destination"`
 		Name        string `json:"name"`
 	} `json:"link"`
@@ -105,6 +102,15 @@ type backup struct {
 		Stop  int64 `json:"stop"`
 	} `json:"timestamp"`
 	Type string `json:"type"`
+}
+
+//  "database-ref": [{
+//    "name": "string",
+//    "oid": number
+//  }]
+type databaseRef struct {
+	Name string `json:"name"`
+	OID  int    `json:"oid"`
 }
 
 //  "info": {

@@ -19,17 +19,17 @@ var (
 	logger                 = getLogger()
 )
 
-func TestSetPromPortandPath(t *testing.T) {
+func TestSetPromPortAndPath(t *testing.T) {
 	var (
 		testPort          = "9854"
-		testEndpoit       = "/metrics"
+		testEndpoint      = "/metrics"
 		testTLSConfigPath = ""
 	)
-	SetPromPortandPath(testPort, testEndpoit, testTLSConfigPath)
-	if testPort != promPort || testEndpoit != promEndpoint || testTLSConfigPath != promTLSConfigPath {
+	SetPromPortAndPath(testPort, testEndpoint, testTLSConfigPath)
+	if testPort != promPort || testEndpoint != promEndpoint || testTLSConfigPath != promTLSConfigPath {
 		t.Errorf("\nVariables do not match,\nport: %s, want: %s;\nendpoint: %s, want: %s;\nconfig: %swant: %s",
 			testPort, promPort,
-			testEndpoit, promEndpoint,
+			testEndpoint, promEndpoint,
 			testTLSConfigPath, promTLSConfigPath,
 		)
 	}
@@ -37,12 +37,13 @@ func TestSetPromPortandPath(t *testing.T) {
 
 func TestGetPgBackRestInfo(t *testing.T) {
 	type args struct {
-		config            string
-		configIncludePath string
-		stanzas           []string
-		stanzasExclude    []string
-		backupType        string
-		verbose           bool
+		config              string
+		configIncludePath   string
+		backupType          string
+		stanzas             []string
+		stanzasExclude      []string
+		backupDBCountLatest bool
+		verboseWAL          bool
 	}
 	tests := []struct {
 		name       string
@@ -53,7 +54,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 		testText   string
 	}{
 		{"GetPgBackRestInfoGoodDataReturn",
-			args{"", "", []string{""}, []string{""}, "", false},
+			args{"", "", "", []string{""}, []string{""}, false, false},
 			`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 				`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
 				`"backup":[{"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
@@ -68,7 +69,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 			0,
 			""},
 		{"GetPgBackRestInfoGoodDataReturnWithWarn",
-			args{"", "", []string{""}, []string{""}, "", false},
+			args{"", "", "", []string{""}, []string{""}, false, false},
 			`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 				`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
 				`"backup":[{"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
@@ -83,25 +84,25 @@ func TestGetPgBackRestInfo(t *testing.T) {
 			0,
 			`msg="pgBackRest message" err="WARN: environment contains invalid option 'test'`},
 		{"GetPgBackRestInfoBadDataReturn",
-			args{"", "", []string{""}, []string{""}, "", false},
+			args{"", "", "", []string{""}, []string{""}, false, false},
 			``,
 			`msg="pgBackRest message" err="ERROR: [029]: missing '=' in key/value at line 9: test"`,
 			29,
 			`msg="Get data from pgBackRest failed" err="exit status 29`},
 		{"GetPgBackRestInfoZeroDataReturn",
-			args{"", "", []string{""}, []string{""}, "", false},
+			args{"", "", "", []string{""}, []string{""}, false, false},
 			`[]`,
 			``,
 			0,
 			`msg="No backup data returned"`},
 		{"GetPgBackRestInfoJsonUnmarshalFail",
-			args{"", "", []string{""}, []string{""}, "", false},
+			args{"", "", "", []string{""}, []string{""}, false, false},
 			`[{}`,
 			``,
 			0,
 			`msg="Parse JSON failed" err="unexpected end of JSON input"`},
 		{"GetPgBackRestInfoEqualIncludeExcludeLists",
-			args{"", "", []string{"demo"}, []string{"demo"}, "", false},
+			args{"", "", "", []string{"demo"}, []string{"demo"}, false, false},
 			``,
 			``,
 			0,
@@ -120,10 +121,11 @@ func TestGetPgBackRestInfo(t *testing.T) {
 			GetPgBackRestInfo(
 				tt.args.config,
 				tt.args.configIncludePath,
+				tt.args.backupType,
 				tt.args.stanzas,
 				tt.args.stanzasExclude,
-				tt.args.backupType,
-				tt.args.verbose,
+				tt.args.backupDBCountLatest,
+				tt.args.verboseWAL,
 				lc,
 			)
 			if !strings.Contains(out.String(), tt.testText) {

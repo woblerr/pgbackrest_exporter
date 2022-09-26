@@ -15,14 +15,18 @@ import (
 	"github.com/prometheus/common/expfmt"
 )
 
-var curretnUnixTimeForTests = parseDate("2021-07-22 21:00:00").UnixNano()
+var currentUnixTimeForTests = parseDate("2021-07-22 21:00:00").UnixNano()
 
 // All metrics exist and all labels are corrected.
-// Like pgBackRest version = 2.38.
+// Like pgBackRest version = 2.41.
+// Without '--backrest.database-count-latest' flag.
 func TestGetMetrics(t *testing.T) {
 	type args struct {
+		config              string
+		configIncludePath   string
 		data                stanza
-		verbose             bool
+		backupDBCountLatest bool
+		verboseWAL          bool
 		testText            string
 		setUpMetricValueFun setUpMetricValueFunType
 	}
@@ -46,7 +50,7 @@ pgbackrest_backup_full_since_last_completion_seconds{stanza="demo"} 9.2233720368
 pgbackrest_backup_incr_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
 # HELP pgbackrest_backup_info Backup info.
 # TYPE pgbackrest_backup_info gauge
-pgbackrest_backup_info{backrest_ver="2.38",backup_name="20210607-092423F",backup_type="full",database_id="1",lsn_start="0/2000028",lsn_stop="0/2000100",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
+pgbackrest_backup_info{backrest_ver="2.41",backup_name="20210607-092423F",backup_type="full",database_id="1",lsn_start="0/2000028",lsn_stop="0/2000100",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
 # HELP pgbackrest_backup_repo_delta_bytes Compressed files size in backup.
 # TYPE pgbackrest_backup_repo_delta_bytes gauge
 pgbackrest_backup_repo_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
@@ -69,9 +73,16 @@ pgbackrest_stanza_status{stanza="demo"} 0
 		name string
 		args args
 	}{
-		{"getMetricsVerboseFalse",
+		{"getMetricsVerboseWALFalse",
 			args{
-				templateStanza("000000010000000000000004", "000000010000000000000001", true),
+				"",
+				"",
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true),
+				false,
 				false,
 				templateMetrics +
 					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="",wal_min=""} 1` +
@@ -79,9 +90,16 @@ pgbackrest_stanza_status{stanza="demo"} 0
 				setUpMetricValue,
 			},
 		},
-		{"getMetricsVerboseTrue",
+		{"getMetricsVerboseWALTrue",
 			args{
-				templateStanza("000000010000000000000004", "000000010000000000000001", true),
+				"",
+				"",
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true),
+				false,
 				true,
 				templateMetrics +
 					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="000000010000000000000004",wal_min="000000010000000000000001"} 1` +
@@ -91,7 +109,14 @@ pgbackrest_stanza_status{stanza="demo"} 0
 		},
 		{"getMetricsWithoutWal",
 			args{
-				templateStanza("", "000000010000000000000001", true),
+				"",
+				"",
+				templateStanza(
+					"",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true),
+				false,
 				false,
 				templateMetrics +
 					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="",wal_min=""} 0` +
@@ -103,7 +128,7 @@ pgbackrest_stanza_status{stanza="demo"} 0
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ResetMetrics()
-			getMetrics(tt.args.data, tt.args.verbose, curretnUnixTimeForTests, tt.args.setUpMetricValueFun, logger)
+			getMetrics(tt.args.config, tt.args.configIncludePath, tt.args.data, tt.args.backupDBCountLatest, tt.args.verboseWAL, currentUnixTimeForTests, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaStatusMetric,
@@ -118,6 +143,7 @@ pgbackrest_stanza_status{stanza="demo"} 0
 				pgbrStanzaBackupLastFullMetric,
 				pgbrStanzaBackupLastDiffMetric,
 				pgbrStanzaBackupLastIncrMetric,
+				pgbrStanzaBackupLastDatabasesMetric,
 				pgbrWALArchivingMetric,
 			)
 			metricFamily, err := reg.Gather()
@@ -145,8 +171,11 @@ pgbackrest_stanza_status{stanza="demo"} 0
 // Like pgBackrest version = 2.35.
 func TestGetMetricsErrorAbsent(t *testing.T) {
 	type args struct {
+		config              string
+		configIncludePath   string
 		data                stanza
-		verbose             bool
+		backupDBCountLatest bool
+		verboseWAL          bool
 		testText            string
 		setUpMetricValueFun setUpMetricValueFunType
 	}
@@ -192,7 +221,10 @@ pgbackrest_stanza_status{stanza="demo"} 0
 	}{
 		{"getMetricsErrorAbsent",
 			args{
+				"",
+				"",
 				templateStanzaErrorAbsent("000000010000000000000004", "000000010000000000000001"),
+				false,
 				false,
 				templateMetrics +
 					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="",wal_min=""} 1` +
@@ -204,7 +236,7 @@ pgbackrest_stanza_status{stanza="demo"} 0
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ResetMetrics()
-			getMetrics(tt.args.data, tt.args.verbose, curretnUnixTimeForTests, tt.args.setUpMetricValueFun, logger)
+			getMetrics(tt.args.config, tt.args.configIncludePath, tt.args.data, tt.args.backupDBCountLatest, tt.args.verboseWAL, currentUnixTimeForTests, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaStatusMetric,
@@ -247,8 +279,11 @@ pgbackrest_stanza_status{stanza="demo"} 0
 // Like pgBackrest version = 2.31.
 func TestGetMetricsRepoAbsent(t *testing.T) {
 	type args struct {
+		config              string
+		configIncludePath   string
 		data                stanza
-		verbose             bool
+		backupDBCountLatest bool
+		verboseWAL          bool
 		testText            string
 		setUpMetricValueFun setUpMetricValueFunType
 	}
@@ -291,7 +326,10 @@ pgbackrest_stanza_status{stanza="demo"} 0
 	}{
 		{"getMetricsVerboseFalse",
 			args{
+				"",
+				"",
 				templateStanzaRepoAbsent("000000010000000000000004", "000000010000000000000001"),
+				false,
 				false,
 				templateMetrics +
 					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="0",stanza="demo",wal_max="",wal_min=""} 1` +
@@ -303,7 +341,7 @@ pgbackrest_stanza_status{stanza="demo"} 0
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ResetMetrics()
-			getMetrics(tt.args.data, tt.args.verbose, curretnUnixTimeForTests, tt.args.setUpMetricValueFun, logger)
+			getMetrics(tt.args.config, tt.args.configIncludePath, tt.args.data, tt.args.backupDBCountLatest, tt.args.verboseWAL, currentUnixTimeForTests, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaStatusMetric,
@@ -337,8 +375,11 @@ pgbackrest_stanza_status{stanza="demo"} 0
 
 func TestGetMetricsErrorsAndDebugs(t *testing.T) {
 	type args struct {
+		config              string
+		configIncludePath   string
 		data                stanza
-		verbose             bool
+		backupDBCountLatest bool
+		verboseWAL          bool
 		setUpMetricValueFun setUpMetricValueFunType
 		errorsCount         int
 		debugsCount         int
@@ -349,7 +390,14 @@ func TestGetMetricsErrorsAndDebugs(t *testing.T) {
 	}{
 		{"getMetricsVerboseFalseLogError",
 			args{
-				templateStanza("000000010000000000000004", "000000010000000000000001", true),
+				"",
+				"",
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true),
+				false,
 				false,
 				fakeSetUpMetricValue,
 				13,
@@ -358,7 +406,14 @@ func TestGetMetricsErrorsAndDebugs(t *testing.T) {
 		},
 		{"getMetricsVerboseTrueLogError",
 			args{
-				templateStanza("000000010000000000000004", "000000010000000000000001", true),
+				"",
+				"",
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true),
+				false,
 				true,
 				fakeSetUpMetricValue,
 				13,
@@ -367,7 +422,14 @@ func TestGetMetricsErrorsAndDebugs(t *testing.T) {
 		},
 		{"getMetricsWithoutWalLogError",
 			args{
-				templateStanza("", "000000010000000000000001", true),
+				"",
+				"",
+				templateStanza(
+					"",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true),
+				false,
 				false,
 				fakeSetUpMetricValue,
 				13,
@@ -376,7 +438,13 @@ func TestGetMetricsErrorsAndDebugs(t *testing.T) {
 		},
 		{"getMetricsVerboseFalseLogErrorRepoAbsent",
 			args{
-				templateStanzaRepoAbsent("000000010000000000000004", "000000010000000000000001"),
+				"",
+				"",
+				templateStanzaRepoAbsent(
+					"000000010000000000000004",
+					"000000010000000000000001",
+				),
+				false,
 				false,
 				fakeSetUpMetricValue,
 				11,
@@ -385,7 +453,13 @@ func TestGetMetricsErrorsAndDebugs(t *testing.T) {
 		},
 		{"getMetricsVerboseTrueLogErrorRepoAbsent",
 			args{
-				templateStanzaRepoAbsent("000000010000000000000004", "000000010000000000000001"),
+				"",
+				"",
+				templateStanzaRepoAbsent(
+					"000000010000000000000004",
+					"000000010000000000000001",
+				),
+				false,
 				true,
 				fakeSetUpMetricValue,
 				11,
@@ -394,7 +468,10 @@ func TestGetMetricsErrorsAndDebugs(t *testing.T) {
 		},
 		{"getMetricsWithoutWalLogErrorRepoAbsent",
 			args{
+				"",
+				"",
 				templateStanzaRepoAbsent("", "000000010000000000000001"),
+				false,
 				false,
 				fakeSetUpMetricValue,
 				11,
@@ -406,13 +483,13 @@ func TestGetMetricsErrorsAndDebugs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			out := &bytes.Buffer{}
 			lc := log.NewLogfmtLogger(out)
-			getMetrics(tt.args.data, tt.args.verbose, curretnUnixTimeForTests, tt.args.setUpMetricValueFun, lc)
+			getMetrics(tt.args.config, tt.args.configIncludePath, tt.args.data, tt.args.backupDBCountLatest, tt.args.verboseWAL, currentUnixTimeForTests, tt.args.setUpMetricValueFun, lc)
 			errorsOutputCount := strings.Count(out.String(), "level=error")
-			debugssOutputCount := strings.Count(out.String(), "level=debug")
-			if tt.args.errorsCount != errorsOutputCount || tt.args.debugsCount != debugssOutputCount {
+			debugsOutputCount := strings.Count(out.String(), "level=debug")
+			if tt.args.errorsCount != errorsOutputCount || tt.args.debugsCount != debugsOutputCount {
 				t.Errorf("\nVariables do not match:\nerrors=%d, debugs=%d\nwant:\nerrors=%d, debugs=%d",
 					tt.args.errorsCount, tt.args.debugsCount,
-					errorsOutputCount, debugssOutputCount)
+					errorsOutputCount, debugsOutputCount)
 			}
 		})
 	}
@@ -498,11 +575,11 @@ func TestReturnConfigExecArgs(t *testing.T) {
 			args{"/tmp/pgbackrest.conf", ""},
 			[]string{"--config", "/tmp/pgbackrest.conf"},
 		},
-		{"returnConfigExecArgsNotEmptyConfigInckudePath",
+		{"returnConfigExecArgsNotEmptyConfigIncludePath",
 			args{"", "/tmp/pgbackrest/conf.d"},
 			[]string{"--config-include-path", "/tmp/pgbackrest/conf.d"},
 		},
-		{"returnConfigExecArgsNotEmptyConfigAndConfigInckudePath",
+		{"returnConfigExecArgsNotEmptyConfigAndConfigIncludePath",
 			args{"/tmp/pgbackrest.conf", "/tmp/pgbackrest/conf.d"},
 			[]string{"--config", "/tmp/pgbackrest.conf", "--config-include-path", "/tmp/pgbackrest/conf.d"},
 		},
@@ -536,7 +613,7 @@ func TestReturnConfigStanzaArgs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := returnConfigStanzaArgs(tt.args.stanza); !reflect.DeepEqual(got, tt.want) {
+			if got := returnStanzaExecArgs(tt.args.stanza); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", got, tt.want)
 			}
 		})
@@ -563,7 +640,7 @@ func TestReturnConfigBackupTypeArgs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := returnConfigBackupTypeArgs(tt.args.backupType); !reflect.DeepEqual(got, tt.want) {
+			if got := returnBackupTypeExecArgs(tt.args.backupType); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", got, tt.want)
 			}
 		})
@@ -613,6 +690,7 @@ func TestCompareLastBackups(t *testing.T) {
 	type args struct {
 		backups       *lastBackupsStruct
 		currentBackup time.Time
+		backupLabel   string
 		backupType    string
 	}
 	tests := []struct {
@@ -621,21 +699,33 @@ func TestCompareLastBackups(t *testing.T) {
 		want lastBackupsStruct
 	}{
 		{"compareLastBackupsFull",
-			args{&lastBackups, fullDate, "full"},
-			lastBackupsStruct{fullDate, fullDate, fullDate},
+			args{&lastBackups, fullDate, "20210721-000101F", "full"},
+			lastBackupsStruct{
+				backupStruct{"20210721-000101F", "", fullDate},
+				backupStruct{"20210721-000101F", "", fullDate},
+				backupStruct{"20210721-000101F", "", fullDate},
+			},
 		},
 		{"compareLastBackupsDiff",
-			args{&lastBackups, diffDate, "diff"},
-			lastBackupsStruct{fullDate, diffDate, diffDate},
+			args{&lastBackups, diffDate, "20210721-000101F_20210721-000501D", "diff"},
+			lastBackupsStruct{
+				backupStruct{"20210721-000101F", "", fullDate},
+				backupStruct{"20210721-000101F_20210721-000501D", "", diffDate},
+				backupStruct{"20210721-000101F_20210721-000501D", "", diffDate},
+			},
 		},
 		{"compareLastBackupsIncr",
-			args{&lastBackups, incrDate, "incr"},
-			lastBackupsStruct{fullDate, diffDate, incrDate},
+			args{&lastBackups, incrDate, "20210721-000101F_20210721-001001I", "incr"},
+			lastBackupsStruct{
+				backupStruct{"20210721-000101F", "", fullDate},
+				backupStruct{"20210721-000101F_20210721-000501D", "", diffDate},
+				backupStruct{"20210721-000101F_20210721-001001I", "", incrDate},
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			compareLastBackups(tt.args.backups, tt.args.currentBackup, tt.args.backupType)
+			compareLastBackups(tt.args.backups, tt.args.currentBackup, tt.args.backupLabel, tt.args.backupType)
 			if !reflect.DeepEqual(*tt.args.backups, tt.want) {
 				t.Errorf("\nVariables do not match:\n%v\nwant:\n%v", *tt.args.backups, tt.want)
 			}
@@ -680,21 +770,34 @@ func fakeSetUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...
 }
 
 //nolint:unparam
-func templateStanza(walMax, walMin string, errorStatus bool) stanza {
+func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus bool) stanza {
+	var (
+		link *[]struct {
+			Destination string "json:\"destination\""
+			Name        string "json:\"name\""
+		}
+		tablespace *[]struct {
+			Destination string `json:"destination"`
+			Name        string `json:"name"`
+			OID         int    `json:"oid"`
+		}
+	)
 	return stanza{
 		[]archive{
 			{databaseID{1, 1}, "13-1", walMax, walMin},
 		},
 		[]backup{
-			{struct {
-				StartWAL string "json:\"start\""
-				StopWAL  string "json:\"stop\""
-			}{"000000010000000000000002", "000000010000000000000002"},
+			{
+				struct {
+					StartWAL string "json:\"start\""
+					StopWAL  string "json:\"stop\""
+				}{"000000010000000000000002", "000000010000000000000002"},
 				struct {
 					Format  int    "json:\"format\""
 					Version string "json:\"version\""
-				}{5, "2.38"},
+				}{5, "2.41"},
 				databaseID{1, 1},
+				&dbRef,
 				&errorStatus,
 				backupInfo{
 					24316343,
@@ -705,12 +808,14 @@ func templateStanza(walMax, walMin string, errorStatus bool) stanza {
 					24316343,
 				},
 				"20210607-092423F",
+				link,
 				struct {
 					StartLSN string "json:\"start\""
 					StopLSN  string "json:\"stop\""
 				}{"0/2000028", "0/2000100"},
 				"",
 				[]string{""},
+				tablespace,
 				struct {
 					Start int64 "json:\"start\""
 					Stop  int64 "json:\"stop\""
@@ -750,21 +855,35 @@ func templateStanza(walMax, walMin string, errorStatus bool) stanza {
 
 //nolint:unparam
 func templateStanzaErrorAbsent(walMax, walMin string) stanza {
-	var errorStatus *bool
+	var (
+		errorStatus *bool
+		dbRef       *[]databaseRef
+		link        *[]struct {
+			Destination string "json:\"destination\""
+			Name        string "json:\"name\""
+		}
+		tablespace *[]struct {
+			Destination string `json:"destination"`
+			Name        string `json:"name"`
+			OID         int    `json:"oid"`
+		}
+	)
 	return stanza{
 		[]archive{
 			{databaseID{1, 1}, "13-1", walMax, walMin},
 		},
 		[]backup{
-			{struct {
-				StartWAL string "json:\"start\""
-				StopWAL  string "json:\"stop\""
-			}{"000000010000000000000002", "000000010000000000000002"},
+			{
+				struct {
+					StartWAL string "json:\"start\""
+					StopWAL  string "json:\"stop\""
+				}{"000000010000000000000002", "000000010000000000000002"},
 				struct {
 					Format  int    "json:\"format\""
 					Version string "json:\"version\""
 				}{5, "2.35"},
 				databaseID{1, 1},
+				dbRef,
 				errorStatus,
 				backupInfo{
 					24316343,
@@ -775,12 +894,14 @@ func templateStanzaErrorAbsent(walMax, walMin string) stanza {
 					24316343,
 				},
 				"20210607-092423F",
+				link,
 				struct {
 					StartLSN string "json:\"start\""
 					StopLSN  string "json:\"stop\""
 				}{"", ""},
 				"",
 				[]string{""},
+				tablespace,
 				struct {
 					Start int64 "json:\"start\""
 					Stop  int64 "json:\"stop\""
@@ -820,7 +941,19 @@ func templateStanzaErrorAbsent(walMax, walMin string) stanza {
 
 //nolint:unparam
 func templateStanzaRepoAbsent(walMax, walMin string) stanza {
-	var errorStatus *bool
+	var (
+		errorStatus *bool
+		dbRef       *[]databaseRef
+		link        *[]struct {
+			Destination string "json:\"destination\""
+			Name        string "json:\"name\""
+		}
+		tablespace *[]struct {
+			Destination string `json:"destination"`
+			Name        string `json:"name"`
+			OID         int    `json:"oid"`
+		}
+	)
 	return stanza{
 		[]archive{
 			{databaseID{1, 0}, "13-1", walMax, walMin},
@@ -835,6 +968,7 @@ func templateStanzaRepoAbsent(walMax, walMin string) stanza {
 					Version string "json:\"version\""
 				}{5, "2.31"},
 				databaseID{1, 0},
+				dbRef,
 				errorStatus,
 				backupInfo{
 					24316343,
@@ -845,12 +979,14 @@ func templateStanzaRepoAbsent(walMax, walMin string) stanza {
 					24316343,
 				},
 				"20210607-092423F",
+				link,
 				struct {
 					StartLSN string "json:\"start\""
 					StopLSN  string "json:\"stop\""
 				}{"", ""},
 				"",
 				[]string{""},
+				tablespace,
 				struct {
 					Start int64 "json:\"start\""
 					Stop  int64 "json:\"stop\""
