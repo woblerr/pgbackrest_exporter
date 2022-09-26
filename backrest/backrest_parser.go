@@ -783,9 +783,6 @@ func getMetrics(config, configIncludePath string, data stanza, backupDBCountLate
 	}
 }
 
-func getMetricsLatest(setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
-
-}
 func setUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...string) error {
 	metricVec, err := metric.GetMetricWithLabelValues(labels...)
 	if err != nil {
