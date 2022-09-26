@@ -2,7 +2,7 @@ ARG BACKREST_VERSION="2.41"
 ARG DOCKER_BACKREST_VERSION="v0.15"
 ARG REPO_BUILD_TAG="unknown"
 
-FROM golang:1.17-buster AS builder
+FROM golang:1.18-buster AS builder
 ARG REPO_BUILD_TAG
 COPY . /build
 WORKDIR /build
