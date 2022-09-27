@@ -647,6 +647,33 @@ func TestReturnConfigBackupTypeArgs(t *testing.T) {
 	}
 }
 
+func TestReturnBackupSetExecArgs(t *testing.T) {
+	type args struct {
+		backupSetLabel string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{"returnBackupSetExecArgsEmpty",
+			args{""},
+			[]string{},
+		},
+		{"returnBackupSetExecArgsNotEmpty",
+			args{"20210607-092423F"},
+			[]string{"--set", "20210607-092423F"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := returnBackupSetExecArgs(tt.args.backupSetLabel); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestConcatExecArgs(t *testing.T) {
 	type args struct {
 		slices [][]string
