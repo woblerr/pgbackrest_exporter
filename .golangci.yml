@@ -19,6 +19,9 @@ linters-settings:
     locale: US
   lll:
     line-length: 140
+  # It's bad parameter value, need refactoring code in future.
+  gocyclo:
+    min-complexity: 50
 
 linters:
   enable:

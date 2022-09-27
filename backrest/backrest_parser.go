@@ -166,7 +166,11 @@ func getPGVersion(id, repoKey int, dbList []db) string {
 }
 
 func getMetrics(config, configIncludePath string, data stanza, backupDBCountLatest, verboseWAL bool, currentUnixTime int64, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
-	var err error
+	var (
+		err                     error
+		stanzaDataSpecific      []byte
+		parseStanzaDataSpecific []stanza
+	)
 	lastBackups := lastBackupsStruct{}
 	lastBackups.full.backupType = "full"
 	lastBackups.diff.backupType = "diff"
@@ -527,7 +531,7 @@ func getMetrics(config, configIncludePath string, data stanza, backupDBCountLate
 		// If the calculation of the number of databases in latest backups is enabled.
 		if backupDBCountLatest {
 			// Try to get info fo full backup.
-			stanzaDataSpecific, err := getSpecificBackupInfoData(config, configIncludePath, data.Name, lastBackups.full.backupLabel, logger)
+			stanzaDataSpecific, err = getSpecificBackupInfoData(config, configIncludePath, data.Name, lastBackups.full.backupLabel, logger)
 			if err != nil {
 				level.Error(logger).Log(
 					"msg", "Get data from pgBackRest failed",
@@ -536,7 +540,7 @@ func getMetrics(config, configIncludePath string, data stanza, backupDBCountLate
 					"backup", lastBackups.full.backupLabel,
 					"err", err)
 			}
-			parseStanzaDataSpecific, err := parseResult(stanzaDataSpecific)
+			parseStanzaDataSpecific, err = parseResult(stanzaDataSpecific)
 			if err != nil {
 				level.Error(logger).Log(
 					"msg", "Parse JSON failed",
