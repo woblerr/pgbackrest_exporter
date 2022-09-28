@@ -89,7 +89,12 @@ func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas []s
 			for _, singleStanza := range parseStanzaData {
 				// If stanza is in the exclude list, skip it.
 				if stanzaNotInExclude(singleStanza.Name, stanzasExclude) {
-					getMetrics(config, configIncludePath, singleStanza, backupDBCountLatest, verboseWAL, currentUnixTime, setUpMetricValue, logger)
+					getStanzaMetrics(singleStanza.Name, singleStanza.Status.Code, setUpMetricValue, logger)
+					getRepoMetrics(singleStanza.Name, singleStanza.Repo, setUpMetricValue, logger)
+					// Last backups for current stanza
+					lastBackups := getBackupMetrics(singleStanza.Name, singleStanza.Backup, singleStanza.DB, setUpMetricValue, logger)
+					getBackupLastMetrics(config, configIncludePath, singleStanza.Name, lastBackups, backupDBCountLatest, currentUnixTime, setUpMetricValue, logger)
+					getWALMetrics(singleStanza.Name, singleStanza.Archive, singleStanza.DB, verboseWAL, setUpMetricValue, logger)
 				}
 			}
 		} else {
