@@ -1577,3 +1577,48 @@ func templateLastBackup() lastBackupsStruct {
 		backupStruct{"20210607-092423F", "", time.Unix(1623706322, 0)},
 	}
 }
+
+func TestGetParsedSpecificBackupInfoDataErrors(t *testing.T) {
+	type args struct {
+		config            string
+		configIncludePath string
+		stanzaName        string
+		backupLabel       string
+		errorsCount       int
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			"getParsedSpecificBackupInfoDataErrors",
+			args{
+				"",
+				"",
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Name,
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Backup[0].Label,
+				2,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out := &bytes.Buffer{}
+			lc := log.NewLogfmtLogger(out)
+			getParsedSpecificBackupInfoData(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.backupLabel, lc)
+			errorsOutputCount := strings.Count(out.String(), "level=error")
+			if tt.args.errorsCount != errorsOutputCount {
+				t.Errorf("\nVariables do not match:\nerrors=%d, want:\nerrors=%d",
+					tt.args.errorsCount, errorsOutputCount)
+			}
+		})
+	}
+}
