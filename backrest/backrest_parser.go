@@ -167,7 +167,7 @@ func getPGVersion(id, repoKey int, dbList []db) string {
 
 // Set stanza metrics:
 //	* pgbackrest_stanza_status
-func getStanzaMetrics(stanzaName string, stanzaCode int, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
+func getStanzaMetrics(stanzaName string, stanzaStatusCode int, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
 	//https://github.com/pgbackrest/pgbackrest/blob/03021c6a17f1374e84ef42614fa1dd2a6be4b64d/src/command/info/info.c#L78-L94
 	// Stanza statuses:
 	//  0: "ok",
@@ -180,12 +180,12 @@ func getStanzaMetrics(stanzaName string, stanzaCode int, setUpMetricValueFun set
 	//  99: "other".
 	level.Debug(logger).Log(
 		"msg", "Metric pgbackrest_stanza_status",
-		"value", float64(stanzaCode),
+		"value", float64(stanzaStatusCode),
 		"labels", stanzaName,
 	)
 	err := setUpMetricValueFun(
 		pgbrStanzaStatusMetric,
-		float64(stanzaCode),
+		float64(stanzaStatusCode),
 		stanzaName,
 	)
 	if err != nil {
@@ -238,9 +238,6 @@ func getRepoMetrics(stanzaName string, repoData []repo, setUpMetricValueFun setU
 //	* pgbackrest_backup_repo_size_bytes
 //	* pgbackrest_backup_repo_delta_bytes
 //	* pgbackrest_backup_error_status
-//	* pgbackrest_backup_full_since_last_completion_seconds
-//	* pgbackrest_backup_diff_since_last_completion_seconds
-//	* pgbackrest_backup_incr_since_last_completion_seconds
 // And returns info about last backups.
 func getBackupMetrics(stanzaName string, backupData []backup, dbData []db, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) lastBackupsStruct {
 	var err error
