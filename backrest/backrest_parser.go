@@ -93,7 +93,7 @@ func returnBackupSetExecArgs(backupSetLabel string) []string {
 		// Backup label not set. No return parameters.
 		backupSetLabelArgs = []string{}
 	default:
-		//
+		// Use specific backup label.
 		backupSetLabelArgs = []string{"--set", backupSetLabel}
 	}
 	return backupSetLabelArgs
@@ -495,7 +495,7 @@ func getBackupMetrics(stanzaName string, backupData []backup, dbData []db, setUp
 //	* pgbackrest_backup_last_databases
 func getBackupLastMetrics(config, configIncludePath, stanzaName string, lastBackups lastBackupsStruct, backupDBCountLatest bool, currentUnixTime int64, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
 	var (
-		err                     error
+		err, errParse           error
 		parseStanzaDataSpecific []stanza
 	)
 	lastBackups.full.backupType = "full"
@@ -558,100 +558,106 @@ func getBackupLastMetrics(config, configIncludePath, stanzaName string, lastBack
 			)
 		}
 		// If the calculation of the number of databases in latest backups is enabled.
+		// Information about number of databases in specific backup has appeared since pgBackRest v2.41.
+		// In versions < v2.41 this is missing and the metric does not need to be collected.
+		// getParsedSpecificBackupInfoData will return error in this case.
 		if backupDBCountLatest {
 			// Try to get info fo full backup.
-			parseStanzaDataSpecific, err = getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, lastBackups.full.backupLabel, logger)
-			// In a normal situation, only one element with one backup should be returned.
-			// If more than one element or one backup is returned, there is may be a bug in pgBackRest.
-			// If it's not a bug, then this part will need to be refactoring.
-			// Use *[]struct() type for backup.DatabaseRef.
-			// Information about number of databases in specific backup has appeared since pgBackRest v2.41.
-			// In versions < v2.41 this is missing and the metric does not need to be collected.
-			// json.Unmarshal() will return nil when the error information is  missing.
-			if parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil && err == nil {
-				// Number of databases in the last full backup.
-				level.Debug(logger).Log(
-					"msg", "Metric pgbackrest_backup_last_databases",
-					"value", len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
-					"labels",
-					strings.Join(
-						[]string{
-							lastBackups.full.backupType,
-							stanzaName,
-						}, ",",
-					),
-				)
-				err = setUpMetricValueFun(
-					pgbrStanzaBackupLastDatabasesMetric,
-					float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
-					lastBackups.full.backupType,
-					stanzaName,
-				)
-				if err != nil {
-					level.Error(logger).Log(
-						"msg", "Metric pgbackrest_backup_last_databases set up failed",
-						"err", err,
+			parseStanzaDataSpecific, errParse = getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, lastBackups.full.backupLabel, logger)
+			if errParse == nil {
+				// In a normal situation, only one element with one backup should be returned.
+				// If more than one element or one backup is returned, there is may be a bug in pgBackRest.
+				// If it's not a bug, then this part will need to be refactoring.
+				// Use *[]struct() type for backup.DatabaseRef.
+				if parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil {
+					// Number of databases in the last full backup.
+					level.Debug(logger).Log(
+						"msg", "Metric pgbackrest_backup_last_databases",
+						"value", len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
+						"labels",
+						strings.Join(
+							[]string{
+								lastBackups.full.backupType,
+								stanzaName,
+							}, ",",
+						),
 					)
+					err = setUpMetricValueFun(
+						pgbrStanzaBackupLastDatabasesMetric,
+						float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
+						lastBackups.full.backupType,
+						stanzaName,
+					)
+					if err != nil {
+						level.Error(logger).Log(
+							"msg", "Metric pgbackrest_backup_last_databases set up failed",
+							"err", err,
+						)
+					}
 				}
 			}
 			// If name for diff backup is equal to full, there is no point in re-receiving data.
 			if lastBackups.diff.backupLabel != lastBackups.full.backupLabel {
-				parseStanzaDataSpecific, err = getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, lastBackups.diff.backupLabel, logger)
+				parseStanzaDataSpecific, errParse = getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, lastBackups.diff.backupLabel, logger)
 			}
-			if parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil && err == nil {
-				// Number of databases in the last full or differential backup.
-				level.Debug(logger).Log(
-					"msg", "Metric pgbackrest_backup_last_databases",
-					"value", len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
-					"labels",
-					strings.Join(
-						[]string{
-							lastBackups.diff.backupType,
-							stanzaName,
-						}, ",",
-					),
-				)
-				err = setUpMetricValueFun(
-					pgbrStanzaBackupLastDatabasesMetric,
-					float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
-					lastBackups.diff.backupType,
-					stanzaName,
-				)
-				if err != nil {
-					level.Error(logger).Log(
-						"msg", "Metric pgbackrest_backup_last_databases set up failed",
-						"err", err,
+			if errParse == nil {
+				if parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil {
+					// Number of databases in the last full or differential backup.
+					level.Debug(logger).Log(
+						"msg", "Metric pgbackrest_backup_last_databases",
+						"value", len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
+						"labels",
+						strings.Join(
+							[]string{
+								lastBackups.diff.backupType,
+								stanzaName,
+							}, ",",
+						),
 					)
+					err = setUpMetricValueFun(
+						pgbrStanzaBackupLastDatabasesMetric,
+						float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
+						lastBackups.diff.backupType,
+						stanzaName,
+					)
+					if err != nil {
+						level.Error(logger).Log(
+							"msg", "Metric pgbackrest_backup_last_databases set up failed",
+							"err", err,
+						)
+					}
 				}
 			}
 			// If name for incr backup is equal to diff, there is no point in re-receiving data.
 			if lastBackups.incr.backupLabel != lastBackups.diff.backupLabel {
-				parseStanzaDataSpecific, err = getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, lastBackups.incr.backupLabel, logger)
+				parseStanzaDataSpecific, errParse = getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, lastBackups.incr.backupLabel, logger)
 			}
-			if parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil && err == nil {
-				// Number of databases in the last full, differential or incremental backup.
-				level.Debug(logger).Log(
-					"msg", "Metric pgbackrest_backup_last_databases",
-					"value", len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
-					"labels",
-					strings.Join(
-						[]string{
-							lastBackups.incr.backupType,
-							stanzaName,
-						}, ",",
-					),
-				)
-				err = setUpMetricValueFun(
-					pgbrStanzaBackupLastDatabasesMetric,
-					float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
-					lastBackups.incr.backupType,
-					stanzaName,
-				)
-				if err != nil {
-					level.Error(logger).Log(
-						"msg", "Metric pgbackrest_backup_last_databases set up failed",
-						"err", err,
+			if errParse == nil {
+				if parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil {
+					// Number of databases in the last full, differential or incremental backup.
+					level.Debug(logger).Log(
+						"msg", "Metric pgbackrest_backup_last_databases",
+						"value", len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
+						"labels",
+						strings.Join(
+							[]string{
+								lastBackups.incr.backupType,
+								stanzaName,
+							}, ",",
+						),
 					)
+					err = setUpMetricValueFun(
+						pgbrStanzaBackupLastDatabasesMetric,
+						float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
+						lastBackups.incr.backupType,
+						stanzaName,
+					)
+					if err != nil {
+						level.Error(logger).Log(
+							"msg", "Metric pgbackrest_backup_last_databases set up failed",
+							"err", err,
+						)
+					}
 				}
 			}
 		}
