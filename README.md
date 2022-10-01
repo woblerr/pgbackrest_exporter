@@ -77,6 +77,10 @@ The metrics provided by the client.
 
     Labels: stanza.
 
+* `pgbackrest_backup_last_databases` - number of databases in the last full, differential or incremental backup.
+
+    Labels: backup_type, stanza.
+
 * `pgbackrest_wal_archive_status` - current WAL archive status.
 
     Labels: database_id, pg_version, repo_key, stanza, wal_max, wal_min.
@@ -94,6 +98,10 @@ The metrics provided by the client.
 All metrics are collected for `pgBackRest >= v2.38`.
 
 For earlier versions, some metrics may not be collected or have insignificant label values:
+
+* `pgBackRest < v2.41`
+
+    The following metric will be absent: `pgbackrest_backup_last_databases`. 
 
 * `pgBackRest < v2.38`
 
@@ -138,6 +146,8 @@ Flags:
       --backrest.stanza-exclude="" ...  
                                  Specific stanza to exclude from collecting metrics. Can be specified several times.
       --backrest.backup-type=""  Specific backup type for collecting metrics. One of: [full, incr, diff].
+      --backrest.database-count-latest  
+                                 Exposing the number of databases in the latest backups.
       --backrest.verbose-wal     Enable additional labels for WAL metrics.
       --log.level=info           Only log messages with the given severity or above. One of: [debug, info, warn, error]
       --log.format=logfmt        Output format of log messages. One of: [logfmt, json]
@@ -174,6 +184,11 @@ For this case, metrics will be collected only for `full` backups.<br>
 This flag works for `pgBackRest >= v2.38`.<br>
 For earlier pgBackRest versions there will be an error like: `option 'type' not valid for command 'info'`.
 
+When flag `--backrest.database-count-latest` is specified - information about the number of databases in the last full, differential or incremental backup is collected.<br>
+This flag works for `pgBackRest >= v2.41`.<br>
+For earlier pgBackRest versions there will be an error like: `option 'set' is currently only valid for text output`.<br>
+For a significant number of stanzas, this will require additional time to collect metrics. Each stanza requires pgBackRest execution for the last full, differential or incremental backups to get data.
+
 ### Building and running docker
 
 By default, pgBackRest version is `2.41`. Another version can be specified via arguments.
@@ -186,7 +201,9 @@ Environment variables supported by this image:
 * `STANZA_INCLUDE` - specific stanza for collecting metrics, default `""`;
 * `STANZA_EXCLUDE` - specific stanza to exclude from collecting metrics, default `""`;
 * `COLLECT_INTERVAL` - collecting metrics interval in seconds, default `600`;
-* `BACKUP_TYPE` - specific backup type for collecting metrics, default `""`.
+* `BACKUP_TYPE` - specific backup type for collecting metrics, default `""`;
+* `VERBOSE_WAL` - enabling additional labels for WAL metrics, default `false`;
+* `DATABASE_COUNT_LATEST` - exposing the number of databases in the latest backups, default `false`.
 
 #### Pull
 
@@ -309,6 +326,17 @@ For specific backup type:
 docker run -d \
     --name pgbackrest_exporter \
     -e BACKUP_TYPE=full \
+    -p 9854:9854 \
+    -v  /etc/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf \
+    pgbackrest_exporter
+```
+
+With exposing the number of databases in the latest backups:
+
+```bash
+docker run -d \
+    --name pgbackrest_exporter \
+    -e DATABASE_COUNT_LATEST=true \
     -p 9854:9854 \
     -v  /etc/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf \
     pgbackrest_exporter
