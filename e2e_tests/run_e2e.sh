@@ -35,7 +35,7 @@ case ${EXPORTER_AUTH} in
         echo "[ERROR] incorect value: get=${EXPORTER_AUTH}, want=true or false"
         exit 1
         ;;
-esac    
+esac
 
 # A simple test to check the number of metrics.
 # Format: regex for metric | repetitions.
