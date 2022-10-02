@@ -489,9 +489,7 @@ func getBackupMetrics(stanzaName string, backupData []backup, dbData []db, setUp
 }
 
 // Set backup metrics:
-//	* pgbackrest_backup_full_since_last_completion_seconds
-//	* pgbackrest_backup_diff_since_last_completion_seconds
-//	* pgbackrest_backup_incr_since_last_completion_seconds
+//	* pgbackrest_backup_since_last_completion_seconds
 //	* pgbackrest_backup_last_databases
 func getBackupLastMetrics(config, configIncludePath, stanzaName string, lastBackups lastBackupsStruct, backupDBCountLatest bool, currentUnixTime int64, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
 	var (
@@ -507,53 +505,74 @@ func getBackupLastMetrics(config, configIncludePath, stanzaName string, lastBack
 	if !lastBackups.full.backupTime.IsZero() {
 		// Seconds since the last completed full backup.
 		level.Debug(logger).Log(
-			"msg", "Metric pgbackrest_backup_full_since_last_completion_seconds",
+			"msg", "Metric pgbackrest_backup_since_last_completion_seconds",
 			"value", time.Unix(currentUnixTime, 0).Sub(lastBackups.full.backupTime).Seconds(),
-			"labels", stanzaName,
+			"labels",
+			strings.Join(
+				[]string{
+					lastBackups.full.backupType,
+					stanzaName,
+				}, ",",
+			),
 		)
 		err = setUpMetricValueFun(
-			pgbrStanzaBackupLastFullMetric,
+			pgbrStanzaBackupSinceLastCompletionSecondsMetric,
 			// Trim nanoseconds.
 			time.Unix(currentUnixTime, 0).Sub(lastBackups.full.backupTime).Seconds(),
+			lastBackups.full.backupType,
 			stanzaName,
 		)
 		if err != nil {
 			level.Error(logger).Log(
-				"msg", "Metric pgbackrest_backup_full_since_last_completion_seconds set up failed",
+				"msg", "Metric pgbackrest_backup_since_last_completion_seconds set up failed",
 				"err", err,
 			)
 		}
 		// Seconds since the last completed full or differential backup.
 		level.Debug(logger).Log(
-			"msg", "Metric pgbackrest_backup_diff_since_last_completion_seconds",
+			"msg", "Metric pgbackrest_backup_since_last_completion_seconds",
 			"value", time.Unix(currentUnixTime, 0).Sub(lastBackups.diff.backupTime).Seconds(),
-			"labels", stanzaName,
+			"labels",
+			strings.Join(
+				[]string{
+					lastBackups.diff.backupType,
+					stanzaName,
+				}, ",",
+			),
 		)
 		err = setUpMetricValueFun(
-			pgbrStanzaBackupLastDiffMetric,
+			pgbrStanzaBackupSinceLastCompletionSecondsMetric,
 			time.Unix(currentUnixTime, 0).Sub(lastBackups.diff.backupTime).Seconds(),
+			lastBackups.diff.backupType,
 			stanzaName,
 		)
 		if err != nil {
 			level.Error(logger).Log(
-				"msg", "Metric pgbackrest_backup_diff_since_last_completion_seconds set up failed",
+				"msg", "Metric pgbackrest_backup_since_last_completion_seconds set up failed",
 				"err", err,
 			)
 		}
 		// Seconds since the last completed full, differential or incremental backup.
 		level.Debug(logger).Log(
-			"msg", "Metric pgbackrest_backup_incr_since_last_completion_seconds",
+			"msg", "Metric pgbackrest_backup_since_last_completion_seconds",
 			"value", time.Unix(currentUnixTime, 0).Sub(lastBackups.incr.backupTime).Seconds(),
-			"labels", stanzaName,
+			"labels",
+			strings.Join(
+				[]string{
+					lastBackups.incr.backupType,
+					stanzaName,
+				}, ",",
+			),
 		)
 		err = setUpMetricValueFun(
-			pgbrStanzaBackupLastIncrMetric,
+			pgbrStanzaBackupSinceLastCompletionSecondsMetric,
 			time.Unix(currentUnixTime, 0).Sub(lastBackups.incr.backupTime).Seconds(),
+			lastBackups.incr.backupType,
 			stanzaName,
 		)
 		if err != nil {
 			level.Error(logger).Log(
-				"msg", "Metric pgbackrest_backup_incr_since_last_completion_seconds set up failed",
+				"msg", "Metric pgbackrest_backup_since_last_completion_seconds set up failed",
 				"err", err,
 			)
 		}

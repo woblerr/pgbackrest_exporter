@@ -127,26 +127,18 @@ var (
 			"database_id",
 			"repo_key",
 			"stanza"})
-	pgbrStanzaBackupLastFullMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_backup_full_since_last_completion_seconds",
-		Help: "Seconds since the last completed full backup.",
-	},
-		[]string{"stanza"})
 	// Differential backup is always based on last full,
 	// if the last backup was full, the metric will take full backup value.
-	pgbrStanzaBackupLastDiffMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_backup_diff_since_last_completion_seconds",
-		Help: "Seconds since the last completed full or differential backup.",
-	},
-		[]string{"stanza"})
 	// Incremental backup is always based on last full or differential,
 	// if the last backup was full or differential, the metric will take
 	// full or differential backup value.
-	pgbrStanzaBackupLastIncrMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_backup_incr_since_last_completion_seconds",
+	pgbrStanzaBackupSinceLastCompletionSecondsMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_backup_since_last_completion_seconds",
 		Help: "Seconds since the last completed full, differential or incremental backup.",
 	},
-		[]string{"stanza"})
+		[]string{
+			"backup_type",
+			"stanza"})
 	// Differential backup is always based on last full,
 	// if the last backup was full, the metric will take full backup value.
 	// Incremental backup is always based on last full or differential,
