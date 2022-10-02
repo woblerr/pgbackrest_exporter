@@ -65,17 +65,9 @@ The metrics provided by the client.
     - `0` - backup doesn't contain page checksum errors,
     - `1` - backup contains one or more page checksum errors. To display the list of errors, you need manually run the command like `pgbackrest info --stanza stanza --set backup_name --repo repo_key`.
 
-* `pgbackrest_backup_full_since_last_completion_seconds` - seconds since the last completed full backup.
+* `pgbackrest_backup_since_last_completion_seconds` - seconds since the last completed full, differential or incremental backup.
 
-    Labels: stanza.
-
-* `pgbackrest_backup_diff_since_last_completion_seconds` - seconds since the last completed full or differential backup.
-
-    Labels: stanza.
-
-* `pgbackrest_backup_incr_since_last_completion_seconds` - seconds since the last completed full, differential or incremental backup.
-
-    Labels: stanza.
+    Labels: backup_type, stanza.
 
 * `pgbackrest_backup_last_databases` - number of databases in the last full, differential or incremental backup.
 

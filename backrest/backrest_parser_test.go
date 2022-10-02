@@ -586,20 +586,16 @@ func TestGetBackupLastMetrics(t *testing.T) {
 		setUpMetricValueFun setUpMetricValueFunType
 		testText            string
 	}
-	templateMetrics := `# HELP pgbackrest_backup_diff_since_last_completion_seconds Seconds since the last completed full or differential backup.
-# TYPE pgbackrest_backup_diff_since_last_completion_seconds gauge
-pgbackrest_backup_diff_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
-# HELP pgbackrest_backup_full_since_last_completion_seconds Seconds since the last completed full backup.
-# TYPE pgbackrest_backup_full_since_last_completion_seconds gauge
-pgbackrest_backup_full_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
-# HELP pgbackrest_backup_incr_since_last_completion_seconds Seconds since the last completed full, differential or incremental backup.
-# TYPE pgbackrest_backup_incr_since_last_completion_seconds gauge
-pgbackrest_backup_incr_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
-# HELP pgbackrest_backup_last_databases Number of databases in the last full, differential or incremental backup.
+	templateMetrics := `# HELP pgbackrest_backup_last_databases Number of databases in the last full, differential or incremental backup.
 # TYPE pgbackrest_backup_last_databases gauge
 pgbackrest_backup_last_databases{backup_type="diff",stanza="demo"} 2
 pgbackrest_backup_last_databases{backup_type="full",stanza="demo"} 1
 pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 2
+# HELP pgbackrest_backup_since_last_completion_seconds Seconds since the last completed full, differential or incremental backup.
+# TYPE pgbackrest_backup_since_last_completion_seconds gauge
+pgbackrest_backup_since_last_completion_seconds{backup_type="diff",stanza="demo"} 9.223372036854776e+09
+pgbackrest_backup_since_last_completion_seconds{backup_type="full",stanza="demo"} 9.223372036854776e+09
+pgbackrest_backup_since_last_completion_seconds{backup_type="incr",stanza="demo"} 9.223372036854776e+09
 `
 	tests := []struct {
 		name                   string
@@ -682,9 +678,7 @@ pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 2
 			getBackupLastMetrics(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.lastBackups, tt.args.backupDBCountLatest, tt.args.currentUnixTime, tt.args.setUpMetricValueFun, lc)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
-				pgbrStanzaBackupLastFullMetric,
-				pgbrStanzaBackupLastDiffMetric,
-				pgbrStanzaBackupLastIncrMetric,
+				pgbrStanzaBackupSinceLastCompletionSecondsMetric,
 				pgbrStanzaBackupLastDatabasesMetric,
 			)
 			metricFamily, err := reg.Gather()
@@ -719,15 +713,11 @@ func TestGetBackupLastMetricsDBsAbsent(t *testing.T) {
 		setUpMetricValueFun setUpMetricValueFunType
 		testText            string
 	}
-	templateMetrics := `# HELP pgbackrest_backup_diff_since_last_completion_seconds Seconds since the last completed full or differential backup.
-# TYPE pgbackrest_backup_diff_since_last_completion_seconds gauge
-pgbackrest_backup_diff_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
-# HELP pgbackrest_backup_full_since_last_completion_seconds Seconds since the last completed full backup.
-# TYPE pgbackrest_backup_full_since_last_completion_seconds gauge
-pgbackrest_backup_full_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
-# HELP pgbackrest_backup_incr_since_last_completion_seconds Seconds since the last completed full, differential or incremental backup.
-# TYPE pgbackrest_backup_incr_since_last_completion_seconds gauge
-pgbackrest_backup_incr_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
+	templateMetrics := `# HELP pgbackrest_backup_since_last_completion_seconds Seconds since the last completed full, differential or incremental backup.
+# TYPE pgbackrest_backup_since_last_completion_seconds gauge
+pgbackrest_backup_since_last_completion_seconds{backup_type="diff",stanza="demo"} 9.223372036854776e+09
+pgbackrest_backup_since_last_completion_seconds{backup_type="full",stanza="demo"} 9.223372036854776e+09
+pgbackrest_backup_since_last_completion_seconds{backup_type="incr",stanza="demo"} 9.223372036854776e+09
 `
 	tests := []struct {
 		name                   string
@@ -779,9 +769,7 @@ pgbackrest_backup_incr_since_last_completion_seconds{stanza="demo"} 9.2233720368
 			getBackupLastMetrics(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.lastBackups, tt.args.backupDBCountLatest, tt.args.currentUnixTime, tt.args.setUpMetricValueFun, lc)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
-				pgbrStanzaBackupLastFullMetric,
-				pgbrStanzaBackupLastDiffMetric,
-				pgbrStanzaBackupLastIncrMetric,
+				pgbrStanzaBackupSinceLastCompletionSecondsMetric,
 			)
 			metricFamily, err := reg.Gather()
 			if err != nil {
