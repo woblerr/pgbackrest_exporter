@@ -95,7 +95,7 @@ The metrics provided by the client.
 
 ## Compatibility with pgBackRest versions
 
-All metrics are collected for `pgBackRest >= v2.38`.
+All metrics are collected for `pgBackRest >= v2.41`.
 
 For earlier versions, some metrics may not be collected or have insignificant label values:
 
