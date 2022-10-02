@@ -13,23 +13,28 @@ import (
 	"github.com/prometheus/common/promlog"
 )
 
+type mockStruct struct {
+	mockStdout string
+	mockStderr string
+	mockExit   int
+}
+
 var (
-	mockStdout, mockStderr string
-	mockExit               int
-	logger                 = getLogger()
+	logger   = getLogger()
+	mockData = mockStruct{}
 )
 
-func TestSetPromPortandPath(t *testing.T) {
+func TestSetPromPortAndPath(t *testing.T) {
 	var (
 		testPort          = "9854"
-		testEndpoit       = "/metrics"
+		testEndpoint      = "/metrics"
 		testTLSConfigPath = ""
 	)
-	SetPromPortandPath(testPort, testEndpoit, testTLSConfigPath)
-	if testPort != promPort || testEndpoit != promEndpoint || testTLSConfigPath != promTLSConfigPath {
+	SetPromPortAndPath(testPort, testEndpoint, testTLSConfigPath)
+	if testPort != promPort || testEndpoint != promEndpoint || testTLSConfigPath != promTLSConfigPath {
 		t.Errorf("\nVariables do not match,\nport: %s, want: %s;\nendpoint: %s, want: %s;\nconfig: %swant: %s",
 			testPort, promPort,
-			testEndpoit, promEndpoint,
+			testEndpoint, promEndpoint,
 			testTLSConfigPath, promTLSConfigPath,
 		)
 	}
@@ -37,93 +42,109 @@ func TestSetPromPortandPath(t *testing.T) {
 
 func TestGetPgBackRestInfo(t *testing.T) {
 	type args struct {
-		config            string
-		configIncludePath string
-		stanzas           []string
-		stanzasExclude    []string
-		backupType        string
-		verbose           bool
+		config              string
+		configIncludePath   string
+		backupType          string
+		stanzas             []string
+		stanzasExclude      []string
+		backupDBCountLatest bool
+		verboseWAL          bool
 	}
 	tests := []struct {
-		name       string
-		args       args
-		mockStdout string
-		mockStderr string
-		mockExit   int
-		testText   string
+		name         string
+		args         args
+		mockTestData mockStruct
+		testText     string
 	}{
-		{"GetPgBackRestInfoGoodDataReturn",
-			args{"", "", []string{""}, []string{""}, "", false},
-			`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
-				`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
-				`"backup":[{"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
-				`"backrest":{"format":5,"version":"2.34"},"database":{"id":1,"repo-key":1},` +
-				`"info":{"delta":24316343,"repository":{"delta":2969512,"size":2969512},"size":24316343},` +
-				`"label":"20210614-213200F","lsn":{"start":"0/2000028","stop":"0/2000100"},"prior":null,"reference":null,"timestamp":{"start":1623706320,` +
-				`"stop":1623706322},"type":"full"}],"cipher":"none","db":[{"id":1,"repo-key":1,` +
-				`"system-id":6970977677138971135,"version":"13"}],"name":"demo","repo":[{"cipher":"none",` +
-				`"key":1,"status":{"code":0,"message":"ok"}}],"status":{"code":0,"lock":{"backup":` +
-				`{"held":false}},"message":"ok"}}]`,
-			``,
-			0,
+		{
+			"GetPgBackRestInfoGoodDataReturn",
+			args{"", "", "", []string{""}, []string{""}, true, false},
+			mockStruct{
+				`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
+					`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
+					`"backup":[{"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
+					`"backrest":{"format":5,"version":"2.41"},"database":{"id":1,"repo-key":1},` +
+					`"error":false,"info":{"delta":24316343,"repository":{"delta":2969512,"size":2969512},"size":24316343},` +
+					`"label":"20210614-213200F","lsn":{"start":"0/2000028","stop":"0/2000100"},"prior":null,"reference":null,"timestamp":{"start":1623706320,` +
+					`"stop":1623706322},"type":"full"}],"cipher":"none","db":[{"id":1,"repo-key":1,` +
+					`"system-id":6970977677138971135,"version":"13"}],"name":"demo","repo":[{"cipher":"none",` +
+					`"key":1,"status":{"code":0,"message":"ok"}}],"status":{"code":0,"lock":{"backup":` +
+					`{"held":false}},"message":"ok"}}]`,
+				``,
+				0,
+			},
 			""},
-		{"GetPgBackRestInfoGoodDataReturnWithWarn",
-			args{"", "", []string{""}, []string{""}, "", false},
-			`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
-				`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
-				`"backup":[{"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
-				`"backrest":{"format":5,"version":"2.34"},"database":{"id":1,"repo-key":1},` +
-				`"info":{"delta":24316343,"repository":{"delta":2969512,"size":2969512},"size":24316343},` +
-				`"label":"20210614-213200F","lsn":{"start":"0/2000028","stop":"0/2000100"},"prior":null,"reference":null,"timestamp":{"start":1623706320,` +
-				`"stop":1623706322},"type":"full"}],"cipher":"none","db":[{"id":1,"repo-key":1,` +
-				`"system-id":6970977677138971135,"version":"13"}],"name":"demo","repo":[{"cipher":"none",` +
-				`"key":1,"status":{"code":0,"message":"ok"}}],"status":{"code":0,"lock":{"backup":` +
-				`{"held":false}},"message":"ok"}}]`,
-			`WARN: environment contains invalid option 'test'`,
-			0,
+		{
+			"GetPgBackRestInfoGoodDataReturnWithWarn",
+			args{"", "", "", []string{""}, []string{""}, true, false},
+			mockStruct{
+				`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
+					`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
+					`"backup":[{"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
+					`"backrest":{"format":5,"version":"2.41"},"database":{"id":1,"repo-key":1},` +
+					`"error":false,"info":{"delta":24316343,"repository":{"delta":2969512,"size":2969512},"size":24316343},` +
+					`"label":"20210614-213200F","lsn":{"start":"0/2000028","stop":"0/2000100"},"prior":null,"reference":null,"timestamp":{"start":1623706320,` +
+					`"stop":1623706322},"type":"full"}],"cipher":"none","db":[{"id":1,"repo-key":1,` +
+					`"system-id":6970977677138971135,"version":"13"}],"name":"demo","repo":[{"cipher":"none",` +
+					`"key":1,"status":{"code":0,"message":"ok"}}],"status":{"code":0,"lock":{"backup":` +
+					`{"held":false}},"message":"ok"}}]`,
+				`WARN: environment contains invalid option 'test'`,
+				0,
+			},
 			`msg="pgBackRest message" err="WARN: environment contains invalid option 'test'`},
-		{"GetPgBackRestInfoBadDataReturn",
-			args{"", "", []string{""}, []string{""}, "", false},
-			``,
-			`msg="pgBackRest message" err="ERROR: [029]: missing '=' in key/value at line 9: test"`,
-			29,
+		{
+			"GetPgBackRestInfoBadDataReturn",
+			args{"", "", "", []string{""}, []string{""}, false, false},
+			mockStruct{
+				``,
+				`msg="pgBackRest message" err="ERROR: [029]: missing '=' in key/value at line 9: test"`,
+				29,
+			},
 			`msg="Get data from pgBackRest failed" err="exit status 29`},
-		{"GetPgBackRestInfoZeroDataReturn",
-			args{"", "", []string{""}, []string{""}, "", false},
-			`[]`,
-			``,
-			0,
+		{
+			"GetPgBackRestInfoZeroDataReturn",
+			args{"", "", "", []string{""}, []string{""}, false, false},
+			mockStruct{
+				`[]`,
+				``,
+				0,
+			},
 			`msg="No backup data returned"`},
-		{"GetPgBackRestInfoJsonUnmarshalFail",
-			args{"", "", []string{""}, []string{""}, "", false},
-			`[{}`,
-			``,
-			0,
+		{
+			"GetPgBackRestInfoJsonUnmarshalFail",
+			args{"", "", "", []string{""}, []string{""}, false, false},
+			mockStruct{
+				`[{}`,
+				``,
+				0,
+			},
 			`msg="Parse JSON failed" err="unexpected end of JSON input"`},
-		{"GetPgBackRestInfoEqualIncludeExcludeLists",
-			args{"", "", []string{"demo"}, []string{"demo"}, "", false},
-			``,
-			``,
-			0,
+		{
+			"GetPgBackRestInfoEqualIncludeExcludeLists",
+			args{"", "", "", []string{"demo"}, []string{"demo"}, false, false},
+			mockStruct{
+				``,
+				``,
+				0,
+			},
 			`msg="Stanza is specified in include and exclude lists" stanza=demo`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ResetMetrics()
-			mockStdout = tt.mockStdout
-			mockStderr = tt.mockStderr
+			mockData = tt.mockTestData
 			execCommand = fakeExecCommand
-			mockExit = tt.mockExit
 			defer func() { execCommand = exec.Command }()
 			out := &bytes.Buffer{}
 			lc := log.NewLogfmtLogger(out)
 			GetPgBackRestInfo(
 				tt.args.config,
 				tt.args.configIncludePath,
+				tt.args.backupType,
 				tt.args.stanzas,
 				tt.args.stanzasExclude,
-				tt.args.backupType,
-				tt.args.verbose,
+				tt.args.backupDBCountLatest,
+				tt.args.verboseWAL,
 				lc,
 			)
 			if !strings.Contains(out.String(), tt.testText) {
@@ -137,10 +158,10 @@ func fakeExecCommand(command string, args ...string) *exec.Cmd {
 	cs := []string{"-test.run=TestExecCommandHelper", "--", command}
 	cs = append(cs, args...)
 	cmd := exec.Command(os.Args[0], cs...)
-	es := strconv.Itoa(mockExit)
+	es := strconv.Itoa(mockData.mockExit)
 	cmd.Env = []string{"GO_WANT_HELPER_PROCESS=1",
-		"STDOUT=" + mockStdout,
-		"STDERR=" + mockStderr,
+		"STDOUT=" + mockData.mockStdout,
+		"STDERR=" + mockData.mockStderr,
 		"EXIT_STATUS=" + es}
 	return cmd
 }

@@ -35,7 +35,7 @@ case ${EXPORTER_AUTH} in
         echo "[ERROR] incorect value: get=${EXPORTER_AUTH}, want=true or false"
         exit 1
         ;;
-esac    
+esac
 
 # A simple test to check the number of metrics.
 # Format: regex for metric | repetitions.
@@ -47,6 +47,7 @@ declare -a REGEX_LIST=(
     '^pgbackrest_backup_diff_since_last_completion_seconds{.*}|1'
     '^pgbackrest_backup_full_since_last_completion_seconds{.*}|1'
     '^pgbackrest_backup_incr_since_last_completion_seconds{.*}|1'
+    '^pgbackrest_backup_last_databases{.*}|3'
     '^pgbackrest_backup_info{.*} 1$|3'
     '^pgbackrest_backup_repo_delta_bytes{.*}|3'
     '^pgbackrest_backup_repo_size_bytes{.*}|3'

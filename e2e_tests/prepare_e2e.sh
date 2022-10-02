@@ -32,7 +32,7 @@ echo "currupt" >> ${db_file}
 pgbackrest backup --stanza ${BACKREST_STANZA} --type diff  --repo 2 --log-level-console warn
 # Run pgbackrest_exporter.
 if [[ ! -z ${EXPORTER_CONFIG} ]]; then
-    $(${EXPORTER_BIN} --prom.web-config=${EXPORTER_CONFIG})
+    $(${EXPORTER_BIN} --backrest.database-count-latest --prom.web-config=${EXPORTER_CONFIG})
 else
-    $(${EXPORTER_BIN})
+    $(${EXPORTER_BIN} --backrest.database-count-latest)
 fi

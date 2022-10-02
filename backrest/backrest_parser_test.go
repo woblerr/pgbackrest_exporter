@@ -4,7 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"os"
+	"os/exec"
 	"reflect"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -15,111 +19,58 @@ import (
 	"github.com/prometheus/common/expfmt"
 )
 
-var curretnUnixTimeForTests = parseDate("2021-07-22 21:00:00").UnixNano()
+type mockBackupLastStruct struct {
+	mockFull mockStruct
+	mockDiff mockStruct
+	mockIncr mockStruct
+}
+
+var (
+	currentUnixTimeForTests = parseDate("2021-07-22 21:00:00").UnixNano()
+	mockDataBackupLast      = mockBackupLastStruct{}
+)
 
 // All metrics exist and all labels are corrected.
-// Like pgBackRest version = 2.38.
-func TestGetMetrics(t *testing.T) {
+// pgBackrest version = latest.
+func TestGetStanzaMetrics(t *testing.T) {
 	type args struct {
-		data                stanza
-		verbose             bool
-		testText            string
+		stanzaName          string
+		stanzaStatusCode    int
 		setUpMetricValueFun setUpMetricValueFunType
+		testText            string
 	}
-	templateMetrics := `# HELP pgbackrest_backup_delta_bytes Amount of data in the database to actually backup.
-# TYPE pgbackrest_backup_delta_bytes gauge
-pgbackrest_backup_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
-# HELP pgbackrest_backup_diff_since_last_completion_seconds Seconds since the last completed full or differential backup.
-# TYPE pgbackrest_backup_diff_since_last_completion_seconds gauge
-pgbackrest_backup_diff_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
-# HELP pgbackrest_backup_duration_seconds Backup duration.
-# TYPE pgbackrest_backup_duration_seconds gauge
-pgbackrest_backup_duration_seconds{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo",start_time="2021-06-07 12:24:23",stop_time="2021-06-07 12:24:26"} 3
-# HELP pgbackrest_backup_error_status Backup error status.
-# TYPE pgbackrest_backup_error_status gauge
-pgbackrest_backup_error_status{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 1
-# HELP pgbackrest_backup_full_since_last_completion_seconds Seconds since the last completed full backup.
-# TYPE pgbackrest_backup_full_since_last_completion_seconds gauge
-pgbackrest_backup_full_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
-# HELP pgbackrest_backup_incr_since_last_completion_seconds Seconds since the last completed full, differential or incremental backup.
-# TYPE pgbackrest_backup_incr_since_last_completion_seconds gauge
-pgbackrest_backup_incr_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
-# HELP pgbackrest_backup_info Backup info.
-# TYPE pgbackrest_backup_info gauge
-pgbackrest_backup_info{backrest_ver="2.38",backup_name="20210607-092423F",backup_type="full",database_id="1",lsn_start="0/2000028",lsn_stop="0/2000100",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
-# HELP pgbackrest_backup_repo_delta_bytes Compressed files size in backup.
-# TYPE pgbackrest_backup_repo_delta_bytes gauge
-pgbackrest_backup_repo_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
-# HELP pgbackrest_backup_repo_size_bytes Full compressed files size to restore the database from backup.
-# TYPE pgbackrest_backup_repo_size_bytes gauge
-pgbackrest_backup_repo_size_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
-# HELP pgbackrest_backup_size_bytes Full uncompressed size of the database.
-# TYPE pgbackrest_backup_size_bytes gauge
-pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
-# HELP pgbackrest_repo_status Current repository status.
-# TYPE pgbackrest_repo_status gauge
-pgbackrest_repo_status{cipher="none",repo_key="1",stanza="demo"} 0
-# HELP pgbackrest_stanza_status Current stanza status.
+	templateMetrics := `# HELP pgbackrest_stanza_status Current stanza status.
 # TYPE pgbackrest_stanza_status gauge
 pgbackrest_stanza_status{stanza="demo"} 0
-# HELP pgbackrest_wal_archive_status Current WAL archive status.
-# TYPE pgbackrest_wal_archive_status gauge
 `
 	tests := []struct {
 		name string
 		args args
 	}{
-		{"getMetricsVerboseFalse",
+		{
+			"getStanzaMetrics",
 			args{
-				templateStanza("000000010000000000000004", "000000010000000000000001", true),
-				false,
-				templateMetrics +
-					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="",wal_min=""} 1` +
-					"\n",
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Name,
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Status.Code,
 				setUpMetricValue,
-			},
-		},
-		{"getMetricsVerboseTrue",
-			args{
-				templateStanza("000000010000000000000004", "000000010000000000000001", true),
-				true,
-				templateMetrics +
-					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="000000010000000000000004",wal_min="000000010000000000000001"} 1` +
-					"\n",
-				setUpMetricValue,
-			},
-		},
-		{"getMetricsWithoutWal",
-			args{
-				templateStanza("", "000000010000000000000001", true),
-				false,
-				templateMetrics +
-					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="",wal_min=""} 0` +
-					"\n",
-				setUpMetricValue,
+				templateMetrics,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ResetMetrics()
-			getMetrics(tt.args.data, tt.args.verbose, curretnUnixTimeForTests, tt.args.setUpMetricValueFun, logger)
+			getStanzaMetrics(tt.args.stanzaName, tt.args.stanzaStatusCode, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
-			reg.MustRegister(
-				pgbrStanzaStatusMetric,
-				pgbrRepoStatusMetric,
-				pgbrStanzaBackupInfoMetric,
-				pgbrStanzaBackupDurationMetric,
-				pgbrStanzaBackupDatabaseSizeMetric,
-				pgbrStanzaBackupDatabaseBackupSizeMetric,
-				pgbrStanzaBackupRepoBackupSetSizeMetric,
-				pgbrStanzaBackupRepoBackupSizeMetric,
-				pgbrStanzaBackupErrorMetric,
-				pgbrStanzaBackupLastFullMetric,
-				pgbrStanzaBackupLastDiffMetric,
-				pgbrStanzaBackupLastIncrMetric,
-				pgbrWALArchivingMetric,
-			)
+			reg.MustRegister(pgbrStanzaStatusMetric)
 			metricFamily, err := reg.Gather()
 			if err != nil {
 				fmt.Println(err)
@@ -131,7 +82,255 @@ pgbackrest_stanza_status{stanza="demo"} 0
 				}
 			}
 			if tt.args.testText != out.String() {
-				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", tt.args.testText, out.String())
+				t.Errorf("\nVariables do not match, metrics:\n%s\nwant:\n%s", tt.args.testText, out.String())
+			}
+		})
+	}
+}
+
+func TestGetStanzaMetricsErrorsAndDebugs(t *testing.T) {
+	type args struct {
+		stanzaName          string
+		stanzaStatusCode    int
+		setUpMetricValueFun setUpMetricValueFunType
+		errorsCount         int
+		debugsCount         int
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			"getStanzaMetricsLogError",
+			args{
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Name,
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Status.Code,
+				fakeSetUpMetricValue,
+				1,
+				1,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out := &bytes.Buffer{}
+			lc := log.NewLogfmtLogger(out)
+			getStanzaMetrics(tt.args.stanzaName, tt.args.stanzaStatusCode, tt.args.setUpMetricValueFun, lc)
+			errorsOutputCount := strings.Count(out.String(), "level=error")
+			debugsOutputCount := strings.Count(out.String(), "level=debug")
+			if tt.args.errorsCount != errorsOutputCount || tt.args.debugsCount != debugsOutputCount {
+				t.Errorf("\nVariables do not match:\nerrors=%d, debugs=%d\nwant:\nerrors=%d, debugs=%d",
+					tt.args.errorsCount, tt.args.debugsCount,
+					errorsOutputCount, debugsOutputCount)
+			}
+		})
+	}
+}
+
+// All metrics exist and all labels are corrected.
+// pgBackrest version = latest.
+func TestRepoMetrics(t *testing.T) {
+	type args struct {
+		stanzaName          string
+		repoData            []repo
+		setUpMetricValueFun setUpMetricValueFunType
+		testText            string
+	}
+	templateMetrics := `# HELP pgbackrest_repo_status Current repository status.
+# TYPE pgbackrest_repo_status gauge
+pgbackrest_repo_status{cipher="none",repo_key="1",stanza="demo"} 0
+`
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			"getRepoMetrics",
+			args{
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Name,
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Repo,
+				setUpMetricValue,
+				templateMetrics,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ResetMetrics()
+			getRepoMetrics(tt.args.stanzaName, tt.args.repoData, tt.args.setUpMetricValueFun, logger)
+			reg := prometheus.NewRegistry()
+			reg.MustRegister(pgbrRepoStatusMetric)
+			metricFamily, err := reg.Gather()
+			if err != nil {
+				fmt.Println(err)
+			}
+			out := &bytes.Buffer{}
+			for _, mf := range metricFamily {
+				if _, err := expfmt.MetricFamilyToText(out, mf); err != nil {
+					panic(err)
+				}
+			}
+			if tt.args.testText != out.String() {
+				t.Errorf("\nVariables do not match, metrics:\n%s\nwant:\n%s", tt.args.testText, out.String())
+			}
+		})
+	}
+}
+
+func TestGetRepoMetricsErrorsAndDebugs(t *testing.T) {
+	type args struct {
+		stanzaName          string
+		repoData            []repo
+		setUpMetricValueFun setUpMetricValueFunType
+		errorsCount         int
+		debugsCount         int
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			"getRepoMetricsLogError",
+			args{
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Name,
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Repo,
+				fakeSetUpMetricValue,
+				1,
+				1,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out := &bytes.Buffer{}
+			lc := log.NewLogfmtLogger(out)
+			getRepoMetrics(tt.args.stanzaName, tt.args.repoData, tt.args.setUpMetricValueFun, lc)
+			errorsOutputCount := strings.Count(out.String(), "level=error")
+			debugsOutputCount := strings.Count(out.String(), "level=debug")
+			if tt.args.errorsCount != errorsOutputCount || tt.args.debugsCount != debugsOutputCount {
+				t.Errorf("\nVariables do not match:\nerrors=%d, debugs=%d\nwant:\nerrors=%d, debugs=%d",
+					tt.args.errorsCount, tt.args.debugsCount,
+					errorsOutputCount, debugsOutputCount)
+			}
+		})
+	}
+}
+
+// All metrics exist and all labels are corrected.
+// pgBackrest version = latest.
+func TestGetBackupMetrics(t *testing.T) {
+	type args struct {
+		stanzaName          string
+		backupData          []backup
+		dbData              []db
+		setUpMetricValueFun setUpMetricValueFunType
+		testText            string
+		testLastBackups     lastBackupsStruct
+	}
+	templateMetrics := `# HELP pgbackrest_backup_delta_bytes Amount of data in the database to actually backup.
+# TYPE pgbackrest_backup_delta_bytes gauge
+pgbackrest_backup_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
+# HELP pgbackrest_backup_duration_seconds Backup duration.
+# TYPE pgbackrest_backup_duration_seconds gauge
+pgbackrest_backup_duration_seconds{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo",start_time="2021-06-07 12:24:23",stop_time="2021-06-07 12:24:26"} 3
+# HELP pgbackrest_backup_error_status Backup error status.
+# TYPE pgbackrest_backup_error_status gauge
+pgbackrest_backup_error_status{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 1
+# HELP pgbackrest_backup_info Backup info.
+# TYPE pgbackrest_backup_info gauge
+pgbackrest_backup_info{backrest_ver="2.41",backup_name="20210607-092423F",backup_type="full",database_id="1",lsn_start="0/2000028",lsn_stop="0/2000100",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
+# HELP pgbackrest_backup_repo_delta_bytes Compressed files size in backup.
+# TYPE pgbackrest_backup_repo_delta_bytes gauge
+pgbackrest_backup_repo_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
+# HELP pgbackrest_backup_repo_size_bytes Full compressed files size to restore the database from backup.
+# TYPE pgbackrest_backup_repo_size_bytes gauge
+pgbackrest_backup_repo_size_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
+# HELP pgbackrest_backup_size_bytes Full uncompressed size of the database.
+# TYPE pgbackrest_backup_size_bytes gauge
+pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
+`
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			"getBackupMetrics",
+			args{
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Name,
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Backup,
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).DB,
+				setUpMetricValue,
+				templateMetrics,
+				templateLastBackup(),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ResetMetrics()
+			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
+			reg := prometheus.NewRegistry()
+			reg.MustRegister(
+				pgbrStanzaBackupInfoMetric,
+				pgbrStanzaBackupDurationMetric,
+				pgbrStanzaBackupDatabaseSizeMetric,
+				pgbrStanzaBackupDatabaseBackupSizeMetric,
+				pgbrStanzaBackupRepoBackupSetSizeMetric,
+				pgbrStanzaBackupRepoBackupSizeMetric,
+				pgbrStanzaBackupErrorMetric,
+			)
+			metricFamily, err := reg.Gather()
+			if err != nil {
+				fmt.Println(err)
+			}
+			out := &bytes.Buffer{}
+			for _, mf := range metricFamily {
+				if _, err := expfmt.MetricFamilyToText(out, mf); err != nil {
+					panic(err)
+				}
+			}
+			if tt.args.testText != out.String() && !reflect.DeepEqual(tt.args.testLastBackups, testLastBackups) {
+				t.Errorf(
+					"\nVariables do not match, metrics:\n%s\nwant:\n%s\nlastBackups:\n%v\nwant:\n%v",
+					tt.args.testText, out.String(),
+					tt.args.testLastBackups, testLastBackups,
+				)
 			}
 		})
 	}
@@ -142,29 +341,23 @@ pgbackrest_stanza_status{stanza="demo"} 0
 // Labels:
 //  * lsn_start=""
 //	* lsn_stop=""
-// Like pgBackrest version = 2.35.
-func TestGetMetricsErrorAbsent(t *testing.T) {
+// pgBackrest version < 2.36.
+//nolint:dupl
+func TestGetBackupMetricsErrorAbsent(t *testing.T) {
 	type args struct {
-		data                stanza
-		verbose             bool
-		testText            string
+		stanzaName          string
+		backupData          []backup
+		dbData              []db
 		setUpMetricValueFun setUpMetricValueFunType
+		testText            string
+		testLastBackups     lastBackupsStruct
 	}
 	templateMetrics := `# HELP pgbackrest_backup_delta_bytes Amount of data in the database to actually backup.
 # TYPE pgbackrest_backup_delta_bytes gauge
 pgbackrest_backup_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
-# HELP pgbackrest_backup_diff_since_last_completion_seconds Seconds since the last completed full or differential backup.
-# TYPE pgbackrest_backup_diff_since_last_completion_seconds gauge
-pgbackrest_backup_diff_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
 # HELP pgbackrest_backup_duration_seconds Backup duration.
 # TYPE pgbackrest_backup_duration_seconds gauge
 pgbackrest_backup_duration_seconds{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo",start_time="2021-06-07 12:24:23",stop_time="2021-06-07 12:24:26"} 3
-# HELP pgbackrest_backup_full_since_last_completion_seconds Seconds since the last completed full backup.
-# TYPE pgbackrest_backup_full_since_last_completion_seconds gauge
-pgbackrest_backup_full_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
-# HELP pgbackrest_backup_incr_since_last_completion_seconds Seconds since the last completed full, differential or incremental backup.
-# TYPE pgbackrest_backup_incr_since_last_completion_seconds gauge
-pgbackrest_backup_incr_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
 # HELP pgbackrest_backup_info Backup info.
 # TYPE pgbackrest_backup_info gauge
 pgbackrest_backup_info{backrest_ver="2.35",backup_name="20210607-092423F",backup_type="full",database_id="1",lsn_start="",lsn_stop="",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
@@ -177,48 +370,41 @@ pgbackrest_backup_repo_size_bytes{backup_name="20210607-092423F",backup_type="fu
 # HELP pgbackrest_backup_size_bytes Full uncompressed size of the database.
 # TYPE pgbackrest_backup_size_bytes gauge
 pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
-# HELP pgbackrest_repo_status Current repository status.
-# TYPE pgbackrest_repo_status gauge
-pgbackrest_repo_status{cipher="none",repo_key="1",stanza="demo"} 0
-# HELP pgbackrest_stanza_status Current stanza status.
-# TYPE pgbackrest_stanza_status gauge
-pgbackrest_stanza_status{stanza="demo"} 0
-# HELP pgbackrest_wal_archive_status Current WAL archive status.
-# TYPE pgbackrest_wal_archive_status gauge
 `
 	tests := []struct {
 		name string
 		args args
 	}{
-		{"getMetricsErrorAbsent",
+		{
+			"getBackupMetricsErrorAbsent",
 			args{
-				templateStanzaErrorAbsent("000000010000000000000004", "000000010000000000000001"),
-				false,
-				templateMetrics +
-					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="",wal_min=""} 1` +
-					"\n",
+				templateStanzaErrorAbsent(
+					"000000010000000000000004",
+					"000000010000000000000001").Name,
+				templateStanzaErrorAbsent(
+					"000000010000000000000004",
+					"000000010000000000000001").Backup,
+				templateStanzaErrorAbsent(
+					"000000010000000000000004",
+					"000000010000000000000001").DB,
 				setUpMetricValue,
+				templateMetrics,
+				templateLastBackup(),
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ResetMetrics()
-			getMetrics(tt.args.data, tt.args.verbose, curretnUnixTimeForTests, tt.args.setUpMetricValueFun, logger)
+			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
-				pgbrStanzaStatusMetric,
-				pgbrRepoStatusMetric,
 				pgbrStanzaBackupInfoMetric,
 				pgbrStanzaBackupDurationMetric,
 				pgbrStanzaBackupDatabaseSizeMetric,
 				pgbrStanzaBackupDatabaseBackupSizeMetric,
 				pgbrStanzaBackupRepoBackupSetSizeMetric,
 				pgbrStanzaBackupRepoBackupSizeMetric,
-				pgbrStanzaBackupLastFullMetric,
-				pgbrStanzaBackupLastDiffMetric,
-				pgbrStanzaBackupLastIncrMetric,
-				pgbrWALArchivingMetric,
 			)
 			metricFamily, err := reg.Gather()
 			if err != nil {
@@ -230,8 +416,12 @@ pgbackrest_stanza_status{stanza="demo"} 0
 					panic(err)
 				}
 			}
-			if tt.args.testText != out.String() {
-				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", tt.args.testText, out.String())
+			if tt.args.testText != out.String() && !reflect.DeepEqual(tt.args.testLastBackups, testLastBackups) {
+				t.Errorf(
+					"\nVariables do not match, metrics:\n%s\nwant:\n%s\nlastBackups:\n%v\nwant:\n%v",
+					tt.args.testText, out.String(),
+					tt.args.testLastBackups, testLastBackups,
+				)
 			}
 		})
 	}
@@ -239,34 +429,27 @@ pgbackrest_stanza_status{stanza="demo"} 0
 
 // Absent metrics:
 //	* pgbackrest_backup_error_status
-//  * pgbackrest_repo_status
 // Labels:
 // 	* repo_key="0"
 //  * lsn_start=""
 //	* lsn_stop=""
-// Like pgBackrest version = 2.31.
-func TestGetMetricsRepoAbsent(t *testing.T) {
+// pgBackrest version < v2.32
+//nolint:dupl
+func TestGetBackupMetricsRepoAbsent(t *testing.T) {
 	type args struct {
-		data                stanza
-		verbose             bool
-		testText            string
+		stanzaName          string
+		backupData          []backup
+		dbData              []db
 		setUpMetricValueFun setUpMetricValueFunType
+		testText            string
+		testLastBackups     lastBackupsStruct
 	}
 	templateMetrics := `# HELP pgbackrest_backup_delta_bytes Amount of data in the database to actually backup.
 # TYPE pgbackrest_backup_delta_bytes gauge
 pgbackrest_backup_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo"} 2.4316343e+07
-# HELP pgbackrest_backup_diff_since_last_completion_seconds Seconds since the last completed full or differential backup.
-# TYPE pgbackrest_backup_diff_since_last_completion_seconds gauge
-pgbackrest_backup_diff_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
 # HELP pgbackrest_backup_duration_seconds Backup duration.
 # TYPE pgbackrest_backup_duration_seconds gauge
 pgbackrest_backup_duration_seconds{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo",start_time="2021-06-07 12:24:23",stop_time="2021-06-07 12:24:26"} 3
-# HELP pgbackrest_backup_full_since_last_completion_seconds Seconds since the last completed full backup.
-# TYPE pgbackrest_backup_full_since_last_completion_seconds gauge
-pgbackrest_backup_full_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
-# HELP pgbackrest_backup_incr_since_last_completion_seconds Seconds since the last completed full, differential or incremental backup.
-# TYPE pgbackrest_backup_incr_since_last_completion_seconds gauge
-pgbackrest_backup_incr_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
 # HELP pgbackrest_backup_info Backup info.
 # TYPE pgbackrest_backup_info gauge
 pgbackrest_backup_info{backrest_ver="2.31",backup_name="20210607-092423F",backup_type="full",database_id="1",lsn_start="",lsn_stop="",pg_version="13",prior="",repo_key="0",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
@@ -279,44 +462,230 @@ pgbackrest_backup_repo_size_bytes{backup_name="20210607-092423F",backup_type="fu
 # HELP pgbackrest_backup_size_bytes Full uncompressed size of the database.
 # TYPE pgbackrest_backup_size_bytes gauge
 pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo"} 2.4316343e+07
-# HELP pgbackrest_stanza_status Current stanza status.
-# TYPE pgbackrest_stanza_status gauge
-pgbackrest_stanza_status{stanza="demo"} 0
-# HELP pgbackrest_wal_archive_status Current WAL archive status.
-# TYPE pgbackrest_wal_archive_status gauge
 `
 	tests := []struct {
 		name string
 		args args
 	}{
-		{"getMetricsVerboseFalse",
+		{
+			"getBackupMetricsRepoAbsent",
 			args{
-				templateStanzaRepoAbsent("000000010000000000000004", "000000010000000000000001"),
-				false,
-				templateMetrics +
-					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="0",stanza="demo",wal_max="",wal_min=""} 1` +
-					"\n",
+				templateStanzaRepoAbsent(
+					"000000010000000000000004",
+					"000000010000000000000001").Name,
+				templateStanzaRepoAbsent(
+					"000000010000000000000004",
+					"000000010000000000000001").Backup,
+				templateStanzaRepoAbsent(
+					"000000010000000000000004",
+					"000000010000000000000001").DB,
 				setUpMetricValue,
+				templateMetrics,
+				templateLastBackup(),
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ResetMetrics()
-			getMetrics(tt.args.data, tt.args.verbose, curretnUnixTimeForTests, tt.args.setUpMetricValueFun, logger)
+			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
-				pgbrStanzaStatusMetric,
 				pgbrStanzaBackupInfoMetric,
 				pgbrStanzaBackupDurationMetric,
 				pgbrStanzaBackupDatabaseSizeMetric,
 				pgbrStanzaBackupDatabaseBackupSizeMetric,
 				pgbrStanzaBackupRepoBackupSetSizeMetric,
 				pgbrStanzaBackupRepoBackupSizeMetric,
+			)
+			metricFamily, err := reg.Gather()
+			if err != nil {
+				fmt.Println(err)
+			}
+			out := &bytes.Buffer{}
+			for _, mf := range metricFamily {
+				if _, err := expfmt.MetricFamilyToText(out, mf); err != nil {
+					panic(err)
+				}
+			}
+			if tt.args.testText != out.String() && !reflect.DeepEqual(tt.args.testLastBackups, testLastBackups) {
+				t.Errorf(
+					"\nVariables do not match, metrics:\n%s\nwant:\n%s\nlastBackups:\n%v\nwant:\n%v",
+					tt.args.testText, out.String(),
+					tt.args.testLastBackups, testLastBackups,
+				)
+			}
+		})
+	}
+}
+
+func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
+	type args struct {
+		stanzaName          string
+		backupData          []backup
+		dbData              []db
+		setUpMetricValueFun setUpMetricValueFunType
+		errorsCount         int
+		debugsCount         int
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			"getBackupMetricsLogError",
+			args{
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Name,
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Backup,
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).DB,
+				fakeSetUpMetricValue,
+				7,
+				7,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out := &bytes.Buffer{}
+			lc := log.NewLogfmtLogger(out)
+			getBackupMetrics(tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, lc)
+			errorsOutputCount := strings.Count(out.String(), "level=error")
+			debugsOutputCount := strings.Count(out.String(), "level=debug")
+			if tt.args.errorsCount != errorsOutputCount || tt.args.debugsCount != debugsOutputCount {
+				t.Errorf("\nVariables do not match:\nerrors=%d, debugs=%d\nwant:\nerrors=%d, debugs=%d",
+					tt.args.errorsCount, tt.args.debugsCount,
+					errorsOutputCount, debugsOutputCount)
+			}
+		})
+	}
+}
+
+// All metrics exist and all labels are corrected.
+// pgBackrest version = latest.
+// With '--backrest.database-count-latest' flag.
+func TestGetBackupLastMetrics(t *testing.T) {
+	type args struct {
+		config              string
+		configIncludePath   string
+		stanzaName          string
+		lastBackups         lastBackupsStruct
+		backupDBCountLatest bool
+		currentUnixTime     int64
+		setUpMetricValueFun setUpMetricValueFunType
+		testText            string
+	}
+	templateMetrics := `# HELP pgbackrest_backup_diff_since_last_completion_seconds Seconds since the last completed full or differential backup.
+# TYPE pgbackrest_backup_diff_since_last_completion_seconds gauge
+pgbackrest_backup_diff_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
+# HELP pgbackrest_backup_full_since_last_completion_seconds Seconds since the last completed full backup.
+# TYPE pgbackrest_backup_full_since_last_completion_seconds gauge
+pgbackrest_backup_full_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
+# HELP pgbackrest_backup_incr_since_last_completion_seconds Seconds since the last completed full, differential or incremental backup.
+# TYPE pgbackrest_backup_incr_since_last_completion_seconds gauge
+pgbackrest_backup_incr_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
+# HELP pgbackrest_backup_last_databases Number of databases in the last full, differential or incremental backup.
+# TYPE pgbackrest_backup_last_databases gauge
+pgbackrest_backup_last_databases{backup_type="diff",stanza="demo"} 2
+pgbackrest_backup_last_databases{backup_type="full",stanza="demo"} 1
+pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 2
+`
+	tests := []struct {
+		name                   string
+		args                   args
+		mockTestDataBackupLast mockBackupLastStruct
+	}{
+		{
+			"getBackupLastMetrics",
+			args{
+				"",
+				"",
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Name,
+				templateLastBackupDifferent(),
+				true,
+				currentUnixTimeForTests,
+				setUpMetricValue,
+				templateMetrics,
+			},
+			mockBackupLastStruct{
+				mockStruct{
+					`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
+						`"max":"000000010000000000000010","min":"000000010000000000000001"}],` +
+						`"backup":[{"archive":{"start":"000000010000000000000003","stop":"000000010000000000000004"},` +
+						`"backrest":{"format":5,"version":"2.41"},"database":{"id":1,"repo-key":1},` +
+						`"database-ref":[{"name":"postgres","oid":13412}],"error":false,` +
+						`"info":{"delta":32230330,"repository":{"delta":3970793,"size":3970793},"size":32230330},` +
+						`"label":"20220926-201857F","link":null,"lsn":{"start":"0/3000028","stop":"0/4000050"},"prior":null,` +
+						`"reference":null,"tablespace":null,"timestamp":{"start":1664223537,"stop":1664223540},"type":"full"}],` +
+						`"cipher":"none","db":[{"id":1,"repo-key":1,"system-id":7147741414128675215,"version":"13"}],` +
+						`"name":"demo","repo":[{"cipher":"none","key":1,"status":{"code":0,"message":"ok"}}],` +
+						`"status":{"code":0,"lock":{"backup":{"held":false}},"message":"ok"}}]`,
+					"",
+					0,
+				},
+				mockStruct{
+					`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
+						`"max":"000000010000000000000010","min":"000000010000000000000001"}],` +
+						`"backup":[{"archive":{"start":"000000010000000000000005","stop":"000000010000000000000006"},` +
+						`"backrest":{"format":5,"version":"2.41"},"database":{"id":1,"repo-key":2},` +
+						`"database-ref":[{"name":"postgres","oid":13412},{"name":"test_db","oid":16384}],` +
+						`"error":false,"info":{"delta":16657,"repository":{"delta":518,"size":3970802},"size":32230338},` +
+						`"label":"20220926-201857F_20220926-201901D","link":null,"lsn":{"start":"0/5000028","stop":"0/6000050"},"prior":"20220926-201857F",` +
+						`"reference":["20220926-201857F"],"tablespace":null,"timestamp":{"start":1664223541,"stop":1664223543},"type":"diff"}],` +
+						`"cipher":"none","db":[{"id":1,"repo-key":1,"system-id":7147741414128675215,"version":"13"}],` +
+						`"name":"demo","repo":[{"cipher":"none","key":1,"status":{"code":0,"message":"ok"}}],` +
+						`"status":{"code":0,"lock":{"backup":{"held":false}},"message":"ok"}}]`,
+					"",
+					0,
+				},
+				mockStruct{
+					`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
+						`"max":"000000010000000000000010","min":"000000010000000000000001"}],` +
+						`"backup":[{"archive":{"start":"000000010000000000000008","stop":"000000010000000000000008"},` +
+						`"backrest":{"format":5,"version":"2.41"},"database":{"id":1,"repo-key":1},` +
+						`"database-ref":[{"name":"postgres","oid":13412},{"name":"test_db","oid":16384}],` +
+						`"error":false,"info":{"delta":16657,"repository":{"delta":519,"size":3970803},"size":32230338},` +
+						`"label":"20220926-201854F_20220926-202454I","link":null,"lsn":{"start":"0/8000028","stop":"0/8000138"},` +
+						`"prior":"20220926-201854F","reference":["20220926-201854F"],"tablespace":null,` +
+						`"timestamp":{"start":1664223894,"stop":1664223896},"type":"incr"}],` +
+						`"cipher":"none","db":[{"id":1,"repo-key":1,"system-id":7147741414128675215,"version":"13"}],` +
+						`"name":"demo","repo":[{"cipher":"none","key":1,"status":{"code":0,"message":"ok"}}],` +
+						`"status":{"code":0,"lock":{"backup":{"held":false}},"message":"ok"}}]`,
+					"",
+					0,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ResetMetrics()
+			mockDataBackupLast = tt.mockTestDataBackupLast
+			execCommand = fakeExecCommandSpecificDatabase
+			defer func() { execCommand = exec.Command }()
+			lc := log.NewNopLogger()
+			getBackupLastMetrics(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.lastBackups, tt.args.backupDBCountLatest, tt.args.currentUnixTime, tt.args.setUpMetricValueFun, lc)
+			reg := prometheus.NewRegistry()
+			reg.MustRegister(
 				pgbrStanzaBackupLastFullMetric,
 				pgbrStanzaBackupLastDiffMetric,
 				pgbrStanzaBackupLastIncrMetric,
-				pgbrWALArchivingMetric,
+				pgbrStanzaBackupLastDatabasesMetric,
 			)
 			metricFamily, err := reg.Gather()
 			if err != nil {
@@ -329,16 +698,336 @@ pgbackrest_stanza_status{stanza="demo"} 0
 				}
 			}
 			if tt.args.testText != out.String() {
-				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", tt.args.testText, out.String())
+				t.Errorf(
+					"\nVariables do not match, metrics:\n%s\nwant:\n%s", tt.args.testText, out.String())
 			}
 		})
 	}
 }
 
-func TestGetMetricsErrorsAndDebugs(t *testing.T) {
+// Absent metrics:
+//	* pgbackrest_backup_last_databases
+// pgBackrest version < v2.41
+func TestGetBackupLastMetricsDBsAbsent(t *testing.T) {
 	type args struct {
-		data                stanza
-		verbose             bool
+		config              string
+		configIncludePath   string
+		stanzaName          string
+		lastBackups         lastBackupsStruct
+		backupDBCountLatest bool
+		currentUnixTime     int64
+		setUpMetricValueFun setUpMetricValueFunType
+		testText            string
+	}
+	templateMetrics := `# HELP pgbackrest_backup_diff_since_last_completion_seconds Seconds since the last completed full or differential backup.
+# TYPE pgbackrest_backup_diff_since_last_completion_seconds gauge
+pgbackrest_backup_diff_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
+# HELP pgbackrest_backup_full_since_last_completion_seconds Seconds since the last completed full backup.
+# TYPE pgbackrest_backup_full_since_last_completion_seconds gauge
+pgbackrest_backup_full_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
+# HELP pgbackrest_backup_incr_since_last_completion_seconds Seconds since the last completed full, differential or incremental backup.
+# TYPE pgbackrest_backup_incr_since_last_completion_seconds gauge
+pgbackrest_backup_incr_since_last_completion_seconds{stanza="demo"} 9.223372036854776e+09
+`
+	tests := []struct {
+		name                   string
+		args                   args
+		mockTestDataBackupLast mockBackupLastStruct
+	}{
+		{
+			"getBackupLastMetrics",
+			args{
+				"",
+				"",
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Name,
+				templateLastBackupDifferent(),
+				true,
+				currentUnixTimeForTests,
+				setUpMetricValue,
+				templateMetrics,
+			},
+			mockBackupLastStruct{
+				mockStruct{
+					"",
+					"ERROR: [027]: option 'set' is currently only valid for text output",
+					27,
+				},
+				mockStruct{
+					"",
+					"ERROR: [027]: option 'set' is currently only valid for text output",
+					27,
+				},
+				mockStruct{
+					"",
+					"ERROR: [027]: option 'set' is currently only valid for text output",
+					27,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ResetMetrics()
+			mockDataBackupLast = tt.mockTestDataBackupLast
+			execCommand = fakeExecCommandSpecificDatabase
+			defer func() { execCommand = exec.Command }()
+			lc := log.NewNopLogger()
+			getBackupLastMetrics(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.lastBackups, tt.args.backupDBCountLatest, tt.args.currentUnixTime, tt.args.setUpMetricValueFun, lc)
+			reg := prometheus.NewRegistry()
+			reg.MustRegister(
+				pgbrStanzaBackupLastFullMetric,
+				pgbrStanzaBackupLastDiffMetric,
+				pgbrStanzaBackupLastIncrMetric,
+			)
+			metricFamily, err := reg.Gather()
+			if err != nil {
+				fmt.Println(err)
+			}
+			out := &bytes.Buffer{}
+			for _, mf := range metricFamily {
+				if _, err := expfmt.MetricFamilyToText(out, mf); err != nil {
+					panic(err)
+				}
+			}
+			if tt.args.testText != out.String() {
+				t.Errorf(
+					"\nVariables do not match, metrics:\n%s\nwant:\n%s", tt.args.testText, out.String())
+			}
+		})
+	}
+}
+
+func TestGetBackupLastMetricsErrorsAndDebugs(t *testing.T) {
+	type args struct {
+		config              string
+		configIncludePath   string
+		stanzaName          string
+		lastBackups         lastBackupsStruct
+		backupDBCountLatest bool
+		currentUnixTime     int64
+		setUpMetricValueFun setUpMetricValueFunType
+		errorsCount         int
+		debugsCount         int
+	}
+	tests := []struct {
+		name                   string
+		args                   args
+		mockTestDataBackupLast mockBackupLastStruct
+	}{
+		{
+			"getBackupLastMetricsLogError",
+			args{
+				"",
+				"",
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Name,
+				templateLastBackup(),
+				true,
+				currentUnixTimeForTests,
+				fakeSetUpMetricValue,
+				6,
+				6,
+			},
+			mockBackupLastStruct{
+				mockStruct{
+					`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
+						`"max":"000000010000000000000010","min":"000000010000000000000001"}],` +
+						`"backup":[{"archive":{"start":"000000010000000000000003","stop":"000000010000000000000004"},` +
+						`"backrest":{"format":5,"version":"2.41"},"database":{"id":1,"repo-key":1},` +
+						`"database-ref":[{"name":"postgres","oid":13412}],"error":false,` +
+						`"info":{"delta":32230330,"repository":{"delta":3970793,"size":3970793},"size":32230330},` +
+						`"label":"20220926-201857F","link":null,"lsn":{"start":"0/3000028","stop":"0/4000050"},"prior":null,` +
+						`"reference":null,"tablespace":null,"timestamp":{"start":1664223537,"stop":1664223540},"type":"full"}],` +
+						`"cipher":"none","db":[{"id":1,"repo-key":1,"system-id":7147741414128675215,"version":"13"}],` +
+						`"name":"demo","repo":[{"cipher":"none","key":1,"status":{"code":0,"message":"ok"}}],` +
+						`"status":{"code":0,"lock":{"backup":{"held":false}},"message":"ok"}}]`,
+					"",
+					0,
+				},
+				mockStruct{
+					`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
+						`"max":"000000010000000000000010","min":"000000010000000000000001"}],` +
+						`"backup":[{"archive":{"start":"000000010000000000000005","stop":"000000010000000000000006"},` +
+						`"backrest":{"format":5,"version":"2.41"},"database":{"id":1,"repo-key":2},` +
+						`"database-ref":[{"name":"postgres","oid":13412},{"name":"test_db","oid":16384}],` +
+						`"error":false,"info":{"delta":16657,"repository":{"delta":518,"size":3970802},"size":32230338},` +
+						`"label":"20220926-201857F_20220926-201901D","link":null,"lsn":{"start":"0/5000028","stop":"0/6000050"},"prior":"20220926-201857F",` +
+						`"reference":["20220926-201857F"],"tablespace":null,"timestamp":{"start":1664223541,"stop":1664223543},"type":"diff"}],` +
+						`"cipher":"none","db":[{"id":1,"repo-key":1,"system-id":7147741414128675215,"version":"13"}],` +
+						`"name":"demo","repo":[{"cipher":"none","key":1,"status":{"code":0,"message":"ok"}}],` +
+						`"status":{"code":0,"lock":{"backup":{"held":false}},"message":"ok"}}]`,
+					"",
+					0,
+				},
+				mockStruct{
+					`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
+						`"max":"000000010000000000000010","min":"000000010000000000000001"}],` +
+						`"backup":[{"archive":{"start":"000000010000000000000008","stop":"000000010000000000000008"},` +
+						`"backrest":{"format":5,"version":"2.41"},"database":{"id":1,"repo-key":1},` +
+						`"database-ref":[{"name":"postgres","oid":13412},{"name":"test_db","oid":16384}],` +
+						`"error":false,"info":{"delta":16657,"repository":{"delta":519,"size":3970803},"size":32230338},` +
+						`"label":"20220926-201854F_20220926-202454I","link":null,"lsn":{"start":"0/8000028","stop":"0/8000138"},` +
+						`"prior":"20220926-201854F","reference":["20220926-201854F"],"tablespace":null,` +
+						`"timestamp":{"start":1664223894,"stop":1664223896},"type":"incr"}],` +
+						`"cipher":"none","db":[{"id":1,"repo-key":1,"system-id":7147741414128675215,"version":"13"}],` +
+						`"name":"demo","repo":[{"cipher":"none","key":1,"status":{"code":0,"message":"ok"}}],` +
+						`"status":{"code":0,"lock":{"backup":{"held":false}},"message":"ok"}}]`,
+					"",
+					0,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockDataBackupLast = tt.mockTestDataBackupLast
+			execCommand = fakeExecCommandSpecificDatabase
+			defer func() { execCommand = exec.Command }()
+			out := &bytes.Buffer{}
+			lc := log.NewLogfmtLogger(out)
+			getBackupLastMetrics(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.lastBackups, tt.args.backupDBCountLatest, tt.args.currentUnixTime, tt.args.setUpMetricValueFun, lc)
+			errorsOutputCount := strings.Count(out.String(), "level=error")
+			debugsOutputCount := strings.Count(out.String(), "level=debug")
+			if tt.args.errorsCount != errorsOutputCount || tt.args.debugsCount != debugsOutputCount {
+				t.Errorf("\nVariables do not match:\nerrors=%d, debugs=%d\nwant:\nerrors=%d, debugs=%d",
+					tt.args.errorsCount, tt.args.debugsCount,
+					errorsOutputCount, debugsOutputCount)
+			}
+		})
+	}
+}
+
+// All metrics exist and all labels are corrected.
+// pgBackrest version = latest.
+func TestGetWALMetrics(t *testing.T) {
+	type args struct {
+		stanzaName          string
+		archiveData         []archive
+		dbData              []db
+		verboseWAL          bool
+		setUpMetricValueFun setUpMetricValueFunType
+		testText            string
+	}
+	templateMetrics := `# HELP pgbackrest_wal_archive_status Current WAL archive status.
+# TYPE pgbackrest_wal_archive_status gauge
+`
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			"getWALMetricsVerboseFalse",
+			args{
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Name,
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Archive,
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).DB,
+				false,
+				setUpMetricValue,
+				templateMetrics +
+					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="",wal_min=""} 1` +
+					"\n",
+			},
+		},
+		{
+			"getWALMetricsVerboseTrue",
+			args{
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Name,
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Archive,
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).DB,
+				true,
+				setUpMetricValue,
+				templateMetrics +
+					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="000000010000000000000004",wal_min="000000010000000000000001"} 1` +
+					"\n",
+			},
+		},
+		{
+			"getWALMetricsWithoutWAL",
+			args{
+				templateStanza(
+					"",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Name,
+				templateStanza(
+					"",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Archive,
+				templateStanza(
+					"",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).DB,
+				false,
+				setUpMetricValue,
+				templateMetrics +
+					`pgbackrest_wal_archive_status{database_id="1",pg_version="13",repo_key="1",stanza="demo",wal_max="",wal_min=""} 0` +
+					"\n",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ResetMetrics()
+			getWALMetrics(tt.args.stanzaName, tt.args.archiveData, tt.args.dbData, tt.args.verboseWAL, tt.args.setUpMetricValueFun, logger)
+			reg := prometheus.NewRegistry()
+			reg.MustRegister(pgbrWALArchivingMetric)
+			metricFamily, err := reg.Gather()
+			if err != nil {
+				fmt.Println(err)
+			}
+			out := &bytes.Buffer{}
+			for _, mf := range metricFamily {
+				if _, err := expfmt.MetricFamilyToText(out, mf); err != nil {
+					panic(err)
+				}
+			}
+			if tt.args.testText != out.String() {
+				t.Errorf(
+					"\nVariables do not match, metrics:\n%s\nwant:\n%s", tt.args.testText, out.String())
+			}
+		})
+	}
+}
+
+func TestGetWALMetricsErrorsAndDebugs(t *testing.T) {
+	type args struct {
+		stanzaName          string
+		archiveData         []archive
+		dbData              []db
+		verboseWAL          bool
 		setUpMetricValueFun setUpMetricValueFunType
 		errorsCount         int
 		debugsCount         int
@@ -347,58 +1036,76 @@ func TestGetMetricsErrorsAndDebugs(t *testing.T) {
 		name string
 		args args
 	}{
-		{"getMetricsVerboseFalseLogError",
+		{
+			"getWALMetricsVerboseFalseLogError",
 			args{
-				templateStanza("000000010000000000000004", "000000010000000000000001", true),
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Name,
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Archive,
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).DB,
 				false,
 				fakeSetUpMetricValue,
-				13,
-				13,
+				1,
+				1,
 			},
 		},
-		{"getMetricsVerboseTrueLogError",
+		{
+			"getMetricsVerboseTrueLogError",
 			args{
-				templateStanza("000000010000000000000004", "000000010000000000000001", true),
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Name,
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Archive,
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).DB,
 				true,
 				fakeSetUpMetricValue,
-				13,
-				13,
+				1,
+				1,
 			},
 		},
-		{"getMetricsWithoutWalLogError",
+		{
+			"getMetricsWithoutWalLogError",
 			args{
-				templateStanza("", "000000010000000000000001", true),
+				templateStanza(
+					"",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Name,
+				templateStanza(
+					"",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Archive,
+				templateStanza(
+					"",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).DB,
 				false,
 				fakeSetUpMetricValue,
-				13,
-				13,
-			},
-		},
-		{"getMetricsVerboseFalseLogErrorRepoAbsent",
-			args{
-				templateStanzaRepoAbsent("000000010000000000000004", "000000010000000000000001"),
-				false,
-				fakeSetUpMetricValue,
-				11,
-				11,
-			},
-		},
-		{"getMetricsVerboseTrueLogErrorRepoAbsent",
-			args{
-				templateStanzaRepoAbsent("000000010000000000000004", "000000010000000000000001"),
-				true,
-				fakeSetUpMetricValue,
-				11,
-				11,
-			},
-		},
-		{"getMetricsWithoutWalLogErrorRepoAbsent",
-			args{
-				templateStanzaRepoAbsent("", "000000010000000000000001"),
-				false,
-				fakeSetUpMetricValue,
-				11,
-				11,
+				1,
+				1,
 			},
 		},
 	}
@@ -406,13 +1113,13 @@ func TestGetMetricsErrorsAndDebugs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			out := &bytes.Buffer{}
 			lc := log.NewLogfmtLogger(out)
-			getMetrics(tt.args.data, tt.args.verbose, curretnUnixTimeForTests, tt.args.setUpMetricValueFun, lc)
+			getWALMetrics(tt.args.stanzaName, tt.args.archiveData, tt.args.dbData, tt.args.verboseWAL, tt.args.setUpMetricValueFun, lc)
 			errorsOutputCount := strings.Count(out.String(), "level=error")
-			debugssOutputCount := strings.Count(out.String(), "level=debug")
-			if tt.args.errorsCount != errorsOutputCount || tt.args.debugsCount != debugssOutputCount {
+			debugsOutputCount := strings.Count(out.String(), "level=debug")
+			if tt.args.errorsCount != errorsOutputCount || tt.args.debugsCount != debugsOutputCount {
 				t.Errorf("\nVariables do not match:\nerrors=%d, debugs=%d\nwant:\nerrors=%d, debugs=%d",
 					tt.args.errorsCount, tt.args.debugsCount,
-					errorsOutputCount, debugssOutputCount)
+					errorsOutputCount, debugsOutputCount)
 			}
 		})
 	}
@@ -498,11 +1205,11 @@ func TestReturnConfigExecArgs(t *testing.T) {
 			args{"/tmp/pgbackrest.conf", ""},
 			[]string{"--config", "/tmp/pgbackrest.conf"},
 		},
-		{"returnConfigExecArgsNotEmptyConfigInckudePath",
+		{"returnConfigExecArgsNotEmptyConfigIncludePath",
 			args{"", "/tmp/pgbackrest/conf.d"},
 			[]string{"--config-include-path", "/tmp/pgbackrest/conf.d"},
 		},
-		{"returnConfigExecArgsNotEmptyConfigAndConfigInckudePath",
+		{"returnConfigExecArgsNotEmptyConfigAndConfigIncludePath",
 			args{"/tmp/pgbackrest.conf", "/tmp/pgbackrest/conf.d"},
 			[]string{"--config", "/tmp/pgbackrest.conf", "--config-include-path", "/tmp/pgbackrest/conf.d"},
 		},
@@ -536,7 +1243,7 @@ func TestReturnConfigStanzaArgs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := returnConfigStanzaArgs(tt.args.stanza); !reflect.DeepEqual(got, tt.want) {
+			if got := returnStanzaExecArgs(tt.args.stanza); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", got, tt.want)
 			}
 		})
@@ -563,7 +1270,34 @@ func TestReturnConfigBackupTypeArgs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := returnConfigBackupTypeArgs(tt.args.backupType); !reflect.DeepEqual(got, tt.want) {
+			if got := returnBackupTypeExecArgs(tt.args.backupType); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestReturnBackupSetExecArgs(t *testing.T) {
+	type args struct {
+		backupSetLabel string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{"returnBackupSetExecArgsEmpty",
+			args{""},
+			[]string{},
+		},
+		{"returnBackupSetExecArgsNotEmpty",
+			args{"20210607-092423F"},
+			[]string{"--set", "20210607-092423F"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := returnBackupSetExecArgs(tt.args.backupSetLabel); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", got, tt.want)
 			}
 		})
@@ -613,6 +1347,7 @@ func TestCompareLastBackups(t *testing.T) {
 	type args struct {
 		backups       *lastBackupsStruct
 		currentBackup time.Time
+		backupLabel   string
 		backupType    string
 	}
 	tests := []struct {
@@ -621,21 +1356,33 @@ func TestCompareLastBackups(t *testing.T) {
 		want lastBackupsStruct
 	}{
 		{"compareLastBackupsFull",
-			args{&lastBackups, fullDate, "full"},
-			lastBackupsStruct{fullDate, fullDate, fullDate},
+			args{&lastBackups, fullDate, "20210721-000101F", "full"},
+			lastBackupsStruct{
+				backupStruct{"20210721-000101F", "", fullDate},
+				backupStruct{"20210721-000101F", "", fullDate},
+				backupStruct{"20210721-000101F", "", fullDate},
+			},
 		},
 		{"compareLastBackupsDiff",
-			args{&lastBackups, diffDate, "diff"},
-			lastBackupsStruct{fullDate, diffDate, diffDate},
+			args{&lastBackups, diffDate, "20210721-000101F_20210721-000501D", "diff"},
+			lastBackupsStruct{
+				backupStruct{"20210721-000101F", "", fullDate},
+				backupStruct{"20210721-000101F_20210721-000501D", "", diffDate},
+				backupStruct{"20210721-000101F_20210721-000501D", "", diffDate},
+			},
 		},
 		{"compareLastBackupsIncr",
-			args{&lastBackups, incrDate, "incr"},
-			lastBackupsStruct{fullDate, diffDate, incrDate},
+			args{&lastBackups, incrDate, "20210721-000101F_20210721-001001I", "incr"},
+			lastBackupsStruct{
+				backupStruct{"20210721-000101F", "", fullDate},
+				backupStruct{"20210721-000101F_20210721-000501D", "", diffDate},
+				backupStruct{"20210721-000101F_20210721-001001I", "", incrDate},
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			compareLastBackups(tt.args.backups, tt.args.currentBackup, tt.args.backupType)
+			compareLastBackups(tt.args.backups, tt.args.currentBackup, tt.args.backupLabel, tt.args.backupType)
 			if !reflect.DeepEqual(*tt.args.backups, tt.want) {
 				t.Errorf("\nVariables do not match:\n%v\nwant:\n%v", *tt.args.backups, tt.want)
 			}
@@ -680,21 +1427,34 @@ func fakeSetUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...
 }
 
 //nolint:unparam
-func templateStanza(walMax, walMin string, errorStatus bool) stanza {
+func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus bool) stanza {
+	var (
+		link *[]struct {
+			Destination string "json:\"destination\""
+			Name        string "json:\"name\""
+		}
+		tablespace *[]struct {
+			Destination string `json:"destination"`
+			Name        string `json:"name"`
+			OID         int    `json:"oid"`
+		}
+	)
 	return stanza{
 		[]archive{
 			{databaseID{1, 1}, "13-1", walMax, walMin},
 		},
 		[]backup{
-			{struct {
-				StartWAL string "json:\"start\""
-				StopWAL  string "json:\"stop\""
-			}{"000000010000000000000002", "000000010000000000000002"},
+			{
+				struct {
+					StartWAL string "json:\"start\""
+					StopWAL  string "json:\"stop\""
+				}{"000000010000000000000002", "000000010000000000000002"},
 				struct {
 					Format  int    "json:\"format\""
 					Version string "json:\"version\""
-				}{5, "2.38"},
+				}{5, "2.41"},
 				databaseID{1, 1},
+				&dbRef,
 				&errorStatus,
 				backupInfo{
 					24316343,
@@ -705,12 +1465,14 @@ func templateStanza(walMax, walMin string, errorStatus bool) stanza {
 					24316343,
 				},
 				"20210607-092423F",
+				link,
 				struct {
 					StartLSN string "json:\"start\""
 					StopLSN  string "json:\"stop\""
 				}{"0/2000028", "0/2000100"},
 				"",
 				[]string{""},
+				tablespace,
 				struct {
 					Start int64 "json:\"start\""
 					Stop  int64 "json:\"stop\""
@@ -750,21 +1512,35 @@ func templateStanza(walMax, walMin string, errorStatus bool) stanza {
 
 //nolint:unparam
 func templateStanzaErrorAbsent(walMax, walMin string) stanza {
-	var errorStatus *bool
+	var (
+		errorStatus *bool
+		dbRef       *[]databaseRef
+		link        *[]struct {
+			Destination string "json:\"destination\""
+			Name        string "json:\"name\""
+		}
+		tablespace *[]struct {
+			Destination string `json:"destination"`
+			Name        string `json:"name"`
+			OID         int    `json:"oid"`
+		}
+	)
 	return stanza{
 		[]archive{
 			{databaseID{1, 1}, "13-1", walMax, walMin},
 		},
 		[]backup{
-			{struct {
-				StartWAL string "json:\"start\""
-				StopWAL  string "json:\"stop\""
-			}{"000000010000000000000002", "000000010000000000000002"},
+			{
+				struct {
+					StartWAL string "json:\"start\""
+					StopWAL  string "json:\"stop\""
+				}{"000000010000000000000002", "000000010000000000000002"},
 				struct {
 					Format  int    "json:\"format\""
 					Version string "json:\"version\""
 				}{5, "2.35"},
 				databaseID{1, 1},
+				dbRef,
 				errorStatus,
 				backupInfo{
 					24316343,
@@ -775,12 +1551,14 @@ func templateStanzaErrorAbsent(walMax, walMin string) stanza {
 					24316343,
 				},
 				"20210607-092423F",
+				link,
 				struct {
 					StartLSN string "json:\"start\""
 					StopLSN  string "json:\"stop\""
 				}{"", ""},
 				"",
 				[]string{""},
+				tablespace,
 				struct {
 					Start int64 "json:\"start\""
 					Stop  int64 "json:\"stop\""
@@ -820,7 +1598,19 @@ func templateStanzaErrorAbsent(walMax, walMin string) stanza {
 
 //nolint:unparam
 func templateStanzaRepoAbsent(walMax, walMin string) stanza {
-	var errorStatus *bool
+	var (
+		errorStatus *bool
+		dbRef       *[]databaseRef
+		link        *[]struct {
+			Destination string "json:\"destination\""
+			Name        string "json:\"name\""
+		}
+		tablespace *[]struct {
+			Destination string `json:"destination"`
+			Name        string `json:"name"`
+			OID         int    `json:"oid"`
+		}
+	)
 	return stanza{
 		[]archive{
 			{databaseID{1, 0}, "13-1", walMax, walMin},
@@ -835,6 +1625,7 @@ func templateStanzaRepoAbsent(walMax, walMin string) stanza {
 					Version string "json:\"version\""
 				}{5, "2.31"},
 				databaseID{1, 0},
+				dbRef,
 				errorStatus,
 				backupInfo{
 					24316343,
@@ -845,12 +1636,14 @@ func templateStanzaRepoAbsent(walMax, walMin string) stanza {
 					24316343,
 				},
 				"20210607-092423F",
+				link,
 				struct {
 					StartLSN string "json:\"start\""
 					StopLSN  string "json:\"stop\""
 				}{"", ""},
 				"",
 				[]string{""},
+				tablespace,
 				struct {
 					Start int64 "json:\"start\""
 					Stop  int64 "json:\"stop\""
@@ -994,4 +1787,109 @@ func TestConvertBoolToFloat64(t *testing.T) {
 			}
 		})
 	}
+}
+
+//nolint:unparam
+func templateLastBackup() lastBackupsStruct {
+	return lastBackupsStruct{
+		backupStruct{"20210607-092423F", "", time.Unix(1623706322, 0)},
+		backupStruct{"20210607-092423F", "", time.Unix(1623706322, 0)},
+		backupStruct{"20210607-092423F", "", time.Unix(1623706322, 0)},
+	}
+}
+
+//nolint:unparam
+func templateLastBackupDifferent() lastBackupsStruct {
+	return lastBackupsStruct{
+		backupStruct{"20220926-201857F", "", time.Unix(1623706322, 0)},
+		backupStruct{"20220926-201857F_20220926-201901D", "", time.Unix(1623706322, 0)},
+		backupStruct{"20220926-201854F_20220926-202454I", "", time.Unix(1623706322, 0)},
+	}
+}
+
+func TestGetParsedSpecificBackupInfoDataErrors(t *testing.T) {
+	type args struct {
+		config            string
+		configIncludePath string
+		stanzaName        string
+		backupLabel       string
+		errorsCount       int
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			"getParsedSpecificBackupInfoDataErrors",
+			args{
+				"",
+				"",
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Name,
+				templateStanza(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true).Backup[0].Label,
+				2,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out := &bytes.Buffer{}
+			lc := log.NewLogfmtLogger(out)
+			getParsedSpecificBackupInfoData(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.backupLabel, lc)
+			errorsOutputCount := strings.Count(out.String(), "level=error")
+			if tt.args.errorsCount != errorsOutputCount {
+				t.Errorf("\nVariables do not match:\nerrors=%d, want:\nerrors=%d",
+					tt.args.errorsCount, errorsOutputCount)
+			}
+		})
+	}
+}
+
+func fakeExecCommandSpecificDatabase(command string, args ...string) *exec.Cmd {
+	var (
+		stdOut, stdErr string
+		ecode          int
+	)
+	cs := []string{"-test.run=TestExecCommandHelper", "--", command}
+	cs = append(cs, args...)
+	cmd := exec.Command(os.Args[0], cs...)
+	switch {
+	case checkBackupType(cs, `D$`):
+		stdOut = mockDataBackupLast.mockDiff.mockStdout
+		stdErr = mockDataBackupLast.mockDiff.mockStderr
+		ecode = mockDataBackupLast.mockDiff.mockExit
+	case checkBackupType(cs, `I$`):
+		stdOut = mockDataBackupLast.mockIncr.mockStdout
+		stdErr = mockDataBackupLast.mockIncr.mockStderr
+		ecode = mockDataBackupLast.mockIncr.mockExit
+	default:
+		stdOut = mockDataBackupLast.mockFull.mockStdout
+		stdErr = mockDataBackupLast.mockFull.mockStderr
+		ecode = mockDataBackupLast.mockFull.mockExit
+	}
+	cmd.Env = []string{"GO_WANT_HELPER_PROCESS=1",
+		"STDOUT=" + stdOut,
+		"STDERR=" + stdErr,
+		"EXIT_STATUS=" + strconv.Itoa(ecode)}
+	return cmd
+}
+
+func checkBackupType(a []string, regex string) bool {
+	for _, n := range a {
+		found, err := regexp.MatchString(regex, n)
+		if err != nil {
+			panic(err)
+		}
+		if found {
+			return true
+		}
+	}
+	return false
 }

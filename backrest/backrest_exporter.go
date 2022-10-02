@@ -17,9 +17,9 @@ var (
 	promTLSConfigPath string
 )
 
-// SetPromPortandPath sets HTTP endpoint parameters
-// from command line arguments 'port', 'endpoint' and 'tlsConfigPath'
-func SetPromPortandPath(port, endpoint, tlsConfigPath string) {
+// SetPromPortAndPath sets HTTP endpoint parameters
+// from command line arguments 'prom.port', 'prom.endpoint' and 'prom.web-config'
+func SetPromPortAndPath(port, endpoint, tlsConfigPath string) {
 	promPort = port
 	promEndpoint = endpoint
 	promTLSConfigPath = tlsConfigPath
@@ -60,11 +60,12 @@ func ResetMetrics() {
 	pgbrStanzaBackupLastFullMetric.Reset()
 	pgbrStanzaBackupLastDiffMetric.Reset()
 	pgbrStanzaBackupLastIncrMetric.Reset()
+	pgbrStanzaBackupLastDatabasesMetric.Reset()
 	pgbrWALArchivingMetric.Reset()
 }
 
 // GetPgBackRestInfo get and parse pgBackRest info and set metrics
-func GetPgBackRestInfo(config, configIncludePath string, stanzas []string, stanzasExclude []string, backupType string, verbose bool, logger log.Logger) {
+func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas []string, stanzasExclude []string, backupDBCountLatest, verboseWAL bool, logger log.Logger) {
 	// To calculate the time elapsed since the last completed full, differential or incremental backup.
 	// For all stanzas values are calculated relative to one value.
 	currentUnixTime := time.Now().Unix()
@@ -88,7 +89,12 @@ func GetPgBackRestInfo(config, configIncludePath string, stanzas []string, stanz
 			for _, singleStanza := range parseStanzaData {
 				// If stanza is in the exclude list, skip it.
 				if stanzaNotInExclude(singleStanza.Name, stanzasExclude) {
-					getMetrics(singleStanza, verbose, currentUnixTime, setUpMetricValue, logger)
+					getStanzaMetrics(singleStanza.Name, singleStanza.Status.Code, setUpMetricValue, logger)
+					getRepoMetrics(singleStanza.Name, singleStanza.Repo, setUpMetricValue, logger)
+					// Last backups for current stanza
+					lastBackups := getBackupMetrics(singleStanza.Name, singleStanza.Backup, singleStanza.DB, setUpMetricValue, logger)
+					getBackupLastMetrics(config, configIncludePath, singleStanza.Name, lastBackups, backupDBCountLatest, currentUnixTime, setUpMetricValue, logger)
+					getWALMetrics(singleStanza.Name, singleStanza.Archive, singleStanza.DB, verboseWAL, setUpMetricValue, logger)
 				}
 			}
 		} else {

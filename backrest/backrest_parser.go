@@ -16,10 +16,15 @@ import (
 
 type setUpMetricValueFunType func(metric *prometheus.GaugeVec, value float64, labels ...string) error
 
+type backupStruct struct {
+	backupLabel string
+	backupType  string
+	backupTime  time.Time
+}
 type lastBackupsStruct struct {
-	full time.Time
-	diff time.Time
-	incr time.Time
+	full backupStruct
+	diff backupStruct
+	incr backupStruct
 }
 
 var execCommand = exec.Command
@@ -52,11 +57,11 @@ func returnConfigExecArgs(config, configIncludePath string) []string {
 	return configArgs
 }
 
-func returnConfigStanzaArgs(stanza string) []string {
+func returnStanzaExecArgs(stanza string) []string {
 	var stanzaArgs []string
 	switch {
 	case stanza == "":
-		// Stanza not set. No return parametrs.
+		// Stanza not set. No return parameters.
 		stanzaArgs = []string{}
 	default:
 		// Use specific stanza.
@@ -67,7 +72,7 @@ func returnConfigStanzaArgs(stanza string) []string {
 
 // Option 'type' cannot be set multiple times for info command.
 // It's pgBackRest restriction.
-func returnConfigBackupTypeArgs(backupType string) []string {
+func returnBackupTypeExecArgs(backupType string) []string {
 	var backupTypeArgs []string
 	switch {
 	case backupType == "":
@@ -80,6 +85,20 @@ func returnConfigBackupTypeArgs(backupType string) []string {
 	return backupTypeArgs
 }
 
+//
+func returnBackupSetExecArgs(backupSetLabel string) []string {
+	var backupSetLabelArgs []string
+	switch {
+	case backupSetLabel == "":
+		// Backup label not set. No return parameters.
+		backupSetLabelArgs = []string{}
+	default:
+		// Use specific backup label.
+		backupSetLabelArgs = []string{"--set", backupSetLabel}
+	}
+	return backupSetLabelArgs
+}
+
 func concatExecArgs(slices [][]string) []string {
 	tmp := []string{}
 	for _, s := range slices {
@@ -88,13 +107,26 @@ func concatExecArgs(slices [][]string) []string {
 	return tmp
 }
 
-func getAllInfoData(config, configIncludePath, stanza string, backupType string, logger log.Logger) ([]byte, error) {
+func getAllInfoData(config, configIncludePath, stanza, backupType string, logger log.Logger) ([]byte, error) {
+	var backupLabel string
+	return getInfoData(config, configIncludePath, stanza, backupType, backupLabel, logger)
+}
+
+func getSpecificBackupInfoData(config, configIncludePath, stanza, backupLabel string, logger log.Logger) ([]byte, error) {
+	var backupType string
+	return getInfoData(config, configIncludePath, stanza, backupType, backupLabel, logger)
+}
+
+func getInfoData(config, configIncludePath, stanza, backupType, backupLabel string, logger log.Logger) ([]byte, error) {
 	app := "pgbackrest"
 	args := [][]string{
 		returnDefaultExecArgs(),
 		returnConfigExecArgs(config, configIncludePath),
-		returnConfigStanzaArgs(stanza),
-		returnConfigBackupTypeArgs(backupType),
+		returnStanzaExecArgs(stanza),
+		returnBackupTypeExecArgs(backupType),
+	}
+	if backupLabel != "" {
+		args = append(args, returnBackupSetExecArgs(backupLabel))
 	}
 	// Finally arguments for exec command.
 	concatArgs := concatExecArgs(args)
@@ -133,11 +165,11 @@ func getPGVersion(id, repoKey int, dbList []db) string {
 	return ""
 }
 
-func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
-	var err error
-	lastBackups := lastBackupsStruct{}
+// Set stanza metrics:
+//	* pgbackrest_stanza_status
+func getStanzaMetrics(stanzaName string, stanzaStatusCode int, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
 	//https://github.com/pgbackrest/pgbackrest/blob/03021c6a17f1374e84ef42614fa1dd2a6be4b64d/src/command/info/info.c#L78-L94
-	// Stanza and repo statuses:
+	// Stanza statuses:
 	//  0: "ok",
 	//  1: "missing stanza path",
 	//  2: "no valid backups",
@@ -146,15 +178,15 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 	//  5: "database mismatch across repos",
 	//  6: "requested backup not found",
 	//  99: "other".
-	err = setUpMetricValueFun(
-		pgbrStanzaStatusMetric,
-		float64(data.Status.Code),
-		data.Name,
-	)
 	level.Debug(logger).Log(
 		"msg", "Metric pgbackrest_stanza_status",
-		"value", float64(data.Status.Code),
-		"labels", data.Name,
+		"value", float64(stanzaStatusCode),
+		"labels", stanzaName,
+	)
+	err := setUpMetricValueFun(
+		pgbrStanzaStatusMetric,
+		float64(stanzaStatusCode),
+		stanzaName,
 	)
 	if err != nil {
 		level.Error(logger).Log(
@@ -162,8 +194,14 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 			"err", err,
 		)
 	}
+}
+
+// Set repo metrics:
+//	* pgbackrest_repo_status
+func getRepoMetrics(stanzaName string, repoData []repo, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
 	// Repo status.
-	for _, repo := range data.Repo {
+	// The same statuses as for stanza.
+	for _, repo := range repoData {
 		level.Debug(logger).Log(
 			"msg", "Metric pgbackrest_repo_status",
 			"value", float64(repo.Status.Code),
@@ -172,16 +210,16 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				[]string{
 					repo.Cipher,
 					strconv.Itoa(repo.Key),
-					data.Name,
+					stanzaName,
 				}, ",",
 			),
 		)
-		err = setUpMetricValueFun(
+		err := setUpMetricValueFun(
 			pgbrRepoStatusMetric,
 			float64(repo.Status.Code),
 			repo.Cipher,
 			strconv.Itoa(repo.Key),
-			data.Name,
+			stanzaName,
 		)
 		if err != nil {
 			level.Error(logger).Log(
@@ -190,8 +228,22 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 			)
 		}
 	}
+}
+
+// Set backup metrics:
+//	* pgbackrest_backup_info
+//	* pgbackrest_backup_duration_seconds
+//	* pgbackrest_backup_size_bytes
+//	* pgbackrest_backup_delta_bytes
+//	* pgbackrest_backup_repo_size_bytes
+//	* pgbackrest_backup_repo_delta_bytes
+//	* pgbackrest_backup_error_status
+// And returns info about last backups.
+func getBackupMetrics(stanzaName string, backupData []backup, dbData []db, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) lastBackupsStruct {
+	var err error
+	lastBackups := lastBackupsStruct{}
 	// Each backup for current stanza.
-	for _, backup := range data.Backup {
+	for _, backup := range backupData {
 		//  1 - info about backup is exist.
 		level.Debug(logger).Log(
 			"msg", "Metric pgbackrest_backup_info",
@@ -205,10 +257,10 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 					strconv.Itoa(backup.Database.ID),
 					backup.Lsn.StartLSN,
 					backup.Lsn.StopLSN,
-					getPGVersion(backup.Database.ID, backup.Database.RepoKey, data.DB),
+					getPGVersion(backup.Database.ID, backup.Database.RepoKey, dbData),
 					backup.Prior,
 					strconv.Itoa(backup.Database.RepoKey),
-					data.Name,
+					stanzaName,
 					backup.Archive.StartWAL,
 					backup.Archive.StopWAL,
 				}, ",",
@@ -223,10 +275,10 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 			strconv.Itoa(backup.Database.ID),
 			backup.Lsn.StartLSN,
 			backup.Lsn.StopLSN,
-			getPGVersion(backup.Database.ID, backup.Database.RepoKey, data.DB),
+			getPGVersion(backup.Database.ID, backup.Database.RepoKey, dbData),
 			backup.Prior,
 			strconv.Itoa(backup.Database.RepoKey),
-			data.Name,
+			stanzaName,
 			backup.Archive.StartWAL,
 			backup.Archive.StopWAL,
 		)
@@ -247,7 +299,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 					backup.Type,
 					strconv.Itoa(backup.Database.ID),
 					strconv.Itoa(backup.Database.RepoKey),
-					data.Name,
+					stanzaName,
 					time.Unix(backup.Timestamp.Start, 0).Format(layout),
 					time.Unix(backup.Timestamp.Stop, 0).Format(layout),
 				}, ",",
@@ -260,7 +312,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 			backup.Type,
 			strconv.Itoa(backup.Database.ID),
 			strconv.Itoa(backup.Database.RepoKey),
-			data.Name,
+			stanzaName,
 			time.Unix(backup.Timestamp.Start, 0).Format(layout),
 			time.Unix(backup.Timestamp.Stop, 0).Format(layout),
 		)
@@ -281,7 +333,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 					backup.Type,
 					strconv.Itoa(backup.Database.ID),
 					strconv.Itoa(backup.Database.RepoKey),
-					data.Name,
+					stanzaName,
 				}, ",",
 			),
 		)
@@ -292,7 +344,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 			backup.Type,
 			strconv.Itoa(backup.Database.ID),
 			strconv.Itoa(backup.Database.RepoKey),
-			data.Name,
+			stanzaName,
 		)
 		if err != nil {
 			level.Error(logger).Log(
@@ -311,7 +363,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 					backup.Type,
 					strconv.Itoa(backup.Database.ID),
 					strconv.Itoa(backup.Database.RepoKey),
-					data.Name,
+					stanzaName,
 				}, ",",
 			),
 		)
@@ -322,7 +374,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 			backup.Type,
 			strconv.Itoa(backup.Database.ID),
 			strconv.Itoa(backup.Database.RepoKey),
-			data.Name,
+			stanzaName,
 		)
 		if err != nil {
 			level.Error(logger).Log(
@@ -341,7 +393,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 					backup.Type,
 					strconv.Itoa(backup.Database.ID),
 					strconv.Itoa(backup.Database.RepoKey),
-					data.Name,
+					stanzaName,
 				}, ",",
 			),
 		)
@@ -352,7 +404,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 			backup.Type,
 			strconv.Itoa(backup.Database.ID),
 			strconv.Itoa(backup.Database.RepoKey),
-			data.Name,
+			stanzaName,
 		)
 		if err != nil {
 			level.Error(logger).Log(
@@ -371,7 +423,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 					backup.Type,
 					strconv.Itoa(backup.Database.ID),
 					strconv.Itoa(backup.Database.RepoKey),
-					data.Name,
+					stanzaName,
 				}, ",",
 			),
 		)
@@ -382,7 +434,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 			backup.Type,
 			strconv.Itoa(backup.Database.ID),
 			strconv.Itoa(backup.Database.RepoKey),
-			data.Name,
+			stanzaName,
 		)
 		if err != nil {
 			level.Error(logger).Log(
@@ -406,7 +458,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 						backup.Type,
 						strconv.Itoa(backup.Database.ID),
 						strconv.Itoa(backup.Database.RepoKey),
-						data.Name,
+						stanzaName,
 					}, ",",
 				),
 			)
@@ -417,7 +469,7 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				backup.Type,
 				strconv.Itoa(backup.Database.ID),
 				strconv.Itoa(backup.Database.RepoKey),
-				data.Name,
+				stanzaName,
 			)
 			if err != nil {
 				level.Error(logger).Log(
@@ -429,24 +481,41 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 		compareLastBackups(
 			&lastBackups,
 			time.Unix(backup.Timestamp.Stop, 0),
+			backup.Label,
 			backup.Type,
 		)
 	}
+	return lastBackups
+}
+
+// Set backup metrics:
+//	* pgbackrest_backup_full_since_last_completion_seconds
+//	* pgbackrest_backup_diff_since_last_completion_seconds
+//	* pgbackrest_backup_incr_since_last_completion_seconds
+//	* pgbackrest_backup_last_databases
+func getBackupLastMetrics(config, configIncludePath, stanzaName string, lastBackups lastBackupsStruct, backupDBCountLatest bool, currentUnixTime int64, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
+	var (
+		err, errParse           error
+		parseStanzaDataSpecific []stanza
+	)
+	lastBackups.full.backupType = "full"
+	lastBackups.diff.backupType = "diff"
+	lastBackups.incr.backupType = "incr"
 	// If full backup exists, the values of metrics for differential and
 	// incremental backups also will be set.
 	// If not - metrics won't be set.
-	if !lastBackups.full.IsZero() {
+	if !lastBackups.full.backupTime.IsZero() {
 		// Seconds since the last completed full backup.
 		level.Debug(logger).Log(
 			"msg", "Metric pgbackrest_backup_full_since_last_completion_seconds",
-			"value", time.Unix(currentUnixTime, 0).Sub(lastBackups.full).Seconds(),
-			"labels", data.Name,
+			"value", time.Unix(currentUnixTime, 0).Sub(lastBackups.full.backupTime).Seconds(),
+			"labels", stanzaName,
 		)
 		err = setUpMetricValueFun(
 			pgbrStanzaBackupLastFullMetric,
 			// Trim nanoseconds.
-			time.Unix(currentUnixTime, 0).Sub(lastBackups.full).Seconds(),
-			data.Name,
+			time.Unix(currentUnixTime, 0).Sub(lastBackups.full.backupTime).Seconds(),
+			stanzaName,
 		)
 		if err != nil {
 			level.Error(logger).Log(
@@ -457,13 +526,13 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 		// Seconds since the last completed full or differential backup.
 		level.Debug(logger).Log(
 			"msg", "Metric pgbackrest_backup_diff_since_last_completion_seconds",
-			"value", time.Unix(currentUnixTime, 0).Sub(lastBackups.diff).Seconds(),
-			"labels", data.Name,
+			"value", time.Unix(currentUnixTime, 0).Sub(lastBackups.diff.backupTime).Seconds(),
+			"labels", stanzaName,
 		)
 		err = setUpMetricValueFun(
 			pgbrStanzaBackupLastDiffMetric,
-			time.Unix(currentUnixTime, 0).Sub(lastBackups.diff).Seconds(),
-			data.Name,
+			time.Unix(currentUnixTime, 0).Sub(lastBackups.diff.backupTime).Seconds(),
+			stanzaName,
 		)
 		if err != nil {
 			level.Error(logger).Log(
@@ -474,13 +543,13 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 		// Seconds since the last completed full, differential or incremental backup.
 		level.Debug(logger).Log(
 			"msg", "Metric pgbackrest_backup_incr_since_last_completion_seconds",
-			"value", time.Unix(currentUnixTime, 0).Sub(lastBackups.incr).Seconds(),
-			"labels", data.Name,
+			"value", time.Unix(currentUnixTime, 0).Sub(lastBackups.incr.backupTime).Seconds(),
+			"labels", stanzaName,
 		)
 		err = setUpMetricValueFun(
 			pgbrStanzaBackupLastIncrMetric,
-			time.Unix(currentUnixTime, 0).Sub(lastBackups.incr).Seconds(),
-			data.Name,
+			time.Unix(currentUnixTime, 0).Sub(lastBackups.incr.backupTime).Seconds(),
+			stanzaName,
 		)
 		if err != nil {
 			level.Error(logger).Log(
@@ -488,16 +557,126 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				"err", err,
 			)
 		}
+		// If the calculation of the number of databases in latest backups is enabled.
+		// Information about number of databases in specific backup has appeared since pgBackRest v2.41.
+		// In versions < v2.41 this is missing and the metric does not need to be collected.
+		// getParsedSpecificBackupInfoData will return error in this case.
+		if backupDBCountLatest {
+			// Try to get info fo full backup.
+			parseStanzaDataSpecific, errParse = getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, lastBackups.full.backupLabel, logger)
+			if errParse == nil {
+				// In a normal situation, only one element with one backup should be returned.
+				// If more than one element or one backup is returned, there is may be a bug in pgBackRest.
+				// If it's not a bug, then this part will need to be refactoring.
+				// Use *[]struct() type for backup.DatabaseRef.
+				if parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil {
+					// Number of databases in the last full backup.
+					level.Debug(logger).Log(
+						"msg", "Metric pgbackrest_backup_last_databases",
+						"value", len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
+						"labels",
+						strings.Join(
+							[]string{
+								lastBackups.full.backupType,
+								stanzaName,
+							}, ",",
+						),
+					)
+					err = setUpMetricValueFun(
+						pgbrStanzaBackupLastDatabasesMetric,
+						float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
+						lastBackups.full.backupType,
+						stanzaName,
+					)
+					if err != nil {
+						level.Error(logger).Log(
+							"msg", "Metric pgbackrest_backup_last_databases set up failed",
+							"err", err,
+						)
+					}
+				}
+			}
+			// If name for diff backup is equal to full, there is no point in re-receiving data.
+			if lastBackups.diff.backupLabel != lastBackups.full.backupLabel {
+				parseStanzaDataSpecific, errParse = getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, lastBackups.diff.backupLabel, logger)
+			}
+			if errParse == nil {
+				if parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil {
+					// Number of databases in the last full or differential backup.
+					level.Debug(logger).Log(
+						"msg", "Metric pgbackrest_backup_last_databases",
+						"value", len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
+						"labels",
+						strings.Join(
+							[]string{
+								lastBackups.diff.backupType,
+								stanzaName,
+							}, ",",
+						),
+					)
+					err = setUpMetricValueFun(
+						pgbrStanzaBackupLastDatabasesMetric,
+						float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
+						lastBackups.diff.backupType,
+						stanzaName,
+					)
+					if err != nil {
+						level.Error(logger).Log(
+							"msg", "Metric pgbackrest_backup_last_databases set up failed",
+							"err", err,
+						)
+					}
+				}
+			}
+			// If name for incr backup is equal to diff, there is no point in re-receiving data.
+			if lastBackups.incr.backupLabel != lastBackups.diff.backupLabel {
+				parseStanzaDataSpecific, errParse = getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, lastBackups.incr.backupLabel, logger)
+			}
+			if errParse == nil {
+				if parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil {
+					// Number of databases in the last full, differential or incremental backup.
+					level.Debug(logger).Log(
+						"msg", "Metric pgbackrest_backup_last_databases",
+						"value", len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
+						"labels",
+						strings.Join(
+							[]string{
+								lastBackups.incr.backupType,
+								stanzaName,
+							}, ",",
+						),
+					)
+					err = setUpMetricValueFun(
+						pgbrStanzaBackupLastDatabasesMetric,
+						float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
+						lastBackups.incr.backupType,
+						stanzaName,
+					)
+					if err != nil {
+						level.Error(logger).Log(
+							"msg", "Metric pgbackrest_backup_last_databases set up failed",
+							"err", err,
+						)
+					}
+				}
+			}
+		}
 	}
+}
+
+// Set backup metrics:
+//	* pgbackrest_wal_archive_status
+func getWALMetrics(stanzaName string, archiveData []archive, dbData []db, verboseWAL bool, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
+	var err error
 	// WAL archive info.
 	// 0 - any one of WALMin and WALMax have empty value, there is no correct information about WAL archiving.
 	// 1 - both WALMin and WALMax have no empty values, there is correct information about WAL archiving.
 	// Verbose mode.
-	// When "verbose == true" - WALMin and WALMax are added as metric labels.
+	// When "verboseWAL == true" - WALMin and WALMax are added as metric labels.
 	// This creates new different time series on each WAL archiving which maybe is not right way.
-	for _, archive := range data.Archive {
+	for _, archive := range archiveData {
 		if archive.WALMin != "" && archive.WALMax != "" {
-			if verbose {
+			if verboseWAL {
 				level.Debug(logger).Log(
 					"msg", "Metric pgbackrest_wal_archive_status",
 					"value", 1,
@@ -505,9 +684,9 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 					strings.Join(
 						[]string{
 							strconv.Itoa(archive.Database.ID),
-							getPGVersion(archive.Database.ID, archive.Database.RepoKey, data.DB),
+							getPGVersion(archive.Database.ID, archive.Database.RepoKey, dbData),
 							strconv.Itoa(archive.Database.RepoKey),
-							data.Name,
+							stanzaName,
 							archive.WALMax,
 							archive.WALMin,
 						}, ",",
@@ -517,9 +696,9 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 					pgbrWALArchivingMetric,
 					1,
 					strconv.Itoa(archive.Database.ID),
-					getPGVersion(archive.Database.ID, archive.Database.RepoKey, data.DB),
+					getPGVersion(archive.Database.ID, archive.Database.RepoKey, dbData),
 					strconv.Itoa(archive.Database.RepoKey),
-					data.Name,
+					stanzaName,
 					archive.WALMax,
 					archive.WALMin,
 				)
@@ -537,9 +716,9 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 					strings.Join(
 						[]string{
 							strconv.Itoa(archive.Database.ID),
-							getPGVersion(archive.Database.ID, archive.Database.RepoKey, data.DB),
+							getPGVersion(archive.Database.ID, archive.Database.RepoKey, dbData),
 							strconv.Itoa(archive.Database.RepoKey),
-							data.Name,
+							stanzaName,
 							"''",
 							"''",
 						}, ",",
@@ -549,9 +728,9 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 					pgbrWALArchivingMetric,
 					1,
 					strconv.Itoa(archive.Database.ID),
-					getPGVersion(archive.Database.ID, archive.Database.RepoKey, data.DB),
+					getPGVersion(archive.Database.ID, archive.Database.RepoKey, dbData),
 					strconv.Itoa(archive.Database.RepoKey),
-					data.Name,
+					stanzaName,
 					"",
 					"",
 				)
@@ -570,9 +749,9 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				strings.Join(
 					[]string{
 						strconv.Itoa(archive.Database.ID),
-						getPGVersion(archive.Database.ID, archive.Database.RepoKey, data.DB),
+						getPGVersion(archive.Database.ID, archive.Database.RepoKey, dbData),
 						strconv.Itoa(archive.Database.RepoKey),
-						data.Name,
+						stanzaName,
 						"''",
 						"''",
 					}, ",",
@@ -582,9 +761,9 @@ func getMetrics(data stanza, verbose bool, currentUnixTime int64, setUpMetricVal
 				pgbrWALArchivingMetric,
 				0,
 				strconv.Itoa(archive.Database.ID),
-				getPGVersion(archive.Database.ID, archive.Database.RepoKey, data.DB),
+				getPGVersion(archive.Database.ID, archive.Database.RepoKey, dbData),
 				strconv.Itoa(archive.Database.RepoKey),
-				data.Name,
+				stanzaName,
 				"",
 				"",
 			)
@@ -613,34 +792,40 @@ func setUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...stri
 	return nil
 }
 
-func compareLastBackups(backups *lastBackupsStruct, currentBackup time.Time, backupType string) {
-	switch backupType {
+func compareLastBackups(backups *lastBackupsStruct, currentBackupTime time.Time, currentBackupLabel, currentBackupType string) {
+	switch currentBackupType {
 	case "full":
-		if currentBackup.After(backups.full) {
-			backups.full = currentBackup
+		if currentBackupTime.After(backups.full.backupTime) {
+			backups.full.backupTime = currentBackupTime
+			backups.full.backupLabel = currentBackupLabel
 		}
-		if currentBackup.After(backups.diff) {
-			backups.diff = currentBackup
+		if currentBackupTime.After(backups.diff.backupTime) {
+			backups.diff.backupTime = currentBackupTime
+			backups.diff.backupLabel = currentBackupLabel
 		}
-		if currentBackup.After(backups.incr) {
-			backups.incr = currentBackup
+		if currentBackupTime.After(backups.incr.backupTime) {
+			backups.incr.backupTime = currentBackupTime
+			backups.incr.backupLabel = currentBackupLabel
 		}
 	case "diff":
-		if currentBackup.After(backups.diff) {
-			backups.diff = currentBackup
+		if currentBackupTime.After(backups.diff.backupTime) {
+			backups.diff.backupTime = currentBackupTime
+			backups.diff.backupLabel = currentBackupLabel
 		}
-		if currentBackup.After(backups.incr) {
-			backups.incr = currentBackup
+		if currentBackupTime.After(backups.incr.backupTime) {
+			backups.incr.backupTime = currentBackupTime
+			backups.incr.backupLabel = currentBackupLabel
 		}
 	case "incr":
-		if currentBackup.After(backups.incr) {
-			backups.incr = currentBackup
+		if currentBackupTime.After(backups.incr.backupTime) {
+			backups.incr.backupTime = currentBackupTime
+			backups.incr.backupLabel = currentBackupLabel
 		}
 	}
 }
 
 func stanzaNotInExclude(stanza string, listExclude []string) bool {
-	// Сheck that exclude list is empty.
+	// Check that exclude list is empty.
 	// If so, no excluding stanzas are set during startup.
 	if strings.Join(listExclude, "") != "" {
 		for _, val := range listExclude {
@@ -677,4 +862,24 @@ func convertBoolToFloat64(value bool) float64 {
 		return 1
 	}
 	return 0
+}
+
+func getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, backupLabel string, logger log.Logger) ([]stanza, error) {
+	stanzaDataSpecific, err := getSpecificBackupInfoData(config, configIncludePath, stanzaName, backupLabel, logger)
+	if err != nil {
+		level.Error(logger).Log(
+			"msg", "Get data from pgBackRest failed",
+			"stanza", stanzaName,
+			"backup", backupLabel,
+			"err", err)
+	}
+	parseDataSpecific, err := parseResult(stanzaDataSpecific)
+	if err != nil {
+		level.Error(logger).Log(
+			"msg", "Parse JSON failed",
+			"stanza", stanzaName,
+			"backup", backupLabel,
+			"err", err)
+	}
+	return parseDataSpecific, err
 }

@@ -19,6 +19,8 @@ linters-settings:
     locale: US
   lll:
     line-length: 140
+  gocyclo:
+    min-complexity: 20
 
 linters:
   enable:
