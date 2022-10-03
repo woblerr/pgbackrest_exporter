@@ -45,6 +45,8 @@ declare -a REGEX_LIST=(
     '^pgbackrest_backup_error_status{.*,backup_type="full",.*} 0$|2'
     '^pgbackrest_backup_error_status{.*,backup_type="diff",.*,repo_key="2".*} 1$|1'
     '^pgbackrest_backup_since_last_completion_seconds{.*}|3'
+    '^pgbackrest_backup_databases{.*,backup_type="full",.*} 2|2'
+    '^pgbackrest_backup_databases{.*,backup_type="diff",.*,repo_key="2".*} 2|1'
     '^pgbackrest_backup_last_databases{.*}|3'
     '^pgbackrest_backup_info{.*} 1$|3'
     '^pgbackrest_backup_repo_delta_bytes{.*}|3'
