@@ -59,7 +59,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 	}{
 		{
 			"GetPgBackRestInfoGoodDataReturn",
-			args{"", "", "", []string{""}, []string{""}, false, true, false},
+			args{"", "", "", []string{""}, []string{""}, true, true, false},
 			mockStruct{
 				`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 					`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
@@ -77,7 +77,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 			""},
 		{
 			"GetPgBackRestInfoGoodDataReturnWithWarn",
-			args{"", "", "", []string{""}, []string{""}, false, true, false},
+			args{"", "", "", []string{""}, []string{""}, true, true, false},
 			mockStruct{
 				`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 					`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
