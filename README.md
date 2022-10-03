@@ -65,6 +65,10 @@ The metrics provided by the client.
     - `0` - backup doesn't contain page checksum errors,
     - `1` - backup contains one or more page checksum errors. To display the list of errors, you need manually run the command like `pgbackrest info --stanza stanza --set backup_name --repo repo_key`.
 
+* `pgbackrest_backup_databases` - number of databases in backup.
+
+    Labels: backup_name, backup_type, database_id, repo_key, stanza.
+
 * `pgbackrest_backup_since_last_completion_seconds` - seconds since the last completed full, differential or incremental backup.
 
     Labels: backup_type, stanza.
@@ -93,7 +97,9 @@ For earlier versions, some metrics may not be collected or have insignificant la
 
 * `pgBackRest < v2.41`
 
-    The following metric will be absent: `pgbackrest_backup_last_databases`. 
+    The following metric will be absent: 
+    * `pgbackrest_backup_databases`,
+    * `pgbackrest_backup_last_databases`.
 
 * `pgBackRest < v2.38`
 
@@ -138,6 +144,7 @@ Flags:
       --backrest.stanza-exclude="" ...  
                                  Specific stanza to exclude from collecting metrics. Can be specified several times.
       --backrest.backup-type=""  Specific backup type for collecting metrics. One of: [full, incr, diff].
+      --backrest.database-count  Exposing the number of databases in backups.
       --backrest.database-count-latest  
                                  Exposing the number of databases in the latest backups.
       --backrest.verbose-wal     Enable additional labels for WAL metrics.
@@ -174,12 +181,18 @@ Custom `backup type` for collecting metrics can be specified via `--backrest.bac
 For example, `--backrest.backup-type=full`.<br>
 For this case, metrics will be collected only for `full` backups.<br>
 This flag works for `pgBackRest >= v2.38`.<br>
+When parameter value is `incr` or `diff`, the following metrics will not be collected: `pgbackrest_backup_since_last_completion_seconds`, `pgbackrest_backup_last_databases`.<br>
 For earlier pgBackRest versions there will be an error like: `option 'type' not valid for command 'info'`.
+
+When flag `--backrest.database-count` is specified - information about the number of databases in backup is collected.<br>
+This flag works for `pgBackRest >= v2.41`.<br>
+For earlier pgBackRest versions there will be an error like: `option 'set' is currently only valid for text output`.<br>
+For a significant numbers of stanzas and backups, this may require much more additional time to collect metrics. Each stanza requires pgBackRest execution for backups to get data.
 
 When flag `--backrest.database-count-latest` is specified - information about the number of databases in the last full, differential or incremental backup is collected.<br>
 This flag works for `pgBackRest >= v2.41`.<br>
 For earlier pgBackRest versions there will be an error like: `option 'set' is currently only valid for text output`.<br>
-For a significant number of stanzas, this will require additional time to collect metrics. Each stanza requires pgBackRest execution for the last full, differential or incremental backups to get data.
+For a significant number of stanzas, this may require additional time to collect metrics. Each stanza requires pgBackRest execution for the last full, differential or incremental backups to get data.
 
 ### Building and running docker
 
@@ -195,6 +208,7 @@ Environment variables supported by this image:
 * `COLLECT_INTERVAL` - collecting metrics interval in seconds, default `600`;
 * `BACKUP_TYPE` - specific backup type for collecting metrics, default `""`;
 * `VERBOSE_WAL` - enabling additional labels for WAL metrics, default `false`;
+* `DATABASE_COUNT` - exposing the number of databases in backups, default `false`;
 * `DATABASE_COUNT_LATEST` - exposing the number of databases in the latest backups, default `false`.
 
 #### Pull
@@ -318,6 +332,17 @@ For specific backup type:
 docker run -d \
     --name pgbackrest_exporter \
     -e BACKUP_TYPE=full \
+    -p 9854:9854 \
+    -v  /etc/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf \
+    pgbackrest_exporter
+```
+
+With exposing the number of databases in backups:
+
+```bash
+docker run -d \
+    --name pgbackrest_exporter \
+    -e DATABASE_COUNT=true \
     -p 9854:9854 \
     -v  /etc/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf \
     pgbackrest_exporter
