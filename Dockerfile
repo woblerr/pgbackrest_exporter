@@ -20,6 +20,7 @@ ENV EXPORTER_ENDPOINT="/metrics" \
     COLLECT_INTERVAL="600" \
     BACKUP_TYPE="" \
     VERBOSE_WAL="false" \
+    DATABASE_COUNT="false" \
     DATABASE_COUNT_LATEST="false"
 COPY --chmod=755 docker_files/run_exporter.sh /run_exporter.sh
 COPY --from=builder --chmod=755 /build/pgbackrest_exporter /etc/pgbackrest/pgbackrest_exporter
