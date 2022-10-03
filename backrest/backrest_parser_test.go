@@ -244,9 +244,12 @@ func TestGetRepoMetricsErrorsAndDebugs(t *testing.T) {
 // pgBackrest version = latest.
 func TestGetBackupMetrics(t *testing.T) {
 	type args struct {
+		config              string
+		configIncludePath   string
 		stanzaName          string
 		backupData          []backup
 		dbData              []db
+		backupDBCount       bool
 		setUpMetricValueFun setUpMetricValueFunType
 		testText            string
 		testLastBackups     lastBackupsStruct
@@ -280,6 +283,8 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 		{
 			"getBackupMetrics",
 			args{
+				"",
+				"",
 				templateStanza(
 					"000000010000000000000004",
 					"000000010000000000000001",
@@ -295,6 +300,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
 					true).DB,
+				false,
 				setUpMetricValue,
 				templateMetrics,
 				templateLastBackup(),
@@ -304,7 +310,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ResetMetrics()
-			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
+			testLastBackups := getBackupMetrics(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.backupDBCount, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupInfoMetric,
@@ -345,9 +351,12 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 //nolint:dupl
 func TestGetBackupMetricsErrorAbsent(t *testing.T) {
 	type args struct {
+		config              string
+		configIncludePath   string
 		stanzaName          string
 		backupData          []backup
 		dbData              []db
+		backupDBCount       bool
 		setUpMetricValueFun setUpMetricValueFunType
 		testText            string
 		testLastBackups     lastBackupsStruct
@@ -378,6 +387,8 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 		{
 			"getBackupMetricsErrorAbsent",
 			args{
+				"",
+				"",
 				templateStanzaErrorAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001").Name,
@@ -387,6 +398,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 				templateStanzaErrorAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001").DB,
+				false,
 				setUpMetricValue,
 				templateMetrics,
 				templateLastBackup(),
@@ -396,7 +408,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ResetMetrics()
-			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
+			testLastBackups := getBackupMetrics(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.backupDBCount, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupInfoMetric,
@@ -437,9 +449,12 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 //nolint:dupl
 func TestGetBackupMetricsRepoAbsent(t *testing.T) {
 	type args struct {
+		config              string
+		configIncludePath   string
 		stanzaName          string
 		backupData          []backup
 		dbData              []db
+		backupDBCount       bool
 		setUpMetricValueFun setUpMetricValueFunType
 		testText            string
 		testLastBackups     lastBackupsStruct
@@ -470,6 +485,8 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 		{
 			"getBackupMetricsRepoAbsent",
 			args{
+				"",
+				"",
 				templateStanzaRepoAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001").Name,
@@ -479,6 +496,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 				templateStanzaRepoAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001").DB,
+				false,
 				setUpMetricValue,
 				templateMetrics,
 				templateLastBackup(),
@@ -488,7 +506,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ResetMetrics()
-			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
+			testLastBackups := getBackupMetrics(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.backupDBCount, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupInfoMetric,
@@ -521,9 +539,12 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 
 func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 	type args struct {
+		config              string
+		configIncludePath   string
 		stanzaName          string
 		backupData          []backup
 		dbData              []db
+		backupDBCount       bool
 		setUpMetricValueFun setUpMetricValueFunType
 		errorsCount         int
 		debugsCount         int
@@ -535,6 +556,8 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 		{
 			"getBackupMetricsLogError",
 			args{
+				"",
+				"",
 				templateStanza(
 					"000000010000000000000004",
 					"000000010000000000000001",
@@ -550,6 +573,7 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
 					true).DB,
+				false,
 				fakeSetUpMetricValue,
 				7,
 				7,
@@ -560,7 +584,7 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			out := &bytes.Buffer{}
 			lc := log.NewLogfmtLogger(out)
-			getBackupMetrics(tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, lc)
+			getBackupMetrics(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.backupDBCount, tt.args.setUpMetricValueFun, lc)
 			errorsOutputCount := strings.Count(out.String(), "level=error")
 			debugsOutputCount := strings.Count(out.String(), "level=debug")
 			if tt.args.errorsCount != errorsOutputCount || tt.args.debugsCount != debugsOutputCount {
