@@ -127,6 +127,16 @@ var (
 			"database_id",
 			"repo_key",
 			"stanza"})
+	pgbrStanzaBackupDatabasesMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_backup_databases",
+		Help: "Number of databases in backup.",
+	},
+		[]string{
+			"backup_name",
+			"backup_type",
+			"database_id",
+			"repo_key",
+			"stanza"})
 	// Differential backup is always based on last full,
 	// if the last backup was full, the metric will take full backup value.
 	// Incremental backup is always based on last full or differential,

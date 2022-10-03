@@ -56,6 +56,10 @@ func main() {
 			"backrest.backup-type",
 			"Specific backup type for collecting metrics. One of: [full, incr, diff].",
 		).Default("").String()
+		backrestBackupDBCount = kingpin.Flag(
+			"backrest.database-count",
+			"Exposing the number of databases in backups.",
+		).Default("false").Bool()
 		backrestBackupDBCountLatest = kingpin.Flag(
 			"backrest.database-count-latest",
 			"Exposing the number of databases in the latest backups.",
@@ -121,6 +125,11 @@ func main() {
 			"mgs", "Collecting metrics for specific backup type",
 			"type", *backrestBackupType)
 	}
+	if *backrestBackupDBCount {
+		level.Info(logger).Log(
+			"msg", "Exposing the number of databases in backups",
+			"database-count", *backrestBackupDBCount)
+	}
 	if *backrestBackupDBCountLatest {
 		level.Info(logger).Log(
 			"msg", "Exposing the number of databases in the latest backups",
@@ -155,6 +164,7 @@ func main() {
 			*backrestBackupType,
 			*backrestIncludeStanza,
 			*backrestExcludeStanza,
+			*backrestBackupDBCount,
 			*backrestBackupDBCountLatest,
 			*backrestVerboseWAL,
 			logger,
