@@ -238,9 +238,13 @@ func getRepoMetrics(stanzaName string, repoData []repo, setUpMetricValueFun setU
 //	* pgbackrest_backup_repo_size_bytes
 //	* pgbackrest_backup_repo_delta_bytes
 //	* pgbackrest_backup_error_status
+//	* pgbackrest_backup_databases
 // And returns info about last backups.
-func getBackupMetrics(stanzaName string, backupData []backup, dbData []db, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) lastBackupsStruct {
-	var err error
+func getBackupMetrics(config, configIncludePath, stanzaName string, backupData []backup, dbData []db, backupDBCount bool, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) lastBackupsStruct {
+	var (
+		err                     error
+		parseStanzaDataSpecific []stanza
+	)
 	lastBackups := lastBackupsStruct{}
 	// Each backup for current stanza.
 	for _, backup := range backupData {
@@ -478,6 +482,52 @@ func getBackupMetrics(stanzaName string, backupData []backup, dbData []db, setUp
 				)
 			}
 		}
+		// If the calculation of the number of databases in backups is enabled.
+		// Information about number of databases in specific backup has appeared since pgBackRest v2.41.
+		// In versions < v2.41 this is missing and the metric does not need to be collected.
+		// getParsedSpecificBackupInfoData will return error in this case.
+		if backupDBCount {
+			// Try to get info for backup.
+			parseStanzaDataSpecific, err = getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, backup.Label, logger)
+			if err == nil {
+				// In a normal situation, only one element with one backup should be returned.
+				// If more than one element or one backup is returned, there is may be a bug in pgBackRest.
+				// If it's not a bug, then this part will need to be refactoring.
+				// Use *[]struct() type for backup.DatabaseRef.
+				if parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil {
+					// Number of databases in the last full backup.
+					level.Debug(logger).Log(
+						"msg", "Metric pgbackrest_backup_databases",
+						"value", len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
+						"labels",
+						strings.Join(
+							[]string{
+								backup.Label,
+								backup.Type,
+								strconv.Itoa(backup.Database.ID),
+								strconv.Itoa(backup.Database.RepoKey),
+								stanzaName,
+							}, ",",
+						),
+					)
+					err = setUpMetricValueFun(
+						pgbrStanzaBackupDatabasesMetric,
+						float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
+						backup.Label,
+						backup.Type,
+						strconv.Itoa(backup.Database.ID),
+						strconv.Itoa(backup.Database.RepoKey),
+						stanzaName,
+					)
+					if err != nil {
+						level.Error(logger).Log(
+							"msg", "Metric pgbackrest_backup_databases set up failed",
+							"err", err,
+						)
+					}
+				}
+			}
+		}
 		compareLastBackups(
 			&lastBackups,
 			time.Unix(backup.Timestamp.Stop, 0),
@@ -581,7 +631,7 @@ func getBackupLastMetrics(config, configIncludePath, stanzaName string, lastBack
 		// In versions < v2.41 this is missing and the metric does not need to be collected.
 		// getParsedSpecificBackupInfoData will return error in this case.
 		if backupDBCountLatest {
-			// Try to get info fo full backup.
+			// Try to get info for full backup.
 			parseStanzaDataSpecific, errParse = getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, lastBackups.full.backupLabel, logger)
 			if errParse == nil {
 				// In a normal situation, only one element with one backup should be returned.

@@ -57,13 +57,14 @@ func ResetMetrics() {
 	pgbrStanzaBackupRepoBackupSetSizeMetric.Reset()
 	pgbrStanzaBackupRepoBackupSizeMetric.Reset()
 	pgbrStanzaBackupErrorMetric.Reset()
+	pgbrStanzaBackupDatabasesMetric.Reset()
 	pgbrStanzaBackupSinceLastCompletionSecondsMetric.Reset()
 	pgbrStanzaBackupLastDatabasesMetric.Reset()
 	pgbrWALArchivingMetric.Reset()
 }
 
 // GetPgBackRestInfo get and parse pgBackRest info and set metrics
-func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas []string, stanzasExclude []string, backupDBCountLatest, verboseWAL bool, logger log.Logger) {
+func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas []string, stanzasExclude []string, backupDBCount, backupDBCountLatest, verboseWAL bool, logger log.Logger) {
 	// To calculate the time elapsed since the last completed full, differential or incremental backup.
 	// For all stanzas values are calculated relative to one value.
 	currentUnixTime := time.Now().Unix()
@@ -90,7 +91,7 @@ func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas []s
 					getStanzaMetrics(singleStanza.Name, singleStanza.Status.Code, setUpMetricValue, logger)
 					getRepoMetrics(singleStanza.Name, singleStanza.Repo, setUpMetricValue, logger)
 					// Last backups for current stanza
-					lastBackups := getBackupMetrics(singleStanza.Name, singleStanza.Backup, singleStanza.DB, setUpMetricValue, logger)
+					lastBackups := getBackupMetrics(config, configIncludePath, singleStanza.Name, singleStanza.Backup, singleStanza.DB, backupDBCount, setUpMetricValue, logger)
 					getBackupLastMetrics(config, configIncludePath, singleStanza.Name, lastBackups, backupDBCountLatest, currentUnixTime, setUpMetricValue, logger)
 					getWALMetrics(singleStanza.Name, singleStanza.Archive, singleStanza.DB, verboseWAL, setUpMetricValue, logger)
 				}

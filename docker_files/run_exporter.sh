@@ -14,6 +14,9 @@ EXPORTER_COMMAND="/etc/pgbackrest/pgbackrest_exporter \
 # Check variable for enabling additional labels for WAL metrics.
 [ "${VERBOSE_WAL}" == "true" ] &&  EXPORTER_COMMAND="${EXPORTER_COMMAND} --backrest.verbose-wal"
 
+# Check variable for exposing the number of databases in backups.
+[ "${DATABASE_COUNT}" == "true" ] &&  EXPORTER_COMMAND="${EXPORTER_COMMAND} --backrest.database-count"
+
 # Check variable for exposing the number of databases in the latest backups.
 [ "${DATABASE_COUNT_LATEST}" == "true" ] &&  EXPORTER_COMMAND="${EXPORTER_COMMAND} --backrest.database-count-latest"
 
