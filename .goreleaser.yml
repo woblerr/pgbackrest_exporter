@@ -42,8 +42,6 @@ nfpms:
     formats:
       - deb
       - rpm
-    provides:
-      - pgbackrest_exporter
     bindir: /usr/bin
     contents:
       - src: pgbackrest_exporter.service.txt
