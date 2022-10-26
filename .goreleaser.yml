@@ -46,7 +46,7 @@ nfpms:
       - pgbackrest_exporter
     bindir: /usr/bin
     contents:
-      - src: pgbackrest_exporter.service
+      - src: pgbackrest_exporter.service.txt
         dst: /etc/systemd/system/pgbackrest_exporter.service
 
 checksum:

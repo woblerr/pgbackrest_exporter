@@ -1,0 +1,14 @@
+[Unit]
+Description=pgbackrest_exporter
+
+[Service]
+Type=simple
+Environment="EXPORTER_ENDPOINT=/metrics"
+Environment="EXPORTER_PORT=9854"
+Environment="COLLECT_INTERVAL=600"
+ExecStart=/usr/bin/pgbackrest_exporter --prom.endpoint=${EXPORTER_ENDPOINT} --prom.port=${EXPORTER_PORT} --collect.interval=${COLLECT_INTERVAL}
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target 
