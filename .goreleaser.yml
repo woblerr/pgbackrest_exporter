@@ -28,8 +28,7 @@ archives:
       darwin: macos
 
 nfpms:
-  -
-    id: pgbackrest_exporter
+  - id: pgbackrest_exporter
     package_name: pgbackrest_exporter
     builds:
       - pgbackrest_exporter
