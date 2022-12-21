@@ -28,6 +28,7 @@ jobs:
           go test -v -timeout=100s -covermode=count -coverprofile=$GITHUB_WORKSPACE/coverage.out ./...
         env:
           GOFLAGS: "-mod=vendor"
+          TZ: "Etc/UTC"
 
       - name: Install golangci-lint and goveralls
         run: |
@@ -38,6 +39,7 @@ jobs:
         run: $GITHUB_WORKSPACE/golangci-lint run --out-format=github-actions
         env:
           GOFLAGS: "-mod=vendor"
+          TZ: "Etc/UTC"
 
       - name: Submit coverage
         run: $(go env GOPATH)/bin/goveralls -service="github" -coverprofile=$GITHUB_WORKSPACE/coverage.out
