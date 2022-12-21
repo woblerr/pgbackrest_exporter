@@ -243,6 +243,8 @@ func TestGetRepoMetricsErrorsAndDebugs(t *testing.T) {
 // All metrics exist and all labels are corrected.
 // pgBackrest version = latest.
 // With '--backrest.database-count' flag.
+//
+//nolint:dupl
 func TestGetBackupMetrics(t *testing.T) {
 	type args struct {
 		config              string
@@ -367,8 +369,11 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 }
 
 // Absent metrics:
-//	* pgbackrest_backup_databases
+//   - pgbackrest_backup_databases
+//
 // pgBackrest version < 2.41.
+//
+//nolint:dupl
 func TestGetBackupMetricsDBsAbsent(t *testing.T) {
 	type args struct {
 		config              string
@@ -480,12 +485,15 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 }
 
 // Absent metrics:
-//	* pgbackrest_backup_error_status
-//	* pgbackrest_backup_databases
+//   - pgbackrest_backup_error_status
+//   - pgbackrest_backup_databases
+//
 // Labels:
-//  * lsn_start=""
-//	* lsn_stop=""
+//   - lsn_start=""
+//   - lsn_stop=""
+//
 // pgBackrest version < 2.36.
+//
 //nolint:dupl
 func TestGetBackupMetricsErrorAbsent(t *testing.T) {
 	type args struct {
@@ -587,13 +595,16 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 }
 
 // Absent metrics:
-//	* pgbackrest_backup_error_status
-//	* pgbackrest_backup_databases
+//   - pgbackrest_backup_error_status
+//   - pgbackrest_backup_databases
+//
 // Labels:
-// 	* repo_key="0"
-//  * lsn_start=""
-//	* lsn_stop=""
+//   - repo_key="0"
+//   - lsn_start=""
+//   - lsn_stop=""
+//
 // pgBackrest version < v2.32
+//
 //nolint:dupl
 func TestGetBackupMetricsRepoAbsent(t *testing.T) {
 	type args struct {
@@ -901,8 +912,9 @@ pgbackrest_backup_since_last_completion_seconds{backup_type="incr",stanza="demo"
 }
 
 // Absent metrics:
-//	* pgbackrest_backup_last_databases
-// pgBackrest version < v2.41
+//   - pgbackrest_backup_last_databases.
+//
+// pgBackrest version < v2.41.
 func TestGetBackupLastMetricsDBsAbsent(t *testing.T) {
 	type args struct {
 		config              string
