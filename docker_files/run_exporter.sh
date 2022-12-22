@@ -21,4 +21,4 @@ EXPORTER_COMMAND="/etc/pgbackrest/pgbackrest_exporter \
 [ "${DATABASE_COUNT_LATEST}" == "true" ] &&  EXPORTER_COMMAND="${EXPORTER_COMMAND} --backrest.database-count-latest"
 
 # Execute the final command.
-$(${EXPORTER_COMMAND})
+exec ${EXPORTER_COMMAND}
