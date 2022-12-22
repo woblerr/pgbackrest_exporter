@@ -38,7 +38,10 @@ func StartPromEndpoint(logger log.Logger) {
 			</body>
 			</html>`))
 		})
-		server := &http.Server{Addr: ":" + promPort}
+		server := &http.Server{
+			Addr:              ":" + promPort,
+			ReadHeaderTimeout: 5 * time.Second,
+		}
 		if err := web.ListenAndServe(server, promTLSConfigPath, logger); err != nil {
 			level.Error(logger).Log("msg", "Run web endpoint failed", "err", err)
 			os.Exit(1)

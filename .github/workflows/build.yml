@@ -28,18 +28,18 @@ jobs:
           go test -v -timeout=100s -covermode=count -coverprofile=$GITHUB_WORKSPACE/coverage.out ./...
         env:
           GOFLAGS: "-mod=vendor"
-          TZ: "Europe/Moscow"
+          TZ: "Etc/UTC"
 
       - name: Install golangci-lint and goveralls
         run: |
-          curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $GITHUB_WORKSPACE v1.42.1
+          curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $GITHUB_WORKSPACE v1.50.1
           GO111MODULE=off go get -u github.com/mattn/goveralls
 
       - name: Run linters
-        run: $GITHUB_WORKSPACE/golangci-lint run
+        run: $GITHUB_WORKSPACE/golangci-lint run --out-format=github-actions
         env:
           GOFLAGS: "-mod=vendor"
-          TZ: "Europe/Moscow"
+          TZ: "Etc/UTC"
 
       - name: Submit coverage
         run: $(go env GOPATH)/bin/goveralls -service="github" -coverprofile=$GITHUB_WORKSPACE/coverage.out
