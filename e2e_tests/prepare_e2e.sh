@@ -10,7 +10,9 @@ PG_DATABASE="test_db"
 PG_BIN="/usr/lib/postgresql/13/bin"
 PG_DATA="/var/lib/postgresql/13/${PG_CLUSTER}"
 BACKREST_STANZA="demo"
-EXPORTER_BIN="/etc/pgbackrest/pgbackrest_exporter"
+EXPORTER_COMMAND="/etc/pgbackrest/pgbackrest_exporter \
+--backrest.database-count \
+--backrest.database-count-latest"
 
 # Enable checksums.
 ${PG_BIN}/pg_checksums -e -D ${PG_DATA}
@@ -30,9 +32,7 @@ db_file=$(find ${PG_DATA}/base/${db_oid} -type f -regextype egrep -regex '.*/([0
 echo "currupt" >> ${db_file} 
 # Create diff backup with corrupted databse file in repo1.
 pgbackrest backup --stanza ${BACKREST_STANZA} --type diff  --repo 2 --log-level-console warn
+# Update exporter params.
+[[ ! -z ${EXPORTER_CONFIG} ]] && EXPORTER_COMMAND="${EXPORTER_COMMAND} --prom.web-config=${EXPORTER_CONFIG}"
 # Run pgbackrest_exporter.
-if [[ ! -z ${EXPORTER_CONFIG} ]]; then
-    $(${EXPORTER_BIN} --backrest.database-count --backrest.database-count-latest --prom.web-config=${EXPORTER_CONFIG})
-else
-    $(${EXPORTER_BIN} --backrest.database-count --backrest.database-count-latest)
-fi
+exec ${EXPORTER_COMMAND}
