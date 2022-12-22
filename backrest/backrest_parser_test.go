@@ -265,7 +265,7 @@ pgbackrest_backup_databases{backup_name="20210607-092423F",backup_type="full",da
 pgbackrest_backup_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
 # HELP pgbackrest_backup_duration_seconds Backup duration.
 # TYPE pgbackrest_backup_duration_seconds gauge
-pgbackrest_backup_duration_seconds{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo",start_time="2021-06-07 12:24:23",stop_time="2021-06-07 12:24:26"} 3
+pgbackrest_backup_duration_seconds{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo",start_time="2021-06-07 09:24:23",stop_time="2021-06-07 09:24:26"} 3
 # HELP pgbackrest_backup_error_status Backup error status.
 # TYPE pgbackrest_backup_error_status gauge
 pgbackrest_backup_error_status{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 1
@@ -391,7 +391,7 @@ func TestGetBackupMetricsDBsAbsent(t *testing.T) {
 pgbackrest_backup_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
 # HELP pgbackrest_backup_duration_seconds Backup duration.
 # TYPE pgbackrest_backup_duration_seconds gauge
-pgbackrest_backup_duration_seconds{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo",start_time="2021-06-07 12:24:23",stop_time="2021-06-07 12:24:26"} 3
+pgbackrest_backup_duration_seconds{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo",start_time="2021-06-07 09:24:23",stop_time="2021-06-07 09:24:26"} 3
 # HELP pgbackrest_backup_error_status Backup error status.
 # TYPE pgbackrest_backup_error_status gauge
 pgbackrest_backup_error_status{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 1
@@ -512,7 +512,7 @@ func TestGetBackupMetricsErrorAbsent(t *testing.T) {
 pgbackrest_backup_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
 # HELP pgbackrest_backup_duration_seconds Backup duration.
 # TYPE pgbackrest_backup_duration_seconds gauge
-pgbackrest_backup_duration_seconds{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo",start_time="2021-06-07 12:24:23",stop_time="2021-06-07 12:24:26"} 3
+pgbackrest_backup_duration_seconds{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo",start_time="2021-06-07 09:24:23",stop_time="2021-06-07 09:24:26"} 3
 # HELP pgbackrest_backup_info Backup info.
 # TYPE pgbackrest_backup_info gauge
 pgbackrest_backup_info{backrest_ver="2.35",backup_name="20210607-092423F",backup_type="full",database_id="1",lsn_start="",lsn_stop="",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
@@ -623,7 +623,7 @@ func TestGetBackupMetricsRepoAbsent(t *testing.T) {
 pgbackrest_backup_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo"} 2.4316343e+07
 # HELP pgbackrest_backup_duration_seconds Backup duration.
 # TYPE pgbackrest_backup_duration_seconds gauge
-pgbackrest_backup_duration_seconds{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo",start_time="2021-06-07 12:24:23",stop_time="2021-06-07 12:24:26"} 3
+pgbackrest_backup_duration_seconds{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="0",stanza="demo",start_time="2021-06-07 09:24:23",stop_time="2021-06-07 09:24:26"} 3
 # HELP pgbackrest_backup_info Backup info.
 # TYPE pgbackrest_backup_info gauge
 pgbackrest_backup_info{backrest_ver="2.31",backup_name="20210607-092423F",backup_type="full",database_id="1",lsn_start="",lsn_stop="",pg_version="13",prior="",repo_key="0",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
