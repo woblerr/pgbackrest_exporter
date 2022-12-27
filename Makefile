@@ -14,7 +14,7 @@ HTTP_PORT_E2E := $(shell echo $$((10000 + ($$RANDOM % 10000))))
 .PHONY: test
 test:
 	@echo "Run tests for $(APP_NAME)"
-	go test -mod=vendor -timeout=60s -count 1  ./...
+	TZ="Etc/UTC" go test -mod=vendor -timeout=60s -count 1  ./...
 
 .PHONY: test-e2e
 test-e2e:

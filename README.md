@@ -443,3 +443,7 @@ Run the end-to-end tests:
 ```bash
 make test-e2e
 ```
+
+### Grafana dashboard
+
+To get a dashboard for visualizing the collected metrics, you can use a ready-made dashboard [pgBackRest Exporter Dashboard](https://grafana.com/grafana/dashboards/17709-pgbackrest-exporter-dashboard/) or make your own.
