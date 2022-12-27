@@ -34,17 +34,19 @@ nfpms:
       - pgbackrest_exporter
     replacements:
       amd64: x86_64
-    homepage: https://github.com/woblerr/pgbackrest_exporter/
-    maintainer: Anton Kurochkin <antkurochkin@gmail.com>
+    homepage: https://github.com/woblerr/pgbackrest_exporter
+    maintainer: Anton Kurochkin
     description: Prometheus exporter for pgBackRest
     license: MIT
     formats:
       - deb
       - rpm
     bindir: /usr/bin
+    file_name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     contents:
-      - src: pgbackrest_exporter.service.txt
+      - src: pgbackrest_exporter.service.template
         dst: /etc/systemd/system/pgbackrest_exporter.service
+        type: config
 
 checksum:
   name_template: "{{ .ProjectName }}_checksums.txt"

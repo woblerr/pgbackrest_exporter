@@ -70,7 +70,7 @@ docker-alpine:
 prepare-service:
 	@echo "Prepare config file $(APP_NAME).service for systemd"
 	cp $(ROOT_DIR)/$(APP_NAME).service.template $(ROOT_DIR)/$(APP_NAME).service
-	sed -i.bak "s|{PATH_TO_FILE}|$(ROOT_DIR)|g" $(APP_NAME).service
+	sed -i.bak "s|/usr/bin|$(ROOT_DIR)|g" $(APP_NAME).service
 	rm $(APP_NAME).service.bak
 
 .PHONY: install-service
