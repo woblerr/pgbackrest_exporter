@@ -169,6 +169,8 @@ jobs:
   goreleaser:
     needs: build
     runs-on: ubuntu-latest
+    env: 
+      goreleaser_version: "v1.13.1"
     steps:
       - name: Set up go 1.18
         uses: actions/setup-go@v2
@@ -188,7 +190,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v2
         with:
           distribution: goreleaser
-          version: latest
+          version: ${{ env.goreleaser_version }}
           args: check
 
       - name: Run GoReleaser
@@ -196,7 +198,7 @@ jobs:
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         with:
           distribution: goreleaser
-          version: latest
+          version: ${{ env.goreleaser_version }}
           args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
