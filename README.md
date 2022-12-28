@@ -387,12 +387,13 @@ docker run -d \
     -v /etc/pgbackrest/cert:/etc/pgbackrest/cert \
     pgbackrest_exporter
 ```
+
 ### Running as systemd service
 
 * Register `pgbackrest_exporter` (already builded, if not - exec `make build` before) as a systemd service:
 
 ```bash
- make make prepare-service
+make prepare-service
 ```
 
 Validate prepared file `pgbackrest_exporter.service` and run:
@@ -428,6 +429,18 @@ sudo systemctl daemon-reload
 sudo systemctl enable pgbackrest_exporter.service
 sudo systemctl restart pgbackrest_exporter.service
 systemctl -l status pgbackrest_exporter.service
+```
+
+### RPM/DEB packages
+
+You can use the already prepared rpm/deb package to install the exporter. Only the pgbackrest_exporter binary  and the service file are installed by package.
+
+For example:
+```bash
+rpm -ql pgbackrest_exporter
+
+/etc/systemd/system/pgbackrest_exporter.service
+/usr/bin/pgbackrest_exporter
 ```
 
 ### Running tests
