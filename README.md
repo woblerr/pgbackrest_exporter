@@ -32,7 +32,7 @@ The metrics provided by the client.
 
 * `pgbackrest_backup_info` - backup info.
 
-    Labels: backrest_ver, backup_name, backup_type, database_id, lsn_start, lsn_stop, pg_version, prior, repo_key, stanza, wal_start, wal_stop.
+    Labels: backrest_ver, backup_name, backup_type, block_incr, database_id, lsn_start, lsn_stop, pg_version, prior, repo_key, stanza, wal_start, wal_stop.
 
     Values description:
      - `1` - info about backup is exist.
@@ -54,6 +54,14 @@ The metrics provided by the client.
     Labels: backup_name, backup_type, database_id, repo_key, stanza.
 
 * `pgbackrest_backup_repo_delta_bytes` - compressed files size in backup.
+
+    Labels: backup_name, backup_type, database_id, repo_key, stanza.
+
+* `pgbackrest_backup_repo_size_map_bytes` - size of block incremental map.
+
+    Labels: backup_name, backup_type, database_id, repo_key, stanza.
+
+* `pgbackrest_backup_repo_delta_map_bytes` - size of block incremental delta map.
 
     Labels: backup_name, backup_type, database_id, repo_key, stanza.
 
@@ -91,13 +99,21 @@ The metrics provided by the client.
 
 ## Compatibility with pgBackRest versions
 
-All metrics are collected for `pgBackRest >= v2.41`.
+All metrics are collected for `pgBackRest >= v2.44`.
 
 For earlier versions, some metrics may not be collected or have insignificant label values:
 
+* `pgBackRest < v2.44`
+
+    The following metrics will be absent: 
+    * `pgbackrest_backup_repo_size_map_bytes`,
+    * `pgbackrest_backup_repo_delta_map_bytes`.
+
+    For `pgbackrest_backup_info` metric label `block_incr` will be absent.
+
 * `pgBackRest < v2.41`
 
-    The following metric will be absent: 
+    The following metrics will be absent: 
     * `pgbackrest_backup_databases`,
     * `pgbackrest_backup_last_databases`.
 
