@@ -85,7 +85,6 @@ func returnBackupTypeExecArgs(backupType string) []string {
 	return backupTypeArgs
 }
 
-//
 func returnBackupSetExecArgs(backupSetLabel string) []string {
 	var backupSetLabelArgs []string
 	switch {
@@ -166,7 +165,7 @@ func getPGVersion(id, repoKey int, dbList []db) string {
 }
 
 // Set stanza metrics:
-//	* pgbackrest_stanza_status
+//   - pgbackrest_stanza_status
 func getStanzaMetrics(stanzaName string, stanzaStatusCode int, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
 	//https://github.com/pgbackrest/pgbackrest/blob/03021c6a17f1374e84ef42614fa1dd2a6be4b64d/src/command/info/info.c#L78-L94
 	// Stanza statuses:
@@ -197,7 +196,7 @@ func getStanzaMetrics(stanzaName string, stanzaStatusCode int, setUpMetricValueF
 }
 
 // Set repo metrics:
-//	* pgbackrest_repo_status
+//   - pgbackrest_repo_status
 func getRepoMetrics(stanzaName string, repoData []repo, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
 	// Repo status.
 	// The same statuses as for stanza.
@@ -231,23 +230,101 @@ func getRepoMetrics(stanzaName string, repoData []repo, setUpMetricValueFun setU
 }
 
 // Set backup metrics:
-//	* pgbackrest_backup_info
-//	* pgbackrest_backup_duration_seconds
-//	* pgbackrest_backup_size_bytes
-//	* pgbackrest_backup_delta_bytes
-//	* pgbackrest_backup_repo_size_bytes
-//	* pgbackrest_backup_repo_delta_bytes
-//	* pgbackrest_backup_error_status
-//	* pgbackrest_backup_databases
+//   - pgbackrest_backup_info
+//   - pgbackrest_backup_duration_seconds
+//   - pgbackrest_backup_size_bytes
+//   - pgbackrest_backup_delta_bytes
+//   - pgbackrest_backup_repo_size_bytes
+//   - pgbackrest_backup_repo_size_map_bytes
+//   - pgbackrest_backup_repo_delta_bytes
+//   - pgbackrest_backup_repo_delta_map_bytes
+//   - pgbackrest_backup_error_status
+//   - pgbackrest_backup_databases
+//
 // And returns info about last backups.
 func getBackupMetrics(config, configIncludePath, stanzaName string, backupData []backup, dbData []db, backupDBCount bool, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) lastBackupsStruct {
 	var (
 		err                     error
 		parseStanzaDataSpecific []stanza
+		blockIncr               string
 	)
 	lastBackups := lastBackupsStruct{}
 	// Each backup for current stanza.
 	for _, backup := range backupData {
+		// For pgBackRest >= v2.44 the functionality to perform a block incremental backup has appeared.
+		// The block size is determined based on the file size and age.
+		// Very old or very small files will not use block incremental.
+		// By default, the block incremental is disable for backups. See `--repo-block` option.
+		blockIncr = "n"
+		// Block incremental map is used for block level backup .
+		// If one value from 'size-map' or 'delta-map' is nil, and other has correct value,
+		// it looks like a bug in pgBackRest.
+		// See https://github.com/pgbackrest/pgbackrest/blob/3feed389a2199454db68e446851323498b45db20/src/command/info/info.c#L459-L463
+		// Relation - backupInfoRepoSizeMap != NULL, where backupInfoRepoSizeMap is related to SizeMap (size-map).
+		if backup.Info.Repository.SizeMap != nil && backup.Info.Repository.DeltaMap != nil {
+			// The block incremental backup functionality is used.
+			blockIncr = "y"
+			// Repo backup map size.
+			level.Debug(logger).Log(
+				"msg", "Metric pgbackrest_backup_repo_size_map_bytes",
+				"value", float64(*backup.Info.Repository.SizeMap),
+				"labels",
+				strings.Join(
+					[]string{
+						backup.Label,
+						backup.Type,
+						strconv.Itoa(backup.Database.ID),
+						strconv.Itoa(backup.Database.RepoKey),
+						stanzaName,
+					}, ",",
+				),
+			)
+			err = setUpMetricValueFun(
+				pgbrStanzaBackupRepoBackupSetSizeMapMetric,
+				float64(*backup.Info.Repository.SizeMap),
+				backup.Label,
+				backup.Type,
+				strconv.Itoa(backup.Database.ID),
+				strconv.Itoa(backup.Database.RepoKey),
+				stanzaName,
+			)
+			if err != nil {
+				level.Error(logger).Log(
+					"msg", "Metric pgbackrest_backup_repo_size_map_bytes set up failed",
+					"err", err,
+				)
+			}
+			// Repo backup delta map size.
+			level.Debug(logger).Log(
+				"msg", "Metric pgbackrest_backup_repo_delta_map_bytes",
+				"value", float64(*backup.Info.Repository.DeltaMap),
+				"labels",
+				strings.Join(
+					[]string{
+						backup.Label,
+						backup.Type,
+						strconv.Itoa(backup.Database.ID),
+						strconv.Itoa(backup.Database.RepoKey),
+						stanzaName,
+					}, ",",
+				),
+			)
+			err = setUpMetricValueFun(
+				pgbrStanzaBackupRepoBackupSizeMapMetric,
+				float64(*backup.Info.Repository.DeltaMap),
+				backup.Label,
+				backup.Type,
+				strconv.Itoa(backup.Database.ID),
+				strconv.Itoa(backup.Database.RepoKey),
+				stanzaName,
+			)
+			if err != nil {
+				level.Error(logger).Log(
+					"msg", "Metric pgbackrest_backup_repo_delta_map_bytes set up failed",
+					"err", err,
+				)
+			}
+		}
 		//  1 - info about backup is exist.
 		level.Debug(logger).Log(
 			"msg", "Metric pgbackrest_backup_info",
@@ -258,6 +335,7 @@ func getBackupMetrics(config, configIncludePath, stanzaName string, backupData [
 					backup.BackrestInfo.Version,
 					backup.Label,
 					backup.Type,
+					blockIncr,
 					strconv.Itoa(backup.Database.ID),
 					backup.Lsn.StartLSN,
 					backup.Lsn.StopLSN,
@@ -276,6 +354,7 @@ func getBackupMetrics(config, configIncludePath, stanzaName string, backupData [
 			backup.BackrestInfo.Version,
 			backup.Label,
 			backup.Type,
+			blockIncr,
 			strconv.Itoa(backup.Database.ID),
 			backup.Lsn.StartLSN,
 			backup.Lsn.StopLSN,
@@ -539,8 +618,8 @@ func getBackupMetrics(config, configIncludePath, stanzaName string, backupData [
 }
 
 // Set backup metrics:
-//	* pgbackrest_backup_since_last_completion_seconds
-//	* pgbackrest_backup_last_databases
+//   - pgbackrest_backup_since_last_completion_seconds
+//   - pgbackrest_backup_last_databases
 func getBackupLastMetrics(config, configIncludePath, stanzaName string, lastBackups lastBackupsStruct, backupDBCountLatest bool, currentUnixTime int64, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
 	var (
 		err, errParse           error
@@ -734,7 +813,7 @@ func getBackupLastMetrics(config, configIncludePath, stanzaName string, lastBack
 }
 
 // Set backup metrics:
-//	* pgbackrest_wal_archive_status
+//   - pgbackrest_wal_archive_status
 func getWALMetrics(stanzaName string, archiveData []archive, dbData []db, verboseWAL bool, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
 	var err error
 	// WAL archive info.
