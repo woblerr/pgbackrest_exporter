@@ -35,7 +35,7 @@ RUN apt-get update -y \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p \
         /var/lib/pgbackrest/repo1 \
-        /var/lib/pgbackrest/repo1 \
+        /var/lib/pgbackrest/repo2 \
         /e2e_tests
 COPY --chown=${BACKREST_USER}:${BACKREST_GROUP} \
         ./e2e_tests/postgresql.auto.conf \
