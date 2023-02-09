@@ -2,15 +2,15 @@ package backrest
 
 var stanzas []stanza
 
-//  [{
-//    "archive": [{}],
-//    "cipher": "string",
-//    "backup": [{}],
-//    "db": [{}],
-//    "name": "string",
-//    "repo": [{}],
-//    "status": {}
-//  }]
+//	[{
+//	  "archive": [{}],
+//	  "cipher": "string",
+//	  "backup": [{}],
+//	  "db": [{}],
+//	  "name": "string",
+//	  "repo": [{}],
+//	  "status": {}
+//	}]
 type stanza struct {
 	Archive []archive `json:"archive"`
 	Backup  []backup  `json:"backup"`
@@ -21,12 +21,12 @@ type stanza struct {
 	Status  status    `json:"status"`
 }
 
-//  "archive": [{
-//    "database": {},
-//    "id": "string",
-//    "max": "string",
-//    "min": "string"
-//  }]
+//	"archive": [{
+//	  "database": {},
+//	  "id": "string",
+//	  "max": "string",
+//	  "min": "string"
+//	}]
 type archive struct {
 	Database  databaseID `json:"database"`
 	PGVersion string     `json:"id"`
@@ -34,40 +34,40 @@ type archive struct {
 	WALMin    string     `json:"min"`
 }
 
-//  "database": {
-//    "id": number,
-//    "repo-key": number
-//  }
+//	"database": {
+//	  "id": number,
+//	  "repo-key": number
+//	}
 type databaseID struct {
 	ID      int `json:"id"`
 	RepoKey int `json:"repo-key"`
 }
 
-//  "backup": [{
-//    "archive": {
-//        "start": "string",
-//        "stop": "string"
-//    },
-//    "backrest": {
-//        "format": number,
-//        "version": "string"
-//    },
-//    "database": {},
-//    "error": bool,
-//    "info": {},
-//    "label": "string",
-//    "lsn": {
-//        "start": "string,
-//        "stop": "string"
-//    },
-//    "prior": "string",
-//    "reference": "string",
-//    "timestamp": {
-//        "start": number,
-//        "stop": number
-//    },
-//    "type": "string"
-//  }]
+//	"backup": [{
+//	  "archive": {
+//	      "start": "string",
+//	      "stop": "string"
+//	  },
+//	  "backrest": {
+//	      "format": number,
+//	      "version": "string"
+//	  },
+//	  "database": {},
+//	  "error": bool,
+//	  "info": {},
+//	  "label": "string",
+//	  "lsn": {
+//	      "start": "string,
+//	      "stop": "string"
+//	  },
+//	  "prior": "string",
+//	  "reference": "string",
+//	  "timestamp": {
+//	      "start": number,
+//	      "stop": number
+//	  },
+//	  "type": "string"
+//	}]
 type backup struct {
 	Archive struct {
 		StartWAL string `json:"start"`
@@ -104,38 +104,42 @@ type backup struct {
 	Type string `json:"type"`
 }
 
-//  "database-ref": [{
-//    "name": "string",
-//    "oid": number
-//  }]
+//	"database-ref": [{
+//	  "name": "string",
+//	  "oid": number
+//	}]
 type databaseRef struct {
 	Name string `json:"name"`
 	OID  int    `json:"oid"`
 }
 
-//  "info": {
-//    "delta": number,
-//    "repository": {
-//        "delta": number,
-//        "size": number
-//    },
-//    "size": number
-//  }
+//	"info": {
+//	  "delta": number,
+//	  "repository": {
+//	      "delta": number,
+//	      "delta-map": number,
+//	      "size": number,
+//	      "size-map": number
+//	  },
+//	  "size": number
+//	}
 type backupInfo struct {
 	Delta      int64 `json:"delta"`
 	Repository struct {
-		Delta int64 `json:"delta"`
-		Size  int64 `json:"size"`
+		Delta    int64  `json:"delta"`
+		DeltaMap *int64 `json:"delta-map"`
+		Size     int64  `json:"size"`
+		SizeMap  *int64 `json:"size-map"`
 	} `json:"repository"`
 	Size int64 `json:"size"`
 }
 
-//  "db": [{
-//    "id": number,
-//    "repo-key": number,
-//    "system-id": number,
-//    "version": "string"
-//  }]
+//	"db": [{
+//	  "id": number,
+//	  "repo-key": number,
+//	  "system-id": number,
+//	  "version": "string"
+//	}]
 type db struct {
 	ID       int    `json:"id"`
 	RepoKey  int    `json:"repo-key"`
@@ -143,14 +147,14 @@ type db struct {
 	Version  string `json:"version"`
 }
 
-//  "repo": [{
-//    "cipher": "string",
-//    "key": number,
-//    "status": {
-//        "code": number,
-//        "message": "string"
-//    }
-//  }]
+//	"repo": [{
+//	  "cipher": "string",
+//	  "key": number,
+//	  "status": {
+//	      "code": number,
+//	      "message": "string"
+//	  }
+//	}]
 type repo struct {
 	Cipher string `json:"cipher"`
 	Key    int    `json:"key"`
@@ -160,15 +164,15 @@ type repo struct {
 	} `json:"status"`
 }
 
-//  "status": {
-//    "code": number,
-//    "lock": {
-//        "backup": {
-//            "held": bool
-//        }
-//    },
-//    "message": "string"
-//  }
+//	"status": {
+//	  "code": number,
+//	  "lock": {
+//	      "backup": {
+//	          "held": bool
+//	      }
+//	  },
+//	  "message": "string"
+//	}
 type status struct {
 	Code int `json:"code"`
 	Lock struct {

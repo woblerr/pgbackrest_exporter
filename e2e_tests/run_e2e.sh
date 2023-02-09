@@ -48,7 +48,8 @@ declare -a REGEX_LIST=(
     '^pgbackrest_backup_databases{.*,backup_type="full",.*} 2|2'
     '^pgbackrest_backup_databases{.*,backup_type="diff",.*,repo_key="2".*} 2|1'
     '^pgbackrest_backup_last_databases{.*}|3'
-    '^pgbackrest_backup_info{.*} 1$|3'
+    '^pgbackrest_backup_info{.*,block_incr="n",.*} 1$|1'
+    '^pgbackrest_backup_info{.*,block_incr="y",.*} 1$|2'
     '^pgbackrest_backup_repo_delta_bytes{.*}|3'
     '^pgbackrest_backup_repo_size_bytes{.*}|3'
     '^pgbackrest_backup_size_bytes{.*}|3'
@@ -58,6 +59,8 @@ declare -a REGEX_LIST=(
     '^pgbackrest_stanza_status{.*} 0$|1'
     '^pgbackrest_wal_archive_status{.*,repo_key="1",.*}|1'
     '^pgbackrest_wal_archive_status{.*,repo_key="2",.*}|1'
+    '^pgbackrest_backup_repo_size_map_bytes{.*}|2'
+    '^pgbackrest_backup_repo_delta_map_bytes{.*}|2'
 )
 
 # Check results.

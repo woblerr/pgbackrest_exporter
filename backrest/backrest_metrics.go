@@ -28,6 +28,7 @@ var (
 			"backrest_ver",
 			"backup_name",
 			"backup_type",
+			"block_incr",
 			"database_id",
 			"lsn_start",
 			"lsn_stop",
@@ -97,6 +98,19 @@ var (
 			"database_id",
 			"repo_key",
 			"stanza"})
+	// For json pgBackRest output
+	// "backup":"info":"repository":"size-map"
+	// Size of block incremental map (0 if no map).
+	pgbrStanzaBackupRepoBackupSetSizeMapMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_backup_repo_size_map_bytes",
+		Help: "Size of block incremental map.",
+	},
+		[]string{
+			"backup_name",
+			"backup_type",
+			"database_id",
+			"repo_key",
+			"stanza"})
 	// The 'backup size' for text pgBackRest output
 	// (or "backup":"info":"repository":"delta" for json pgBackRest output)
 	// includes only the files in this backup
@@ -110,6 +124,19 @@ var (
 	pgbrStanzaBackupRepoBackupSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_repo_delta_bytes",
 		Help: "Compressed files size in backup.",
+	},
+		[]string{
+			"backup_name",
+			"backup_type",
+			"database_id",
+			"repo_key",
+			"stanza"})
+	// For json pgBackRest output
+	// "backup":"info":"repository":"delta-map"
+	// Size of block incremental delta map if block incremental.
+	pgbrStanzaBackupRepoBackupSizeMapMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_backup_repo_delta_map_bytes",
+		Help: "Size of block incremental delta map.",
 	},
 		[]string{
 			"backup_name",
