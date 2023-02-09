@@ -2313,8 +2313,9 @@ func TestGetParsedSpecificBackupInfoDataErrors(t *testing.T) {
 		errorsCount       int
 	}
 	tests := []struct {
-		name string
-		args args
+		name         string
+		args         args
+		mockTestData mockStruct
 	}{
 		{
 			"getParsedSpecificBackupInfoDataErrors",
@@ -2335,12 +2336,21 @@ func TestGetParsedSpecificBackupInfoDataErrors(t *testing.T) {
 					true,
 					12,
 					100).Backup[0].Label,
-				2,
+				3,
+			},
+			// Imitate error, when pgBackRest binary not found.
+			mockStruct{
+				``,
+				`executable file not found in $PATH`,
+				127,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			mockData = tt.mockTestData
+			execCommand = fakeExecCommand
+			defer func() { execCommand = exec.Command }()
 			out := &bytes.Buffer{}
 			lc := log.NewLogfmtLogger(out)
 			getParsedSpecificBackupInfoData(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.backupLabel, lc)
