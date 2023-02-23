@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env: 
-      backrest_version: "2.43"
+      backrest_version: "2.44"
       docker_backrest_version: "v0.17"
       build_platforms: "linux/amd64,linux/arm64"
     steps:
