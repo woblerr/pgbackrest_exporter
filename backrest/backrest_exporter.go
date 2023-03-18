@@ -104,7 +104,6 @@ func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas []s
 		} else {
 			level.Warn(logger).Log("msg", "Stanza is specified in include and exclude lists", "stanza", stanza)
 		}
-
 	}
 }
 
