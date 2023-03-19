@@ -60,7 +60,7 @@ func main() {
 		).Default("false").Bool()
 		backrestVerboseWAL = kingpin.Flag(
 			"backrest.verbose-wal",
-			"Enable additional labels for WAL metrics.",
+			"Exposing additional labels for WAL metrics.",
 		).Default("false").Bool()
 	)
 	// Set logger config.
