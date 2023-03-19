@@ -8,31 +8,25 @@ import (
 	"syscall"
 	"time"
 
+	kingpin "github.com/alecthomas/kingpin/v2"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/prometheus/common/promlog"
 	"github.com/prometheus/common/promlog/flag"
+	"github.com/prometheus/exporter-toolkit/web/kingpinflag"
 	"github.com/woblerr/pgbackrest_exporter/backrest"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 var version = "unknown"
 
 func main() {
 	var (
-		promPort = kingpin.Flag(
-			"prom.port",
-			"Port for prometheus metrics to listen on.",
-		).Default("9854").String()
-		promPath = kingpin.Flag(
-			"prom.endpoint",
+		webPath = kingpin.Flag(
+			"web.endpoint",
 			"Endpoint used for metrics.",
 		).Default("/metrics").String()
-		promTLSConfigFile = kingpin.Flag(
-			"prom.web-config",
-			"[EXPERIMENTAL] Path to config yaml file that can enable TLS or authentication.",
-		).Default("").String()
-		collectionInterval = kingpin.Flag(
+		webAdditionalToolkitFlags = kingpinflag.AddFlags(kingpin.CommandLine, ":9854")
+		collectionInterval        = kingpin.Flag(
 			"collect.interval",
 			"Collecting metrics interval in seconds.",
 		).Default("600").Int()
@@ -141,12 +135,10 @@ func main() {
 			"verbose-wal", *backrestVerboseWAL)
 	}
 	// Setup parameters for exporter.
-	backrest.SetPromPortAndPath(*promPort, *promPath, *promTLSConfigFile)
+	backrest.SetPromPortAndPath(*webAdditionalToolkitFlags, *webPath)
 	level.Info(logger).Log(
-		"mgs", "Use port and HTTP endpoint",
-		"port", *promPort,
-		"endpoint", *promPath,
-		"web-config", *promTLSConfigFile,
+		"mgs", "Use endpoint",
+		"endpoint", *webPath,
 	)
 	// Start exporter.
 	backrest.StartPromEndpoint(logger)

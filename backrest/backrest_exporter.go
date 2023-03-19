@@ -12,37 +12,35 @@ import (
 )
 
 var (
-	promPort          string
-	promEndpoint      string
-	promTLSConfigPath string
+	webFlagsConfig web.FlagConfig
+	webEndpoint    string
 )
 
 // SetPromPortAndPath sets HTTP endpoint parameters
-// from command line arguments 'prom.port', 'prom.endpoint' and 'prom.web-config'
-func SetPromPortAndPath(port, endpoint, tlsConfigPath string) {
-	promPort = port
-	promEndpoint = endpoint
-	promTLSConfigPath = tlsConfigPath
+// from command line arguments
+// 'web.endpoint', 'web.listen-address', 'web.config.file' and 'web.systemd-socket' (Linux only)
+func SetPromPortAndPath(flagsConfig web.FlagConfig, endpoint string) {
+	webFlagsConfig = flagsConfig
+	webEndpoint = endpoint
 }
 
 // StartPromEndpoint run HTTP endpoint
 func StartPromEndpoint(logger log.Logger) {
 	go func(logger log.Logger) {
-		http.Handle(promEndpoint, promhttp.Handler())
+		http.Handle(webEndpoint, promhttp.Handler())
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<html>
 			<head><title>pgBackRest exporter</title></head>
 			<body>
 			<h1>pgBackRest exporter</h1>
-			<p><a href='` + promEndpoint + `'>Metrics</a></p>
+			<p><a href='` + webEndpoint + `'>Metrics</a></p>
 			</body>
 			</html>`))
 		})
 		server := &http.Server{
-			Addr:              ":" + promPort,
 			ReadHeaderTimeout: 5 * time.Second,
 		}
-		if err := web.ListenAndServe(server, promTLSConfigPath, logger); err != nil {
+		if err := web.ListenAndServe(server, &webFlagsConfig, logger); err != nil {
 			level.Error(logger).Log("msg", "Run web endpoint failed", "err", err)
 			os.Exit(1)
 		}
