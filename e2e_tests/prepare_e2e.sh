@@ -33,6 +33,6 @@ echo "currupt" >> ${db_file}
 # Create diff backup with corrupted databse file in repo2 with block incremental.
 pgbackrest backup --stanza ${BACKREST_STANZA} --type diff  --repo 2 --repo2-bundle --repo2-block --log-level-console warn
 # Update exporter params.
-[[ ! -z ${EXPORTER_CONFIG} ]] && EXPORTER_COMMAND="${EXPORTER_COMMAND} --prom.web-config=${EXPORTER_CONFIG}"
+[[ ! -z ${EXPORTER_CONFIG} ]] && EXPORTER_COMMAND="${EXPORTER_COMMAND} --web.config.file=${EXPORTER_CONFIG}"
 # Run pgbackrest_exporter.
 exec ${EXPORTER_COMMAND}
