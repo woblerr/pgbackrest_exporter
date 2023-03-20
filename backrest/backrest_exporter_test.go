@@ -41,9 +41,9 @@ func TestSetPromPortAndPath(t *testing.T) {
 		testEndpoint != webEndpoint {
 		t.Errorf("\nVariables do not match,\nlistenAddresses: %v, want: %v;\n"+
 			"systemSocket: %v, want: %v;\nwebConfig: %v, want: %v;\nendpoint: %s, want: %s",
-			ptrToStr(testFlagsConfig.WebListenAddresses), ptrToStr(webFlagsConfig.WebListenAddresses),
-			ptrToStr(testFlagsConfig.WebSystemdSocket), ptrToStr(webFlagsConfig.WebSystemdSocket),
-			ptrToStr(testFlagsConfig.WebConfigFile), ptrToStr(webFlagsConfig.WebConfigFile),
+			ptrToVal(testFlagsConfig.WebListenAddresses), ptrToVal(webFlagsConfig.WebListenAddresses),
+			ptrToVal(testFlagsConfig.WebSystemdSocket), ptrToVal(webFlagsConfig.WebSystemdSocket),
+			ptrToVal(testFlagsConfig.WebConfigFile), ptrToVal(webFlagsConfig.WebConfigFile),
 			testEndpoint, webEndpoint,
 		)
 	}
@@ -203,7 +203,7 @@ func getLogger() log.Logger {
 	return promlog.New(promlogConfig)
 }
 
-// Helper for tests.
-func ptrToStr[T any](v *T) T {
+// Helper for displaying web.FlagConfig values test messages.
+func ptrToVal[T any](v *T) T {
 	return *v
 }
