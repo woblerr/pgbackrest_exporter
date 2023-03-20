@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/prometheus/common/promlog"
+	"github.com/prometheus/exporter-toolkit/web"
 )
 
 type mockStruct struct {
@@ -26,16 +27,24 @@ var (
 
 func TestSetPromPortAndPath(t *testing.T) {
 	var (
-		testPort          = "9854"
-		testEndpoint      = "/metrics"
-		testTLSConfigPath = ""
+		testFlagsConfig = web.FlagConfig{
+			WebListenAddresses: &([]string{":9854"}),
+			WebSystemdSocket:   func(i bool) *bool { return &i }(false),
+			WebConfigFile:      func(i string) *string { return &i }(""),
+		}
+		testEndpoint = "/metrics"
 	)
-	SetPromPortAndPath(testPort, testEndpoint, testTLSConfigPath)
-	if testPort != promPort || testEndpoint != promEndpoint || testTLSConfigPath != promTLSConfigPath {
-		t.Errorf("\nVariables do not match,\nport: %s, want: %s;\nendpoint: %s, want: %s;\nconfig: %swant: %s",
-			testPort, promPort,
-			testEndpoint, promEndpoint,
-			testTLSConfigPath, promTLSConfigPath,
+	SetPromPortAndPath(testFlagsConfig, testEndpoint)
+	if testFlagsConfig.WebListenAddresses != webFlagsConfig.WebListenAddresses ||
+		testFlagsConfig.WebSystemdSocket != webFlagsConfig.WebSystemdSocket ||
+		testFlagsConfig.WebConfigFile != webFlagsConfig.WebConfigFile ||
+		testEndpoint != webEndpoint {
+		t.Errorf("\nVariables do not match,\nlistenAddresses: %v, want: %v;\n"+
+			"systemSocket: %v, want: %v;\nwebConfig: %v, want: %v;\nendpoint: %s, want: %s",
+			ptrToStr(testFlagsConfig.WebListenAddresses), ptrToStr(webFlagsConfig.WebListenAddresses),
+			ptrToStr(testFlagsConfig.WebSystemdSocket), ptrToStr(webFlagsConfig.WebSystemdSocket),
+			ptrToStr(testFlagsConfig.WebConfigFile), ptrToStr(webFlagsConfig.WebConfigFile),
+			testEndpoint, webEndpoint,
 		)
 	}
 }
@@ -191,8 +200,10 @@ func getLogger() log.Logger {
 	}
 	promlogConfig := &promlog.Config{}
 	promlogConfig.Level = logLevel
-	if err != nil {
-		panic(err)
-	}
 	return promlog.New(promlogConfig)
+}
+
+// Helper for tests.
+func ptrToStr[T any](v *T) T {
+	return *v
 }

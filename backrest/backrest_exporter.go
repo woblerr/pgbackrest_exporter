@@ -17,8 +17,11 @@ var (
 )
 
 // SetPromPortAndPath sets HTTP endpoint parameters
-// from command line arguments
-// 'web.endpoint', 'web.listen-address', 'web.config.file' and 'web.systemd-socket' (Linux only)
+// from command line arguments:
+// 'web.endpoint',
+// 'web.listen-address',
+// 'web.config.file',
+// 'web.systemd-socket' (Linux only)
 func SetPromPortAndPath(flagsConfig web.FlagConfig, endpoint string) {
 	webFlagsConfig = flagsConfig
 	webEndpoint = endpoint
