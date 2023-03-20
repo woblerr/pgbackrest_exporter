@@ -1,6 +1,3 @@
-# Exclude vendor folder
-!/vendor/**
-
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -29,3 +26,6 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+
+# Exclude vendor folder from ignore
+!/vendor/**/*
