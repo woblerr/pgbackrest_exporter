@@ -137,8 +137,9 @@ func main() {
 	// Setup parameters for exporter.
 	backrest.SetPromPortAndPath(*webAdditionalToolkitFlags, *webPath)
 	level.Info(logger).Log(
-		"mgs", "Use endpoint",
+		"mgs", "Use exporter parameters",
 		"endpoint", *webPath,
+		"config.file", *webAdditionalToolkitFlags.WebConfigFile,
 	)
 	// Start exporter.
 	backrest.StartPromEndpoint(logger)
