@@ -145,12 +145,13 @@ Available configuration flags:
 ./pgbackrest_exporter --help
 usage: pgbackrest_exporter [<flags>]
 
+
 Flags:
-  -h, --help                     Show context-sensitive help (also try --help-long and --help-man).
-      --prom.port="9854"         Port for prometheus metrics to listen on.
-      --prom.endpoint="/metrics"  
-                                 Endpoint used for metrics.
-      --prom.web-config=""       [EXPERIMENTAL] Path to config yaml file that can enable TLS or authentication.
+  -h, --[no-]help                Show context-sensitive help (also try --help-long and --help-man).
+      --web.endpoint="/metrics"  Endpoint used for metrics.
+      --web.listen-address=:9854 ...  
+                                 Addresses on which to expose metrics and web interface. Repeatable for multiple addresses.
+      --web.config.file=""       [EXPERIMENTAL] Path to configuration file that can enable TLS or authentication.
       --collect.interval=600     Collecting metrics interval in seconds.
       --backrest.config=""       Full path to pgBackRest configuration file.
       --backrest.config-include-path=""  
@@ -160,10 +161,12 @@ Flags:
       --backrest.stanza-exclude="" ...  
                                  Specific stanza to exclude from collecting metrics. Can be specified several times.
       --backrest.backup-type=""  Specific backup type for collecting metrics. One of: [full, incr, diff].
-      --backrest.database-count  Exposing the number of databases in backups.
-      --backrest.database-count-latest  
+      --[no-]backrest.database-count  
+                                 Exposing the number of databases in backups.
+      --[no-]backrest.database-count-latest  
                                  Exposing the number of databases in the latest backups.
-      --backrest.verbose-wal     Enable additional labels for WAL metrics.
+      --[no-]backrest.verbose-wal  
+                                 Exposing additional labels for WAL metrics.
       --log.level=info           Only log messages with the given severity or above. One of: [debug, info, warn, error]
       --log.format=logfmt        Output format of log messages. One of: [logfmt, json]
 ```
@@ -190,8 +193,8 @@ This creates new different time series on each WAL archiving.
 
 When `--log.level=debug` is specified - information of values and labels for metrics is printing to the log.
 
-The flag `--prom.web-config` allows to specify the path to the configuration for TLS and/or basic authentication.<br>
-The description of TLS configuration and basic authentication can be found at [exporter-toolkit/web](https://github.com/prometheus/exporter-toolkit/blob/v0.7.3/docs/web-configuration.md).
+The flag `--web.config.file` allows to specify the path to the configuration for TLS and/or basic authentication.<br>
+The description of TLS configuration and basic authentication can be found at [exporter-toolkit/web](https://github.com/prometheus/exporter-toolkit/blob/v0.9.1//docs/web-configuration.md).
 
 Custom `backup type` for collecting metrics can be specified via `--backrest.backup-type` flag. Valid values: `full`, `incr` or `diff`.<br>
 For example, `--backrest.backup-type=full`.<br>
@@ -219,6 +222,7 @@ Environment variables supported by this image:
 * all environment variables from [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest#docker-pgbackrest)  image;
 * `EXPORTER_ENDPOINT` - metrics endpoint, default `/metrics`;
 * `EXPORTER_PORT` - port for prometheus metrics to listen on, default `9854`;
+* `EXPORTER_CONFIG` - path to the configuration file for TLS and/or basic authentication, default `""`;
 * `STANZA_INCLUDE` - specific stanza for collecting metrics, default `""`;
 * `STANZA_EXCLUDE` - specific stanza to exclude from collecting metrics, default `""`;
 * `COLLECT_INTERVAL` - collecting metrics interval in seconds, default `600`;
