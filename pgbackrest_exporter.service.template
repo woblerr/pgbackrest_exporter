@@ -6,7 +6,7 @@ Type=simple
 Environment="EXPORTER_ENDPOINT=/metrics"
 Environment="EXPORTER_PORT=9854"
 Environment="COLLECT_INTERVAL=600"
-ExecStart=/usr/bin/pgbackrest_exporter --prom.endpoint=${EXPORTER_ENDPOINT} --prom.port=${EXPORTER_PORT} --collect.interval=${COLLECT_INTERVAL}
+ExecStart=/usr/bin/pgbackrest_exporter --web.endpoint=${EXPORTER_ENDPOINT} --web.listen-address=:${EXPORTER_PORT} --collect.interval=${COLLECT_INTERVAL}
 Restart=always
 RestartSec=5s
 
