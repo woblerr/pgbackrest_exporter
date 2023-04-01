@@ -259,6 +259,9 @@ func TestGetRepoMetricsErrorsAndDebugs(t *testing.T) {
 // All metrics exist and all labels are corrected.
 // pgBackrest version = latest.
 // With '--backrest.database-count' flag.
+// The case when the backup is performed with block incremental feature flags.
+// Absent metrics:
+//   - pgbackrest_backup_repo_size_bytes
 //
 //nolint:dupl
 func TestGetBackupMetrics(t *testing.T) {
@@ -294,9 +297,6 @@ pgbackrest_backup_repo_delta_bytes{backup_name="20210607-092423F",backup_type="f
 # HELP pgbackrest_backup_repo_delta_map_bytes Size of block incremental delta map.
 # TYPE pgbackrest_backup_repo_delta_map_bytes gauge
 pgbackrest_backup_repo_delta_map_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 12
-# HELP pgbackrest_backup_repo_size_bytes Full compressed files size to restore the database from backup.
-# TYPE pgbackrest_backup_repo_size_bytes gauge
-pgbackrest_backup_repo_size_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
 # HELP pgbackrest_backup_repo_size_map_bytes Size of block incremental map.
 # TYPE pgbackrest_backup_repo_size_map_bytes gauge
 pgbackrest_backup_repo_size_map_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 100
@@ -346,7 +346,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 					`"backup":[{"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
 					`"backrest":{"format":5,"version":"2.44"},"database":{"id":1,"repo-key":1},` +
 					`"database-ref":[{"name":"postgres","oid":13412}],"error":true,"error-list":["base/1/3351"],` +
-					`"info":{"delta":24316343,"repository":{"delta":2969512, "delta-map":12,"size":2969512,"size-map":100},"size":24316343},` +
+					`"info":{"delta":24316343,"repository":{"delta":2969512, "delta-map":12,"size-map":100},"size":24316343},` +
 					`"label":"20210614-213200F","lsn":{"start":"0/2000028","stop":"0/2000100"},"prior":null,"reference":null,"timestamp":{"start":1623706320,` +
 					`"stop":1623706322},"type":"full"}],"cipher":"none","db":[{"id":1,"repo-key":1,` +
 					`"system-id":6970977677138971135,"version":"13"}],"name":"demo","repo":[{"cipher":"none",` +
@@ -454,17 +454,17 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 					"000000010000000000000004",
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
-					true).Name,
+					true, 2969514).Name,
 				templateStanzaRepoMapSizesAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
-					true).Backup,
+					true, 2969514).Backup,
 				templateStanzaRepoMapSizesAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
-					true).DB,
+					true, 2969514).DB,
 				true,
 				setUpMetricValue,
 				templateMetrics,
@@ -572,17 +572,20 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 					"000000010000000000000004",
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
-					true).Name,
+					true,
+					2969514).Name,
 				templateStanzaRepoMapSizesAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
-					true).Backup,
+					true,
+					2969514).Backup,
 				templateStanzaRepoMapSizesAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
-					true).DB,
+					true,
+					2969514).DB,
 				true,
 				setUpMetricValue,
 				templateMetrics,
@@ -689,13 +692,16 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 				"",
 				templateStanzaErrorAbsent(
 					"000000010000000000000004",
-					"000000010000000000000001").Name,
+					"000000010000000000000001",
+					2969514).Name,
 				templateStanzaErrorAbsent(
 					"000000010000000000000004",
-					"000000010000000000000001").Backup,
+					"000000010000000000000001",
+					2969514).Backup,
 				templateStanzaErrorAbsent(
 					"000000010000000000000004",
-					"000000010000000000000001").DB,
+					"000000010000000000000001",
+					2969514).DB,
 				true,
 				setUpMetricValue,
 				templateMetrics,
@@ -802,13 +808,16 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 				"",
 				templateStanzaRepoAbsent(
 					"000000010000000000000004",
-					"000000010000000000000001").Name,
+					"000000010000000000000001",
+					2969514).Name,
 				templateStanzaRepoAbsent(
 					"000000010000000000000004",
-					"000000010000000000000001").Backup,
+					"000000010000000000000001",
+					2969514).Backup,
 				templateStanzaRepoAbsent(
 					"000000010000000000000004",
-					"000000010000000000000001").DB,
+					"000000010000000000000001",
+					2969514).DB,
 				false,
 				setUpMetricValue,
 				templateMetrics,
@@ -875,6 +884,8 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 		args         args
 		mockTestData mockStruct
 	}{
+		// pgBackRest >= 2.45
+		// Without backup set size.
 		{
 			"getBackupMetricsLogError",
 			args{
@@ -903,8 +914,55 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 					100).DB,
 				true,
 				fakeSetUpMetricValue,
-				10,
-				10,
+				9,
+				9,
+			},
+			mockStruct{
+				`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
+					`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
+					`"backup":[{"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
+					`"backrest":{"format":5,"version":"2.41"},"database":{"id":1,"repo-key":1},` +
+					`"database-ref":[{"name":"postgres","oid":13412}],"error":true,"error-list":["base/1/3351"],` +
+					`"info":{"delta":24316343,"repository":{"delta":2969512, "delta-map":12,"size-map":100},"size":24316343},` +
+					`"label":"20210614-213200F","lsn":{"start":"0/2000028","stop":"0/2000100"},"prior":null,"reference":null,"timestamp":{"start":1623706320,` +
+					`"stop":1623706322},"type":"full"}],"cipher":"none","db":[{"id":1,"repo-key":1,` +
+					`"system-id":6970977677138971135,"version":"13"}],"name":"demo","repo":[{"cipher":"none",` +
+					`"key":1,"status":{"code":0,"message":"ok"}}],"status":{"code":0,"lock":{"backup":` +
+					`{"held":false}},"message":"ok"}}]`,
+				"",
+				0,
+			},
+		},
+		// pgBackrest older than v2.45.
+		// Here the version is not important.
+		// Getting an error is being tested for backup set size.
+		{
+			"getBackupMetricsLogErrorWithRepo",
+			args{
+				"",
+				"",
+				templateStanzaRepoMapSizesAbsent(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true,
+					2969514).Name,
+				templateStanzaRepoMapSizesAbsent(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true,
+					2969514).Backup,
+				templateStanzaRepoMapSizesAbsent(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true,
+					2969514).DB,
+				true,
+				fakeSetUpMetricValue,
+				8,
+				8,
 			},
 			mockStruct{
 				`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
@@ -1831,6 +1889,7 @@ func fakeSetUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...
 //nolint:unparam
 func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus bool, deltaMap, sizeMap int64) stanza {
 	var (
+		size *int64
 		link *[]struct {
 			Destination string "json:\"destination\""
 			Name        string "json:\"name\""
@@ -1863,9 +1922,9 @@ func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus bool
 					struct {
 						Delta    int64  "json:\"delta\""
 						DeltaMap *int64 "json:\"delta-map\""
-						Size     int64  "json:\"size\""
+						Size     *int64 "json:\"size\""
 						SizeMap  *int64 "json:\"size-map\""
-					}{2969514, &deltaMap, 2969514, &sizeMap},
+					}{2969514, &deltaMap, size, &sizeMap},
 					24316343,
 				},
 				"20210607-092423F",
@@ -1915,7 +1974,7 @@ func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus bool
 }
 
 //nolint:unparam
-func templateStanzaRepoMapSizesAbsent(walMax, walMin string, dbRef []databaseRef, errorStatus bool) stanza {
+func templateStanzaRepoMapSizesAbsent(walMax, walMin string, dbRef []databaseRef, errorStatus bool, size int64) stanza {
 	var (
 		deltaMap, sizeMap *int64
 		link              *[]struct {
@@ -1950,9 +2009,9 @@ func templateStanzaRepoMapSizesAbsent(walMax, walMin string, dbRef []databaseRef
 					struct {
 						Delta    int64  "json:\"delta\""
 						DeltaMap *int64 "json:\"delta-map\""
-						Size     int64  "json:\"size\""
+						Size     *int64 "json:\"size\""
 						SizeMap  *int64 "json:\"size-map\""
-					}{2969514, deltaMap, 2969514, sizeMap},
+					}{2969514, deltaMap, &size, sizeMap},
 					24316343,
 				},
 				"20210607-092423F",
@@ -2002,7 +2061,7 @@ func templateStanzaRepoMapSizesAbsent(walMax, walMin string, dbRef []databaseRef
 }
 
 //nolint:unparam
-func templateStanzaErrorAbsent(walMax, walMin string) stanza {
+func templateStanzaErrorAbsent(walMax, walMin string, size int64) stanza {
 	var (
 		errorStatus       *bool
 		deltaMap, sizeMap *int64
@@ -2039,9 +2098,9 @@ func templateStanzaErrorAbsent(walMax, walMin string) stanza {
 					struct {
 						Delta    int64  "json:\"delta\""
 						DeltaMap *int64 "json:\"delta-map\""
-						Size     int64  "json:\"size\""
+						Size     *int64 "json:\"size\""
 						SizeMap  *int64 "json:\"size-map\""
-					}{2969514, deltaMap, 2969514, sizeMap},
+					}{2969514, deltaMap, &size, sizeMap},
 					24316343,
 				},
 				"20210607-092423F",
@@ -2091,7 +2150,7 @@ func templateStanzaErrorAbsent(walMax, walMin string) stanza {
 }
 
 //nolint:unparam
-func templateStanzaRepoAbsent(walMax, walMin string) stanza {
+func templateStanzaRepoAbsent(walMax, walMin string, size int64) stanza {
 	var (
 		errorStatus       *bool
 		deltaMap, sizeMap *int64
@@ -2127,9 +2186,9 @@ func templateStanzaRepoAbsent(walMax, walMin string) stanza {
 					struct {
 						Delta    int64  "json:\"delta\""
 						DeltaMap *int64 "json:\"delta-map\""
-						Size     int64  "json:\"size\""
+						Size     *int64 "json:\"size\""
 						SizeMap  *int64 "json:\"size-map\""
-					}{2969514, deltaMap, 2969514, sizeMap},
+					}{2969514, deltaMap, &size, sizeMap},
 					24316343,
 				},
 				"20210607-092423F",
