@@ -466,34 +466,41 @@ func getBackupMetrics(config, configIncludePath, stanzaName string, backupData [
 			)
 		}
 		// Repo backup set size.
-		level.Debug(logger).Log(
-			"msg", "Metric pgbackrest_backup_repo_size_bytes",
-			"value", float64(backup.Info.Repository.Size),
-			"labels",
-			strings.Join(
-				[]string{
-					backup.Label,
-					backup.Type,
-					strconv.Itoa(backup.Database.ID),
-					strconv.Itoa(backup.Database.RepoKey),
-					stanzaName,
-				}, ",",
-			),
-		)
-		err = setUpMetricValueFun(
-			pgbrStanzaBackupRepoBackupSetSizeMetric,
-			float64(backup.Info.Repository.Size),
-			backup.Label,
-			backup.Type,
-			strconv.Itoa(backup.Database.ID),
-			strconv.Itoa(backup.Database.RepoKey),
-			stanzaName,
-		)
-		if err != nil {
-			level.Error(logger).Log(
-				"msg", "Metric pgbackrest_backup_repo_size_bytes set up failed",
-				"err", err,
+		// Starting from pgBackRest v2.45, there is no 'backup set size' value
+		// for block incremental backups.
+		// See https://github.com/pgbackrest/pgbackrest/commit/6252c0e4485caee362edec13302a5f735a69bff4
+		// and https://github.com/pgbackrest/pgbackrest/projects/2#card-87759001
+		// This behavior may change in future pgBackRest releases.
+		if backup.Info.Repository.Size != nil {
+			level.Debug(logger).Log(
+				"msg", "Metric pgbackrest_backup_repo_size_bytes",
+				"value", float64(*backup.Info.Repository.Size),
+				"labels",
+				strings.Join(
+					[]string{
+						backup.Label,
+						backup.Type,
+						strconv.Itoa(backup.Database.ID),
+						strconv.Itoa(backup.Database.RepoKey),
+						stanzaName,
+					}, ",",
+				),
 			)
+			err = setUpMetricValueFun(
+				pgbrStanzaBackupRepoBackupSetSizeMetric,
+				float64(*backup.Info.Repository.Size),
+				backup.Label,
+				backup.Type,
+				strconv.Itoa(backup.Database.ID),
+				strconv.Itoa(backup.Database.RepoKey),
+				stanzaName,
+			)
+			if err != nil {
+				level.Error(logger).Log(
+					"msg", "Metric pgbackrest_backup_repo_size_bytes set up failed",
+					"err", err,
+				)
+			}
 		}
 		// Repo backup size.
 		level.Debug(logger).Log(

@@ -128,7 +128,7 @@ type backupInfo struct {
 	Repository struct {
 		Delta    int64  `json:"delta"`
 		DeltaMap *int64 `json:"delta-map"`
-		Size     int64  `json:"size"`
+		Size     *int64 `json:"size"`
 		SizeMap  *int64 `json:"size-map"`
 	} `json:"repository"`
 	Size int64 `json:"size"`
