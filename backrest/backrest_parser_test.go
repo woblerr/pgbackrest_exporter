@@ -290,7 +290,7 @@ pgbackrest_backup_duration_seconds{backup_name="20210607-092423F",backup_type="f
 pgbackrest_backup_error_status{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 1
 # HELP pgbackrest_backup_info Backup info.
 # TYPE pgbackrest_backup_info gauge
-pgbackrest_backup_info{backrest_ver="2.44",backup_name="20210607-092423F",backup_type="full",block_incr="y",database_id="1",lsn_start="0/2000028",lsn_stop="0/2000100",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
+pgbackrest_backup_info{backrest_ver="2.45",backup_name="20210607-092423F",backup_type="full",block_incr="y",database_id="1",lsn_start="0/2000028",lsn_stop="0/2000100",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
 # HELP pgbackrest_backup_repo_delta_bytes Compressed files size in backup.
 # TYPE pgbackrest_backup_repo_delta_bytes gauge
 pgbackrest_backup_repo_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
@@ -344,7 +344,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 				`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 					`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
 					`"backup":[{"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
-					`"backrest":{"format":5,"version":"2.44"},"database":{"id":1,"repo-key":1},` +
+					`"backrest":{"format":5,"version":"2.45"},"database":{"id":1,"repo-key":1},` +
 					`"database-ref":[{"name":"postgres","oid":13412}],"error":true,"error-list":["base/1/3351"],` +
 					`"info":{"delta":24316343,"repository":{"delta":2969512, "delta-map":12,"size-map":100},"size":24316343},` +
 					`"label":"20210614-213200F","lsn":{"start":"0/2000028","stop":"0/2000100"},"prior":null,"reference":null,"timestamp":{"start":1623706320,` +
@@ -1913,7 +1913,7 @@ func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus bool
 				struct {
 					Format  int    "json:\"format\""
 					Version string "json:\"version\""
-				}{5, "2.44"},
+				}{5, "2.45"},
 				databaseID{1, 1},
 				&dbRef,
 				&errorStatus,
