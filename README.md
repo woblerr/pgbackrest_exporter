@@ -99,9 +99,14 @@ The metrics provided by the client.
 
 ## Compatibility with pgBackRest versions
 
-All metrics are collected for `pgBackRest >= v2.44`.
+The number of collected metrics may vary depending on pgBackRest version. 
 
-For earlier versions, some metrics may not be collected or have insignificant label values:
+For different versions, some metrics may not be collected or have insignificant label values:
+
+* `pgBackRest >= v2.45`
+  
+    The following metric will be absent for block incremental backups: 
+    * `pgbackrest_backup_repo_size_bytes`.
 
 * `pgBackRest < v2.44`
 
@@ -215,7 +220,7 @@ For a significant number of stanzas, this may require additional time to collect
 
 ### Building and running docker
 
-By default, pgBackRest version is `2.44`. Another version can be specified via arguments.
+By default, pgBackRest version is `2.45`. Another version can be specified via arguments.
 For base image used [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest) image.
 
 Environment variables supported by this image:

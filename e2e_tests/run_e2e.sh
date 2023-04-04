@@ -51,7 +51,7 @@ declare -a REGEX_LIST=(
     '^pgbackrest_backup_info{.*,block_incr="n",.*} 1$|1'
     '^pgbackrest_backup_info{.*,block_incr="y",.*} 1$|2'
     '^pgbackrest_backup_repo_delta_bytes{.*}|3'
-    '^pgbackrest_backup_repo_size_bytes{.*}|3'
+    '^pgbackrest_backup_repo_size_bytes{.*}|1'
     '^pgbackrest_backup_size_bytes{.*}|3'
     '^pgbackrest_exporter_info{.*} 1$|1'
     '^pgbackrest_repo_status{.*,repo_key="1".*} 0$|1'
