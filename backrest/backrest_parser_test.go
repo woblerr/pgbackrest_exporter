@@ -71,7 +71,7 @@ pgbackrest_stanza_status{stanza="demo"} 0
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ResetMetrics()
+			resetMetrics()
 			getStanzaMetrics(tt.args.stanzaName, tt.args.stanzaStatusCode, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(pgbrStanzaStatusMetric)
@@ -184,7 +184,7 @@ pgbackrest_repo_status{cipher="none",repo_key="1",stanza="demo"} 0
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ResetMetrics()
+			resetMetrics()
 			getRepoMetrics(tt.args.stanzaName, tt.args.repoData, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(pgbrRepoStatusMetric)
@@ -359,7 +359,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ResetMetrics()
+			resetMetrics()
 			mockData = tt.mockTestData
 			execCommand = fakeExecCommand
 			defer func() { execCommand = exec.Command }()
@@ -479,7 +479,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ResetMetrics()
+			resetMetrics()
 			mockData = tt.mockTestData
 			execCommand = fakeExecCommand
 			defer func() { execCommand = exec.Command }()
@@ -600,7 +600,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ResetMetrics()
+			resetMetrics()
 			mockData = tt.mockTestData
 			execCommand = fakeExecCommand
 			defer func() { execCommand = exec.Command }()
@@ -716,7 +716,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ResetMetrics()
+			resetMetrics()
 			mockData = tt.mockTestData
 			execCommand = fakeExecCommand
 			defer func() { execCommand = exec.Command }()
@@ -832,7 +832,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ResetMetrics()
+			resetMetrics()
 			mockData = tt.mockTestData
 			execCommand = fakeExecCommand
 			defer func() { execCommand = exec.Command }()
@@ -983,7 +983,7 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ResetMetrics()
+			resetMetrics()
 			mockData = tt.mockTestData
 			execCommand = fakeExecCommand
 			defer func() { execCommand = exec.Command }()
@@ -1101,7 +1101,7 @@ pgbackrest_backup_since_last_completion_seconds{backup_type="incr",stanza="demo"
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ResetMetrics()
+			resetMetrics()
 			mockDataBackupLast = tt.mockTestDataBackupLast
 			execCommand = fakeExecCommandSpecificDatabase
 			defer func() { execCommand = exec.Command }()
@@ -1195,7 +1195,7 @@ pgbackrest_backup_since_last_completion_seconds{backup_type="incr",stanza="demo"
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ResetMetrics()
+			resetMetrics()
 			mockDataBackupLast = tt.mockTestDataBackupLast
 			execCommand = fakeExecCommandSpecificDatabase
 			defer func() { execCommand = exec.Command }()
@@ -1442,7 +1442,7 @@ func TestGetWALMetrics(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ResetMetrics()
+			resetMetrics()
 			getWALMetrics(tt.args.stanzaName, tt.args.archiveData, tt.args.dbData, tt.args.verboseWAL, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(pgbrWALArchivingMetric)

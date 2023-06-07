@@ -14,6 +14,9 @@ import (
 var (
 	webFlagsConfig web.FlagConfig
 	webEndpoint    string
+	// When reset metrics.
+	// Before receiving information from pgBackRest (false) or after (true).
+	MetricResetFlag bool = true
 )
 
 // SetPromPortAndPath sets HTTP endpoint parameters
@@ -50,30 +53,18 @@ func StartPromEndpoint(logger log.Logger) {
 	}(logger)
 }
 
-// ResetMetrics reset metrics
-func ResetMetrics() {
-	pgbrStanzaStatusMetric.Reset()
-	pgbrRepoStatusMetric.Reset()
-	pgbrStanzaBackupInfoMetric.Reset()
-	pgbrStanzaBackupDurationMetric.Reset()
-	pgbrStanzaBackupDatabaseSizeMetric.Reset()
-	pgbrStanzaBackupDatabaseBackupSizeMetric.Reset()
-	pgbrStanzaBackupRepoBackupSetSizeMetric.Reset()
-	pgbrStanzaBackupRepoBackupSetSizeMapMetric.Reset()
-	pgbrStanzaBackupRepoBackupSizeMetric.Reset()
-	pgbrStanzaBackupRepoBackupSizeMapMetric.Reset()
-	pgbrStanzaBackupErrorMetric.Reset()
-	pgbrStanzaBackupDatabasesMetric.Reset()
-	pgbrStanzaBackupSinceLastCompletionSecondsMetric.Reset()
-	pgbrStanzaBackupLastDatabasesMetric.Reset()
-	pgbrWALArchivingMetric.Reset()
-}
-
 // GetPgBackRestInfo get and parse pgBackRest info and set metrics
 func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas []string, stanzasExclude []string, backupDBCount, backupDBCountLatest, verboseWAL bool, logger log.Logger) {
 	// To calculate the time elapsed since the last completed full, differential or incremental backup.
 	// For all stanzas values are calculated relative to one value.
 	currentUnixTime := time.Now().Unix()
+	// If specific stanzas are specified for collecting metrics,
+	// then we reset all metrics before the loop.
+	// Otherwise, it makes sense to reset the metrics after receiving data from pgBackRest,
+	// because this operation can be long.
+	if !MetricResetFlag {
+		resetMetrics()
+	}
 	// Loop over each stanza.
 	// If stanza not set - perform a single loop step to get metrics for all stanzas.
 	for _, stanza := range stanzas {
@@ -91,15 +82,19 @@ func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas []s
 			if len(parseStanzaData) == 0 {
 				level.Warn(logger).Log("msg", "No backup data returned")
 			}
+			// When no specific stanzas set for collecting we can reset the metrics as late as possible.
+			if MetricResetFlag {
+				resetMetrics()
+			}
 			for _, singleStanza := range parseStanzaData {
 				// If stanza is in the exclude list, skip it.
 				if stanzaNotInExclude(singleStanza.Name, stanzasExclude) {
 					getStanzaMetrics(singleStanza.Name, singleStanza.Status.Code, setUpMetricValue, logger)
 					getRepoMetrics(singleStanza.Name, singleStanza.Repo, setUpMetricValue, logger)
+					getWALMetrics(singleStanza.Name, singleStanza.Archive, singleStanza.DB, verboseWAL, setUpMetricValue, logger)
 					// Last backups for current stanza
 					lastBackups := getBackupMetrics(config, configIncludePath, singleStanza.Name, singleStanza.Backup, singleStanza.DB, backupDBCount, setUpMetricValue, logger)
 					getBackupLastMetrics(config, configIncludePath, singleStanza.Name, lastBackups, backupDBCountLatest, currentUnixTime, setUpMetricValue, logger)
-					getWALMetrics(singleStanza.Name, singleStanza.Archive, singleStanza.DB, verboseWAL, setUpMetricValue, logger)
 				}
 			}
 		} else {

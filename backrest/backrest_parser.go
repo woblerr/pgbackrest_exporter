@@ -705,3 +705,22 @@ func setUpMetric(metric *prometheus.GaugeVec, metricName string, value float64, 
 		)
 	}
 }
+
+// Reset all metrics.
+func resetMetrics() {
+	pgbrStanzaStatusMetric.Reset()
+	pgbrRepoStatusMetric.Reset()
+	pgbrStanzaBackupInfoMetric.Reset()
+	pgbrStanzaBackupDurationMetric.Reset()
+	pgbrStanzaBackupDatabaseSizeMetric.Reset()
+	pgbrStanzaBackupDatabaseBackupSizeMetric.Reset()
+	pgbrStanzaBackupRepoBackupSetSizeMetric.Reset()
+	pgbrStanzaBackupRepoBackupSetSizeMapMetric.Reset()
+	pgbrStanzaBackupRepoBackupSizeMetric.Reset()
+	pgbrStanzaBackupRepoBackupSizeMapMetric.Reset()
+	pgbrStanzaBackupErrorMetric.Reset()
+	pgbrStanzaBackupDatabasesMetric.Reset()
+	pgbrStanzaBackupSinceLastCompletionSecondsMetric.Reset()
+	pgbrStanzaBackupLastDatabasesMetric.Reset()
+	pgbrWALArchivingMetric.Reset()
+}
