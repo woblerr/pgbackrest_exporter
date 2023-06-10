@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
 )
@@ -79,8 +78,7 @@ func TestGetExporterInfoErrorsAndDebugs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			out := &bytes.Buffer{}
-			logger := log.NewLogfmtLogger(out)
-			lc := log.With(logger, level.AllowInfo())
+			lc := log.NewLogfmtLogger(out)
 			getExporterMetrics(tt.args.exporterVer, tt.args.setUpMetricValueFun, lc)
 			errorsOutputCount := strings.Count(out.String(), "level=error")
 			debugsOutputCount := strings.Count(out.String(), "level=debug")
