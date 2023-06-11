@@ -101,6 +101,7 @@ func main() {
 			"path", *backrestCustomConfigIncludePath)
 	}
 	if strings.Join(*backrestIncludeStanza, "") != "" {
+		backrest.MetricResetFlag = false
 		for _, stanza := range *backrestIncludeStanza {
 			level.Info(logger).Log(
 				"mgs", "Collecting metrics for specific stanza",
@@ -148,9 +149,7 @@ func main() {
 	// it is set up once at startup.
 	backrest.GetExporterInfo(version, logger)
 	for {
-		// Reset metrics.
-		backrest.ResetMetrics()
-		// Get information form pgBackRest.
+		// Get information form pgBackRest and set metrics.
 		backrest.GetPgBackRestInfo(
 			*backrestCustomConfig,
 			*backrestCustomConfigIncludePath,

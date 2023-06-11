@@ -141,7 +141,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ResetMetrics()
+			resetMetrics()
 			mockData = tt.mockTestData
 			execCommand = fakeExecCommand
 			defer func() { execCommand = exec.Command }()
