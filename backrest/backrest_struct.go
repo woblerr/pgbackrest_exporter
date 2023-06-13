@@ -1,7 +1,5 @@
 package backrest
 
-var stanzas []stanza
-
 //	[{
 //	  "archive": [{}],
 //	  "cipher": "string",

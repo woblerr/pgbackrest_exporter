@@ -150,6 +150,7 @@ func getInfoData(config, configIncludePath, stanza, backupType, backupLabel stri
 }
 
 func parseResult(output []byte) ([]stanza, error) {
+	var stanzas []stanza
 	err := json.Unmarshal(output, &stanzas)
 	return stanzas, err
 }
