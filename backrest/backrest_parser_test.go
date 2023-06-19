@@ -695,24 +695,6 @@ func TestConvertBoolToFloat64(t *testing.T) {
 	}
 }
 
-//nolint:unparam
-func templateLastBackup() lastBackupsStruct {
-	return lastBackupsStruct{
-		backupStruct{"20210607-092423F", "", time.Unix(1623706322, 0)},
-		backupStruct{"20210607-092423F", "", time.Unix(1623706322, 0)},
-		backupStruct{"20210607-092423F", "", time.Unix(1623706322, 0)},
-	}
-}
-
-//nolint:unparam
-func templateLastBackupDifferent() lastBackupsStruct {
-	return lastBackupsStruct{
-		backupStruct{"20220926-201857F", "", time.Unix(1623706322, 0)},
-		backupStruct{"20220926-201857F_20220926-201901D", "", time.Unix(1623706322, 0)},
-		backupStruct{"20220926-201854F_20220926-202454I", "", time.Unix(1623706322, 0)},
-	}
-}
-
 func TestGetParsedSpecificBackupInfoDataErrors(t *testing.T) {
 	type args struct {
 		config            string

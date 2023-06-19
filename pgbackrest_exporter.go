@@ -54,6 +54,10 @@ func main() {
 			"backrest.database-count",
 			"Exposing the number of databases in backups.",
 		).Default("false").Bool()
+		backrestBackupDBCountParallelProcesses = kingpin.Flag(
+			"backrest.database-parallel-processes",
+			"Number of parallel processes for collecting information about databases.",
+		).Default("1").Int()
 		backrestBackupDBCountLatest = kingpin.Flag(
 			"backrest.database-count-latest",
 			"Exposing the number of databases in the latest backups.",
@@ -123,7 +127,8 @@ func main() {
 	if *backrestBackupDBCount {
 		level.Info(logger).Log(
 			"msg", "Exposing the number of databases in backups",
-			"database-count", *backrestBackupDBCount)
+			"database-count", *backrestBackupDBCount,
+			"database-parallel-processes", *backrestBackupDBCountParallelProcesses)
 	}
 	if *backrestBackupDBCountLatest {
 		level.Info(logger).Log(
@@ -159,6 +164,7 @@ func main() {
 			*backrestBackupDBCount,
 			*backrestBackupDBCountLatest,
 			*backrestVerboseWAL,
+			*backrestBackupDBCountParallelProcesses,
 			logger,
 		)
 		// Sleep for 'collection.interval' seconds.

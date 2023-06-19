@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -25,24 +26,15 @@ var (
 
 // All metrics exist and all labels are corrected.
 // pgBackrest version = latest.
-// With '--backrest.database-count-latest' flag.
 func TestGetBackupLastMetrics(t *testing.T) {
 	type args struct {
-		config              string
-		configIncludePath   string
 		stanzaName          string
 		lastBackups         lastBackupsStruct
-		backupDBCountLatest bool
 		currentUnixTime     int64
 		setUpMetricValueFun setUpMetricValueFunType
 		testText            string
 	}
-	templateMetrics := `# HELP pgbackrest_backup_last_databases Number of databases in the last full, differential or incremental backup.
-# TYPE pgbackrest_backup_last_databases gauge
-pgbackrest_backup_last_databases{backup_type="diff",stanza="demo"} 2
-pgbackrest_backup_last_databases{backup_type="full",stanza="demo"} 1
-pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 2
-# HELP pgbackrest_backup_since_last_completion_seconds Seconds since the last completed full, differential or incremental backup.
+	templateMetrics := `# HELP pgbackrest_backup_since_last_completion_seconds Seconds since the last completed full, differential or incremental backup.
 # TYPE pgbackrest_backup_since_last_completion_seconds gauge
 pgbackrest_backup_since_last_completion_seconds{backup_type="diff",stanza="demo"} 9.223372036854776e+09
 pgbackrest_backup_since_last_completion_seconds{backup_type="full",stanza="demo"} 9.223372036854776e+09
@@ -56,8 +48,6 @@ pgbackrest_backup_since_last_completion_seconds{backup_type="incr",stanza="demo"
 		{
 			"getBackupLastMetrics",
 			args{
-				"",
-				"",
 				templateStanza(
 					"000000010000000000000004",
 					"000000010000000000000001",
@@ -66,7 +56,6 @@ pgbackrest_backup_since_last_completion_seconds{backup_type="incr",stanza="demo"
 					12,
 					100).Name,
 				templateLastBackupDifferent(),
-				true,
 				currentUnixTimeForTests,
 				setUpMetricValue,
 				templateMetrics,
@@ -128,7 +117,7 @@ pgbackrest_backup_since_last_completion_seconds{backup_type="incr",stanza="demo"
 			execCommand = fakeExecCommandSpecificDatabase
 			defer func() { execCommand = exec.Command }()
 			lc := log.NewNopLogger()
-			getBackupLastMetrics(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.lastBackups, tt.args.backupDBCountLatest, tt.args.currentUnixTime, tt.args.setUpMetricValueFun, lc)
+			getBackupLastMetrics(tt.args.stanzaName, tt.args.lastBackups, tt.args.currentUnixTime, tt.args.setUpMetricValueFun, lc)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupSinceLastCompletionSecondsMetric,
@@ -158,11 +147,8 @@ pgbackrest_backup_since_last_completion_seconds{backup_type="incr",stanza="demo"
 // pgBackrest version < v2.41.
 func TestGetBackupLastMetricsDBsAbsent(t *testing.T) {
 	type args struct {
-		config              string
-		configIncludePath   string
 		stanzaName          string
 		lastBackups         lastBackupsStruct
-		backupDBCountLatest bool
 		currentUnixTime     int64
 		setUpMetricValueFun setUpMetricValueFunType
 		testText            string
@@ -181,8 +167,6 @@ pgbackrest_backup_since_last_completion_seconds{backup_type="incr",stanza="demo"
 		{
 			"getBackupLastMetrics",
 			args{
-				"",
-				"",
 				templateStanza(
 					"000000010000000000000004",
 					"000000010000000000000001",
@@ -191,7 +175,6 @@ pgbackrest_backup_since_last_completion_seconds{backup_type="incr",stanza="demo"
 					12,
 					100).Name,
 				templateLastBackupDifferent(),
-				true,
 				currentUnixTimeForTests,
 				setUpMetricValue,
 				templateMetrics,
@@ -222,7 +205,7 @@ pgbackrest_backup_since_last_completion_seconds{backup_type="incr",stanza="demo"
 			execCommand = fakeExecCommandSpecificDatabase
 			defer func() { execCommand = exec.Command }()
 			lc := log.NewNopLogger()
-			getBackupLastMetrics(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.lastBackups, tt.args.backupDBCountLatest, tt.args.currentUnixTime, tt.args.setUpMetricValueFun, lc)
+			getBackupLastMetrics(tt.args.stanzaName, tt.args.lastBackups, tt.args.currentUnixTime, tt.args.setUpMetricValueFun, lc)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupSinceLastCompletionSecondsMetric,
@@ -247,11 +230,8 @@ pgbackrest_backup_since_last_completion_seconds{backup_type="incr",stanza="demo"
 
 func TestGetBackupLastMetricsErrorsAndDebugs(t *testing.T) {
 	type args struct {
-		config              string
-		configIncludePath   string
 		stanzaName          string
 		lastBackups         lastBackupsStruct
-		backupDBCountLatest bool
 		currentUnixTime     int64
 		setUpMetricValueFun setUpMetricValueFunType
 		errorsCount         int
@@ -265,8 +245,6 @@ func TestGetBackupLastMetricsErrorsAndDebugs(t *testing.T) {
 		{
 			"getBackupLastMetricsLogError",
 			args{
-				"",
-				"",
 				templateStanza(
 					"000000010000000000000004",
 					"000000010000000000000001",
@@ -275,11 +253,10 @@ func TestGetBackupLastMetricsErrorsAndDebugs(t *testing.T) {
 					12,
 					100).Name,
 				templateLastBackup(),
-				true,
 				currentUnixTimeForTests,
 				fakeSetUpMetricValue,
-				6,
-				6,
+				3,
+				3,
 			},
 			mockBackupLastStruct{
 				mockStruct{
@@ -338,7 +315,7 @@ func TestGetBackupLastMetricsErrorsAndDebugs(t *testing.T) {
 			defer func() { execCommand = exec.Command }()
 			out := &bytes.Buffer{}
 			lc := log.NewLogfmtLogger(out)
-			getBackupLastMetrics(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.lastBackups, tt.args.backupDBCountLatest, tt.args.currentUnixTime, tt.args.setUpMetricValueFun, lc)
+			getBackupLastMetrics(tt.args.stanzaName, tt.args.lastBackups, tt.args.currentUnixTime, tt.args.setUpMetricValueFun, lc)
 			errorsOutputCount := strings.Count(out.String(), "level=error")
 			debugsOutputCount := strings.Count(out.String(), "level=debug")
 			if tt.args.errorsCount != errorsOutputCount || tt.args.debugsCount != debugsOutputCount {
@@ -347,5 +324,23 @@ func TestGetBackupLastMetricsErrorsAndDebugs(t *testing.T) {
 					errorsOutputCount, debugsOutputCount)
 			}
 		})
+	}
+}
+
+//nolint:unparam
+func templateLastBackup() lastBackupsStruct {
+	return lastBackupsStruct{
+		backupStruct{"20210607-092423F", "full", time.Unix(1623706322, 0)},
+		backupStruct{"20210607-092423F", "diff", time.Unix(1623706322, 0)},
+		backupStruct{"20210607-092423F", "incr", time.Unix(1623706322, 0)},
+	}
+}
+
+//nolint:unparam
+func templateLastBackupDifferent() lastBackupsStruct {
+	return lastBackupsStruct{
+		backupStruct{"20220926-201857F", "full", time.Unix(1623706322, 0)},
+		backupStruct{"20220926-201857F_20220926-201901D", "diff", time.Unix(1623706322, 0)},
+		backupStruct{"20220926-201854F_20220926-202454I", "incr", time.Unix(1623706322, 0)},
 	}
 }
