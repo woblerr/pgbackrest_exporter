@@ -795,3 +795,49 @@ func checkBackupType(a []string, regex string) bool {
 	}
 	return false
 }
+
+func TestCheckBackupDatabaseRef(t *testing.T) {
+	type args struct{ backupData []stanza }
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Empty backupData",
+			args: struct{ backupData []stanza }{
+				backupData: []stanza{},
+			},
+			want: false,
+		},
+		{
+			name: "Empty backup",
+			args: struct{ backupData []stanza }{
+				backupData: []stanza{{Backup: []backup{}}},
+			},
+			want: false,
+		},
+		{
+			name: "Nil DatabaseRef",
+			args: struct{ backupData []stanza }{
+				backupData: []stanza{{Backup: []backup{{DatabaseRef: nil}}}},
+			},
+			want: false,
+		},
+		{
+			name: "Non-nil DatabaseRef",
+			args: struct{ backupData []stanza }{
+				backupData: []stanza{{Backup: []backup{{DatabaseRef: &[]databaseRef{{"postgres", 13425}}}}}},
+			},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := checkBackupDatabaseRef(tt.args.backupData); got != tt.want {
+				t.Errorf("\nVariables do not match:\n%v\nwant:\n%v", got, tt.want)
+			}
+		})
+	}
+}
