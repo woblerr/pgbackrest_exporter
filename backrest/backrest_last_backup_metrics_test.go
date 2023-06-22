@@ -84,8 +84,6 @@ pgbackrest_backup_since_last_completion_seconds{backup_type="incr",stanza="demo"
 	}
 }
 
-// All metrics exist and all labels are corrected.
-// pgBackrest version = latest.
 func TestGetBackupLastDBCountMetrics(t *testing.T) {
 	type args struct {
 		config              string
@@ -107,6 +105,8 @@ pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 1
 		args                   args
 		mockTestDataBackupLast mockBackupLastStruct
 	}{
+		// All metrics exist and all labels are corrected.
+		// pgBackrest version = latest.
 		{
 			"getBackupLastMetricsSame",
 			args{
@@ -172,59 +172,12 @@ pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 1
 				},
 			},
 		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			resetMetrics()
-			mockDataBackupLast = tt.mockTestDataBackupLast
-			execCommand = fakeExecCommandSpecificDatabase
-			defer func() { execCommand = exec.Command }()
-			lc := log.NewNopLogger()
-			getBackupLastDBCountMetrics(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.lastBackups, tt.args.setUpMetricValueFun, lc)
-			reg := prometheus.NewRegistry()
-			reg.MustRegister(
-				pgbrStanzaBackupLastDatabasesMetric,
-			)
-			metricFamily, err := reg.Gather()
-			if err != nil {
-				fmt.Println(err)
-			}
-			out := &bytes.Buffer{}
-			for _, mf := range metricFamily {
-				if _, err := expfmt.MetricFamilyToText(out, mf); err != nil {
-					panic(err)
-				}
-			}
-			if tt.args.testText != out.String() {
-				t.Errorf(
-					"\nVariables do not match, metrics:\n%s\nwant:\n%s", tt.args.testText, out.String())
-			}
-		})
-	}
-}
-
-// Absent metrics:
-//   - pgbackrest_backup_last_databases.
-//
-// pgBackrest version < v2.41.
-func TestGetBackupLastDBCountMetricsDBsAbsent(t *testing.T) {
-	type args struct {
-		config              string
-		configIncludePath   string
-		stanzaName          string
-		lastBackups         lastBackupsStruct
-		currentUnixTime     int64
-		setUpMetricValueFun setUpMetricValueFunType
-		testText            string
-	}
-	templateMetrics := ``
-	tests := []struct {
-		name                   string
-		args                   args
-		mockTestDataBackupLast mockBackupLastStruct
-	}{
+		// Absent metrics:
+		//   - pgbackrest_backup_last_databases.
+		//
+		// pgBackrest version < v2.41.
 		{
-			"getBackupLastMetrics",
+			"getBackupLastMetricsDatabasesAbsent",
 			args{
 				"",
 				"",
@@ -238,7 +191,7 @@ func TestGetBackupLastDBCountMetricsDBsAbsent(t *testing.T) {
 				templateLastBackupDifferent(),
 				currentUnixTimeForTests,
 				setUpMetricValue,
-				templateMetrics,
+				``,
 			},
 			mockBackupLastStruct{
 				mockStruct{
