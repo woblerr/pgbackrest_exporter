@@ -294,3 +294,28 @@ func checkBackupDatabaseRef(backupData []stanza) bool {
 	}
 	return false
 }
+
+func processSpecificBackupData(config, configIncludePath, stanzaName, backupLabel, backupType, metricName string, metric *prometheus.GaugeVec, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger, addLabels ...string) {
+	parseStanzaDataSpecific, err := getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, backupLabel, logger)
+	if err != nil {
+		level.Error(logger).Log(
+			"msg", "Get data from pgBackRest failed",
+			"stanza", stanzaName,
+			"backup", backupLabel,
+			"err", err,
+		)
+		return
+	}
+	labels := append([]string{backupType, stanzaName}, addLabels...)
+	if checkBackupDatabaseRef(parseStanzaDataSpecific) {
+		// Number of databases in the last differential or incremental backup.
+		setUpMetric(
+			metric,
+			metricName,
+			float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
+			setUpMetricValueFun,
+			logger,
+			labels...,
+		)
+	}
+}

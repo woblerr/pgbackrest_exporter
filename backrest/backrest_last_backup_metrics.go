@@ -85,12 +85,36 @@ func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, l
 	// If name for diff backup is equal to full, there is no point in re-receiving data.
 	if lastBackups.diff.backupLabel != lastBackups.full.backupLabel {
 		wg.Add(1)
-		go processSpecificBackupData(config, configIncludePath, stanzaName, lastBackups.diff.backupLabel, lastBackups.diff.backupType, setUpMetricValueFun, logger, &wg)
+		go func(backupLabel, backupType string) {
+			defer wg.Done()
+			processSpecificBackupData(
+				config,
+				configIncludePath,
+				stanzaName,
+				backupLabel,
+				backupType,
+				"pgbackrest_backup_last_databases",
+				pgbrStanzaBackupLastDatabasesMetric,
+				setUpMetricValueFun,
+				logger)
+		}(lastBackups.diff.backupLabel, lastBackups.diff.backupType)
 	}
 	// If name for diff backup is equal to full, there is no point in re-receiving data.
 	if lastBackups.incr.backupLabel != lastBackups.diff.backupLabel {
 		wg.Add(1)
-		go processSpecificBackupData(config, configIncludePath, stanzaName, lastBackups.incr.backupLabel, lastBackups.incr.backupType, setUpMetricValueFun, logger, &wg)
+		go func(backupLabel, backupType string) {
+			defer wg.Done()
+			processSpecificBackupData(
+				config,
+				configIncludePath,
+				stanzaName,
+				backupLabel,
+				backupType,
+				"pgbackrest_backup_last_databases",
+				pgbrStanzaBackupLastDatabasesMetric,
+				setUpMetricValueFun,
+				logger)
+		}(lastBackups.incr.backupLabel, lastBackups.incr.backupType)
 	}
 	// Try to get info for full backup.
 	parseStanzaDataSpecific, err := getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, lastBackups.full.backupLabel, logger)
@@ -132,33 +156,6 @@ func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, l
 				setUpMetricValueFun,
 				logger,
 				lastBackups.incr.backupType,
-				stanzaName,
-			)
-		}
-	}
-}
-
-func processSpecificBackupData(config, configIncludePath, stanzaName, backupLabel, backupType string, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger, wg *sync.WaitGroup) {
-	defer wg.Done()
-	parseStanzaDataSpecific, err := getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, backupLabel, logger)
-	if err != nil {
-		level.Error(logger).Log(
-			"msg", "Get data from pgBackRest failed",
-			"stanza", stanzaName,
-			"backup", backupLabel,
-			"err", err,
-		)
-	}
-	if err == nil {
-		if checkBackupDatabaseRef(parseStanzaDataSpecific) {
-			// Number of databases in the last differential or incremental backup.
-			setUpMetric(
-				pgbrStanzaBackupLastDatabasesMetric,
-				"pgbackrest_backup_last_databases",
-				float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
-				setUpMetricValueFun,
-				logger,
-				backupType,
 				stanzaName,
 			)
 		}

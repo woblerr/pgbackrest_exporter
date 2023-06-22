@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -151,11 +150,13 @@ var (
 		Help: "Number of databases in backup.",
 	},
 		[]string{
-			"backup_name",
+			// Don't change this order.
+			// See function processSpecificBackupData().
 			"backup_type",
+			"stanza",
+			"backup_name",
 			"database_id",
-			"repo_key",
-			"stanza"})
+			"repo_key"})
 )
 
 // Set backup metrics:
@@ -351,42 +352,25 @@ func getBackupDBCountMetrics(maxParallelProcesses int, config, configIncludePath
 		// Wait for an available slot.
 		ch <- struct{}{}
 		wg.Add(1)
-		go func(backupLabel, backupType string, backupRepoID, backupRepoKey int) {
+		go func(backupLabel, backupType, backupRepoID, backupRepoKey string) {
 			defer func() {
 				wg.Done()
 				<-ch
 			}()
-			// Try to get info for backup.
-			parseStanzaDataSpecific, err := getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, backupLabel, logger)
-			if err != nil {
-				level.Error(logger).Log(
-					"msg", "Get data from pgBackRest failed",
-					"stanza", stanzaName,
-					"backup", backupLabel,
-					"err", err,
-				)
-				return
-			}
-			// In a normal situation, only one element with one backup should be returned.
-			// If more than one element or one backup is returned, there is may be a bug in pgBackRest.
-			// If it's not a bug, then this part will need to be refactoring.
-			// Use *[]struct() type for backup.DatabaseRef.
-			if checkBackupDatabaseRef(parseStanzaDataSpecific) {
-				// Number of databases in the last full backup.
-				setUpMetric(
-					pgbrStanzaBackupDatabasesMetric,
-					"pgbackrest_backup_databases",
-					float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
-					setUpMetricValueFun,
-					logger,
-					backupLabel,
-					backupType,
-					strconv.Itoa(backupRepoID),
-					strconv.Itoa(backupRepoKey),
-					stanzaName,
-				)
-			}
-		}(backup.Label, backup.Type, backup.Database.ID, backup.Database.RepoKey)
+			processSpecificBackupData(
+				config,
+				configIncludePath,
+				stanzaName,
+				backupLabel,
+				backupType,
+				"pgbackrest_backup_databases",
+				pgbrStanzaBackupDatabasesMetric,
+				setUpMetricValueFun,
+				logger,
+				backupLabel,
+				backupRepoID,
+				backupRepoKey)
+		}(backup.Label, backup.Type, strconv.Itoa(backup.Database.ID), strconv.Itoa(backup.Database.RepoKey))
 	}
 	wg.Wait()
 }
