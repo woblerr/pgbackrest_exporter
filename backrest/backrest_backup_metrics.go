@@ -2,6 +2,7 @@ package backrest
 
 import (
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/go-kit/log"
@@ -149,11 +150,13 @@ var (
 		Help: "Number of databases in backup.",
 	},
 		[]string{
-			"backup_name",
+			// Don't change this order.
+			// See function processSpecificBackupData().
 			"backup_type",
+			"stanza",
+			"backup_name",
 			"database_id",
-			"repo_key",
-			"stanza"})
+			"repo_key"})
 )
 
 // Set backup metrics:
@@ -166,16 +169,13 @@ var (
 //   - pgbackrest_backup_repo_delta_bytes
 //   - pgbackrest_backup_repo_delta_map_bytes
 //   - pgbackrest_backup_error_status
-//   - pgbackrest_backup_databases
 //
 // And returns info about last backups.
-func getBackupMetrics(config, configIncludePath, stanzaName string, backupData []backup, dbData []db, backupDBCount bool, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) lastBackupsStruct {
+func getBackupMetrics(stanzaName string, backupData []backup, dbData []db, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) lastBackupsStruct {
 	var (
-		err                     error
-		parseStanzaDataSpecific []stanza
-		blockIncr               string
+		blockIncr string
 	)
-	lastBackups := lastBackupsStruct{}
+	lastBackups := initLastBackupStruct()
 	// Each backup for current stanza.
 	for _, backup := range backupData {
 		// For pgBackRest >= v2.44 the functionality to perform a block incremental backup has appeared.
@@ -332,35 +332,6 @@ func getBackupMetrics(config, configIncludePath, stanzaName string, backupData [
 				stanzaName,
 			)
 		}
-		// If the calculation of the number of databases in backups is enabled.
-		// Information about number of databases in specific backup has appeared since pgBackRest v2.41.
-		// In versions < v2.41 this is missing and the metric does not need to be collected.
-		// getParsedSpecificBackupInfoData will return error in this case.
-		if backupDBCount {
-			// Try to get info for backup.
-			parseStanzaDataSpecific, err = getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, backup.Label, logger)
-			if err == nil {
-				// In a normal situation, only one element with one backup should be returned.
-				// If more than one element or one backup is returned, there is may be a bug in pgBackRest.
-				// If it's not a bug, then this part will need to be refactoring.
-				// Use *[]struct() type for backup.DatabaseRef.
-				if parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil {
-					// Number of databases in the last full backup.
-					setUpMetric(
-						pgbrStanzaBackupDatabasesMetric,
-						"pgbackrest_backup_databases",
-						float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
-						setUpMetricValueFun,
-						logger,
-						backup.Label,
-						backup.Type,
-						strconv.Itoa(backup.Database.ID),
-						strconv.Itoa(backup.Database.RepoKey),
-						stanzaName,
-					)
-				}
-			}
-		}
 		compareLastBackups(
 			&lastBackups,
 			time.Unix(backup.Timestamp.Stop, 0),
@@ -369,6 +340,39 @@ func getBackupMetrics(config, configIncludePath, stanzaName string, backupData [
 		)
 	}
 	return lastBackups
+}
+
+// Set backup metrics:
+//   - pgbackrest_backup_databases
+func getBackupDBCountMetrics(maxParallelProcesses int, config, configIncludePath, stanzaName string, backupData []backup, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
+	// Create a buffered channel to enforce maximum parallelism.
+	ch := make(chan struct{}, maxParallelProcesses)
+	var wg sync.WaitGroup
+	for _, backup := range backupData {
+		// Wait for an available slot.
+		ch <- struct{}{}
+		wg.Add(1)
+		go func(backupLabel, backupType, backupRepoID, backupRepoKey string) {
+			defer func() {
+				wg.Done()
+				<-ch
+			}()
+			processSpecificBackupData(
+				config,
+				configIncludePath,
+				stanzaName,
+				backupLabel,
+				backupType,
+				"pgbackrest_backup_databases",
+				pgbrStanzaBackupDatabasesMetric,
+				setUpMetricValueFun,
+				logger,
+				backupLabel,
+				backupRepoID,
+				backupRepoKey)
+		}(backup.Label, backup.Type, strconv.Itoa(backup.Database.ID), strconv.Itoa(backup.Database.RepoKey))
+	}
+	wg.Wait()
 }
 
 func resetBackupMetrics() {
@@ -382,4 +386,13 @@ func resetBackupMetrics() {
 	pgbrStanzaBackupRepoBackupSizeMapMetric.Reset()
 	pgbrStanzaBackupErrorMetric.Reset()
 	pgbrStanzaBackupDatabasesMetric.Reset()
+
+}
+
+func initLastBackupStruct() lastBackupsStruct {
+	lastBackups := lastBackupsStruct{}
+	lastBackups.full.backupType = fullLabel
+	lastBackups.diff.backupType = diffLabel
+	lastBackups.incr.backupType = incrLabel
+	return lastBackups
 }

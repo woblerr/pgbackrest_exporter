@@ -1,9 +1,11 @@
 package backrest
 
 import (
+	"sync"
 	"time"
 
 	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -37,15 +39,7 @@ var (
 
 // Set backup metrics:
 //   - pgbackrest_backup_since_last_completion_seconds
-//   - pgbackrest_backup_last_databases
-func getBackupLastMetrics(config, configIncludePath, stanzaName string, lastBackups lastBackupsStruct, backupDBCountLatest bool, currentUnixTime int64, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
-	var (
-		err                     error
-		parseStanzaDataSpecific []stanza
-	)
-	lastBackups.full.backupType = "full"
-	lastBackups.diff.backupType = "diff"
-	lastBackups.incr.backupType = "incr"
+func getBackupLastMetrics(stanzaName string, lastBackups lastBackupsStruct, currentUnixTime int64, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
 	// If full backup exists, the values of metrics for differential and
 	// incremental backups also will be set.
 	// If not - metrics won't be set.
@@ -80,67 +74,90 @@ func getBackupLastMetrics(config, configIncludePath, stanzaName string, lastBack
 			lastBackups.incr.backupType,
 			stanzaName,
 		)
-		// If the calculation of the number of databases in latest backups is enabled.
-		// Information about number of databases in specific backup has appeared since pgBackRest v2.41.
-		// In versions < v2.41 this is missing and the metric does not need to be collected.
-		// getParsedSpecificBackupInfoData will return error in this case.
-		if backupDBCountLatest {
-			// Try to get info for full backup.
-			parseStanzaDataSpecific, err = getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, lastBackups.full.backupLabel, logger)
-			if err == nil {
-				// In a normal situation, only one element with one backup should be returned.
-				// If more than one element or one backup is returned, there is may be a bug in pgBackRest.
-				// If it's not a bug, then this part will need to be refactoring.
-				// Use *[]struct() type for backup.DatabaseRef.
-				if parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil {
-					// Number of databases in the last full backup.
-					setUpMetric(
-						pgbrStanzaBackupLastDatabasesMetric,
-						"pgbackrest_backup_last_databases",
-						float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
-						setUpMetricValueFun,
-						logger,
-						lastBackups.full.backupType,
-						stanzaName,
-					)
-				}
-			}
-			// If name for diff backup is equal to full, there is no point in re-receiving data.
-			if lastBackups.diff.backupLabel != lastBackups.full.backupLabel {
-				parseStanzaDataSpecific, err = getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, lastBackups.diff.backupLabel, logger)
-			}
-			if err == nil {
-				if parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil {
-					// Number of databases in the last full or differential backup.
-					setUpMetric(
-						pgbrStanzaBackupLastDatabasesMetric,
-						"pgbackrest_backup_last_databases",
-						float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
-						setUpMetricValueFun,
-						logger,
-						lastBackups.diff.backupType,
-						stanzaName,
-					)
-				}
-			}
-			// If name for incr backup is equal to diff, there is no point in re-receiving data.
-			if lastBackups.incr.backupLabel != lastBackups.diff.backupLabel {
-				parseStanzaDataSpecific, err = getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, lastBackups.incr.backupLabel, logger)
-			}
-			if err == nil {
-				if parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil {
-					// Number of databases in the last full, differential or incremental backup.
-					setUpMetric(
-						pgbrStanzaBackupLastDatabasesMetric,
-						"pgbackrest_backup_last_databases",
-						float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
-						setUpMetricValueFun,
-						logger,
-						lastBackups.incr.backupType,
-						stanzaName,
-					)
-				}
-			}
+	}
+}
+
+// Set backup metrics:
+//   - pgbackrest_backup_last_databases
+func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, lastBackups lastBackupsStruct, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
+	// For diff and incr run in parallel.
+	var wg sync.WaitGroup
+	// If name for diff backup is equal to full, there is no point in re-receiving data.
+	if lastBackups.diff.backupLabel != lastBackups.full.backupLabel {
+		wg.Add(1)
+		go func(backupLabel, backupType string) {
+			defer wg.Done()
+			processSpecificBackupData(
+				config,
+				configIncludePath,
+				stanzaName,
+				backupLabel,
+				backupType,
+				"pgbackrest_backup_last_databases",
+				pgbrStanzaBackupLastDatabasesMetric,
+				setUpMetricValueFun,
+				logger)
+		}(lastBackups.diff.backupLabel, lastBackups.diff.backupType)
+	}
+	// If name for diff backup is equal to full, there is no point in re-receiving data.
+	if lastBackups.incr.backupLabel != lastBackups.diff.backupLabel {
+		wg.Add(1)
+		go func(backupLabel, backupType string) {
+			defer wg.Done()
+			processSpecificBackupData(
+				config,
+				configIncludePath,
+				stanzaName,
+				backupLabel,
+				backupType,
+				"pgbackrest_backup_last_databases",
+				pgbrStanzaBackupLastDatabasesMetric,
+				setUpMetricValueFun,
+				logger)
+		}(lastBackups.incr.backupLabel, lastBackups.incr.backupType)
+	}
+	// Try to get info for full backup.
+	parseStanzaDataSpecific, err := getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, lastBackups.full.backupLabel, logger)
+	if err != nil {
+		level.Error(logger).Log(
+			"msg", "Get data from pgBackRest failed",
+			"stanza", stanzaName,
+			"backup", lastBackups.full.backupLabel,
+			"err", err,
+		)
+	}
+	if checkBackupDatabaseRef(parseStanzaDataSpecific) {
+		// Number of databases in the last full backup.
+		setUpMetric(
+			pgbrStanzaBackupLastDatabasesMetric,
+			"pgbackrest_backup_last_databases",
+			float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
+			setUpMetricValueFun,
+			logger,
+			lastBackups.full.backupType,
+			stanzaName,
+		)
+		if lastBackups.diff.backupLabel == lastBackups.full.backupLabel {
+			setUpMetric(
+				pgbrStanzaBackupLastDatabasesMetric,
+				"pgbackrest_backup_last_databases",
+				float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
+				setUpMetricValueFun,
+				logger,
+				lastBackups.diff.backupType,
+				stanzaName,
+			)
+		}
+		if lastBackups.incr.backupLabel == lastBackups.diff.backupLabel {
+			setUpMetric(
+				pgbrStanzaBackupLastDatabasesMetric,
+				"pgbackrest_backup_last_databases",
+				float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
+				setUpMetricValueFun,
+				logger,
+				lastBackups.incr.backupType,
+				stanzaName,
+			)
 		}
 	}
 }

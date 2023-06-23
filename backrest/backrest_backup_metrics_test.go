@@ -23,8 +23,6 @@ import (
 //nolint:dupl
 func TestGetBackupMetrics(t *testing.T) {
 	type args struct {
-		config              string
-		configIncludePath   string
 		stanzaName          string
 		backupData          []backup
 		dbData              []db
@@ -33,10 +31,7 @@ func TestGetBackupMetrics(t *testing.T) {
 		testText            string
 		testLastBackups     lastBackupsStruct
 	}
-	templateMetrics := `# HELP pgbackrest_backup_databases Number of databases in backup.
-# TYPE pgbackrest_backup_databases gauge
-pgbackrest_backup_databases{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 1
-# HELP pgbackrest_backup_delta_bytes Amount of data in the database to actually backup.
+	templateMetrics := `# HELP pgbackrest_backup_delta_bytes Amount of data in the database to actually backup.
 # TYPE pgbackrest_backup_delta_bytes gauge
 pgbackrest_backup_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
 # HELP pgbackrest_backup_duration_seconds Backup duration.
@@ -69,8 +64,6 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 		{
 			"getBackupMetrics",
 			args{
-				"",
-				"",
 				templateStanza(
 					"000000010000000000000004",
 					"000000010000000000000001",
@@ -120,7 +113,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 			mockData = tt.mockTestData
 			execCommand = fakeExecCommand
 			defer func() { execCommand = exec.Command }()
-			testLastBackups := getBackupMetrics(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.backupDBCount, tt.args.setUpMetricValueFun, logger)
+			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupInfoMetric,
@@ -132,7 +125,6 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 				pgbrStanzaBackupRepoBackupSizeMetric,
 				pgbrStanzaBackupRepoBackupSizeMapMetric,
 				pgbrStanzaBackupErrorMetric,
-				pgbrStanzaBackupDatabasesMetric,
 			)
 			metricFamily, err := reg.Gather()
 			if err != nil {
@@ -162,11 +154,8 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 // pgBackrest version < 2.44.
 //
 //nolint:dupl
-
 func TestGetRepoMapMetricsAbsent(t *testing.T) {
 	type args struct {
-		config              string
-		configIncludePath   string
 		stanzaName          string
 		backupData          []backup
 		dbData              []db
@@ -205,8 +194,6 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 		{
 			"getBackupMetrics",
 			args{
-				"",
-				"",
 				templateStanzaRepoMapSizesAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
@@ -240,7 +227,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 			mockData = tt.mockTestData
 			execCommand = fakeExecCommand
 			defer func() { execCommand = exec.Command }()
-			testLastBackups := getBackupMetrics(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.backupDBCount, tt.args.setUpMetricValueFun, logger)
+			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupInfoMetric,
@@ -250,7 +237,6 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 				pgbrStanzaBackupRepoBackupSetSizeMetric,
 				pgbrStanzaBackupRepoBackupSizeMetric,
 				pgbrStanzaBackupErrorMetric,
-				pgbrStanzaBackupDatabasesMetric,
 			)
 			metricFamily, err := reg.Gather()
 			if err != nil {
@@ -283,8 +269,6 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 //nolint:dupl
 func TestGetBackupMetricsDBsAbsent(t *testing.T) {
 	type args struct {
-		config              string
-		configIncludePath   string
 		stanzaName          string
 		backupData          []backup
 		dbData              []db
@@ -323,8 +307,6 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 		{
 			"getBackupMetrics",
 			args{
-				"",
-				"",
 				templateStanzaRepoMapSizesAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
@@ -361,7 +343,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 			mockData = tt.mockTestData
 			execCommand = fakeExecCommand
 			defer func() { execCommand = exec.Command }()
-			testLastBackups := getBackupMetrics(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.backupDBCount, tt.args.setUpMetricValueFun, logger)
+			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupInfoMetric,
@@ -408,8 +390,6 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 //nolint:dupl
 func TestGetBackupMetricsErrorAbsent(t *testing.T) {
 	type args struct {
-		config              string
-		configIncludePath   string
 		stanzaName          string
 		backupData          []backup
 		dbData              []db
@@ -445,8 +425,6 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 		{
 			"getBackupMetricsErrorAbsent",
 			args{
-				"",
-				"",
 				templateStanzaErrorAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
@@ -477,7 +455,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 			mockData = tt.mockTestData
 			execCommand = fakeExecCommand
 			defer func() { execCommand = exec.Command }()
-			testLastBackups := getBackupMetrics(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.backupDBCount, tt.args.setUpMetricValueFun, logger)
+			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupInfoMetric,
@@ -524,8 +502,6 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 //nolint:dupl
 func TestGetBackupMetricsRepoAbsent(t *testing.T) {
 	type args struct {
-		config              string
-		configIncludePath   string
 		stanzaName          string
 		backupData          []backup
 		dbData              []db
@@ -561,8 +537,6 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 		{
 			"getBackupMetricsRepoAbsent",
 			args{
-				"",
-				"",
 				templateStanzaRepoAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
@@ -593,7 +567,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 			mockData = tt.mockTestData
 			execCommand = fakeExecCommand
 			defer func() { execCommand = exec.Command }()
-			testLastBackups := getBackupMetrics(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.backupDBCount, tt.args.setUpMetricValueFun, logger)
+			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupInfoMetric,
@@ -626,8 +600,6 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 
 func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 	type args struct {
-		config              string
-		configIncludePath   string
 		stanzaName          string
 		backupData          []backup
 		dbData              []db
@@ -646,8 +618,6 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 		{
 			"getBackupMetricsLogError",
 			args{
-				"",
-				"",
 				templateStanza(
 					"000000010000000000000004",
 					"000000010000000000000001",
@@ -671,8 +641,8 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 					100).DB,
 				true,
 				fakeSetUpMetricValue,
-				9,
-				9,
+				8,
+				8,
 			},
 			mockStruct{
 				`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
@@ -696,8 +666,6 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 		{
 			"getBackupMetricsLogErrorWithRepo",
 			args{
-				"",
-				"",
 				templateStanzaRepoMapSizesAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
@@ -718,8 +686,8 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 					2969514).DB,
 				true,
 				fakeSetUpMetricValue,
-				8,
-				8,
+				7,
+				7,
 			},
 			mockStruct{
 				`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
@@ -746,7 +714,7 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 			defer func() { execCommand = exec.Command }()
 			out := &bytes.Buffer{}
 			lc := log.NewLogfmtLogger(out)
-			getBackupMetrics(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.backupDBCount, tt.args.setUpMetricValueFun, lc)
+			getBackupMetrics(tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, lc)
 			errorsOutputCount := strings.Count(out.String(), "level=error")
 			debugsOutputCount := strings.Count(out.String(), "level=debug")
 			if tt.args.errorsCount != errorsOutputCount || tt.args.debugsCount != debugsOutputCount {

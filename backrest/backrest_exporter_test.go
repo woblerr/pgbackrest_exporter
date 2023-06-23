@@ -51,14 +51,15 @@ func TestSetPromPortAndPath(t *testing.T) {
 
 func TestGetPgBackRestInfo(t *testing.T) {
 	type args struct {
-		config              string
-		configIncludePath   string
-		backupType          string
-		stanzas             []string
-		stanzasExclude      []string
-		backupDBCount       bool
-		backupDBCountLatest bool
-		verboseWAL          bool
+		config                         string
+		configIncludePath              string
+		backupType                     string
+		stanzas                        []string
+		stanzasExclude                 []string
+		backupDBCount                  bool
+		backupDBCountLatest            bool
+		verboseWAL                     bool
+		backupDBCountParallelProcesses int
 	}
 	tests := []struct {
 		name         string
@@ -68,7 +69,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 	}{
 		{
 			"GetPgBackRestInfoGoodDataReturn",
-			args{"", "", "", []string{""}, []string{""}, true, true, false},
+			args{"", "", "", []string{""}, []string{""}, true, true, false, 1},
 			mockStruct{
 				`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 					`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
@@ -86,7 +87,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 			""},
 		{
 			"GetPgBackRestInfoGoodDataReturnWithWarn",
-			args{"", "", "", []string{""}, []string{""}, true, true, false},
+			args{"", "", "", []string{""}, []string{""}, true, true, false, 1},
 			mockStruct{
 				`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 					`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
@@ -104,7 +105,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 			`msg="pgBackRest message" err="WARN: environment contains invalid option 'test'`},
 		{
 			"GetPgBackRestInfoBadDataReturn",
-			args{"", "", "", []string{""}, []string{""}, false, false, false},
+			args{"", "", "", []string{""}, []string{""}, false, false, false, 1},
 			mockStruct{
 				``,
 				`msg="pgBackRest message" err="ERROR: [029]: missing '=' in key/value at line 9: test"`,
@@ -113,7 +114,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 			`msg="Get data from pgBackRest failed" err="exit status 29`},
 		{
 			"GetPgBackRestInfoZeroDataReturn",
-			args{"", "", "", []string{""}, []string{""}, false, false, false},
+			args{"", "", "", []string{""}, []string{""}, false, false, false, 1},
 			mockStruct{
 				`[]`,
 				``,
@@ -122,7 +123,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 			`msg="No backup data returned"`},
 		{
 			"GetPgBackRestInfoJsonUnmarshalFail",
-			args{"", "", "", []string{""}, []string{""}, false, false, false},
+			args{"", "", "", []string{""}, []string{""}, false, false, false, 1},
 			mockStruct{
 				`[{}`,
 				``,
@@ -131,7 +132,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 			`msg="Parse JSON failed" err="unexpected end of JSON input"`},
 		{
 			"GetPgBackRestInfoEqualIncludeExcludeLists",
-			args{"", "", "", []string{"demo"}, []string{"demo"}, false, false, false},
+			args{"", "", "", []string{"demo"}, []string{"demo"}, false, false, false, 1},
 			mockStruct{
 				``,
 				``,
@@ -156,6 +157,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 				tt.args.backupDBCount,
 				tt.args.backupDBCountLatest,
 				tt.args.verboseWAL,
+				tt.args.backupDBCountParallelProcesses,
 				lc,
 			)
 			if !strings.Contains(out.String(), tt.testText) {

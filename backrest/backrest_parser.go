@@ -28,8 +28,13 @@ type lastBackupsStruct struct {
 
 var execCommand = exec.Command
 
-// https://golang.org/pkg/time/#Time.Format
-const layout = "2006-01-02 15:04:05"
+const (
+	// https://golang.org/pkg/time/#Time.Format
+	layout    = "2006-01-02 15:04:05"
+	fullLabel = "full"
+	diffLabel = "diff"
+	incrLabel = "incr"
+)
 
 func returnDefaultExecArgs() []string {
 	// Base exec arguments.
@@ -276,4 +281,41 @@ func resetMetrics() {
 	resetBackupMetrics()
 	resetLastBackupMetrics()
 	resetWALMetrics()
+}
+
+func checkBackupDatabaseRef(backupData []stanza) bool {
+	// In a normal situation, only one element with one backup should be returned.
+	// If more than one element or one backup is returned, there is may be a bug in pgBackRest.
+	// If it's not a bug, then this part will need to be refactoring.
+	// Use *[]struct() type for backup.DatabaseRef.
+	if (len(backupData) != 0 && len(backupData[0].Backup) != 0) &&
+		backupData[0].Backup[0].DatabaseRef != nil {
+		return true
+	}
+	return false
+}
+
+func processSpecificBackupData(config, configIncludePath, stanzaName, backupLabel, backupType, metricName string, metric *prometheus.GaugeVec, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger, addLabels ...string) {
+	parseStanzaDataSpecific, err := getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, backupLabel, logger)
+	if err != nil {
+		level.Error(logger).Log(
+			"msg", "Get data from pgBackRest failed",
+			"stanza", stanzaName,
+			"backup", backupLabel,
+			"err", err,
+		)
+		return
+	}
+	labels := append([]string{backupType, stanzaName}, addLabels...)
+	if checkBackupDatabaseRef(parseStanzaDataSpecific) {
+		// Number of databases in the last differential or incremental backup.
+		setUpMetric(
+			metric,
+			metricName,
+			float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
+			setUpMetricValueFun,
+			logger,
+			labels...,
+		)
+	}
 }
