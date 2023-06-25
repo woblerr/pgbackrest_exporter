@@ -332,12 +332,7 @@ func getBackupMetrics(stanzaName string, backupData []backup, dbData []db, setUp
 				stanzaName,
 			)
 		}
-		compareLastBackups(
-			&lastBackups,
-			time.Unix(backup.Timestamp.Stop, 0),
-			backup.Label,
-			backup.Type,
-		)
+		compareLastBackups(&lastBackups, backup)
 	}
 	return lastBackups
 }

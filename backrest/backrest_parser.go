@@ -16,9 +16,17 @@ import (
 type setUpMetricValueFunType func(metric *prometheus.GaugeVec, value float64, labels ...string) error
 
 type backupStruct struct {
-	backupLabel string
-	backupType  string
-	backupTime  time.Time
+	backupLabel        string
+	backupType         string
+	backupTime         time.Time
+	backupDuration     float64
+	backupDelta        int64
+	backupSize         int64
+	backupRepoDelta    int64
+	backupRepoDeltaMap *int64
+	backupRepoSize     *int64
+	backupRepoSizeMap  *int64
+	backupError        *bool
 }
 type lastBackupsStruct struct {
 	full backupStruct
@@ -184,34 +192,85 @@ func setUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...stri
 	return nil
 }
 
-func compareLastBackups(backups *lastBackupsStruct, currentBackupTime time.Time, currentBackupLabel, currentBackupType string) {
-	switch currentBackupType {
+func compareLastBackups(backups *lastBackupsStruct, currentBackup backup) {
+	currentBackupTime := time.Unix(currentBackup.Timestamp.Stop, 0)
+	curentBackupDuration := time.Unix(currentBackup.Timestamp.Stop, 0).Sub(time.Unix(currentBackup.Timestamp.Start, 0)).Seconds()
+	currentBackupLabel := currentBackup.Label
+	switch currentBackup.Type {
 	case "full":
 		if currentBackupTime.After(backups.full.backupTime) {
 			backups.full.backupTime = currentBackupTime
 			backups.full.backupLabel = currentBackupLabel
+			backups.full.backupDuration = curentBackupDuration
+			backups.full.backupDelta = currentBackup.Info.Delta
+			backups.full.backupSize = currentBackup.Info.Size
+			backups.full.backupRepoDelta = currentBackup.Info.Repository.Delta
+			backups.full.backupRepoDeltaMap = currentBackup.Info.Repository.DeltaMap
+			backups.full.backupRepoSize = currentBackup.Info.Repository.Size
+			backups.full.backupRepoSizeMap = currentBackup.Info.Repository.SizeMap
+			backups.full.backupError = currentBackup.Error
 		}
 		if currentBackupTime.After(backups.diff.backupTime) {
 			backups.diff.backupTime = currentBackupTime
 			backups.diff.backupLabel = currentBackupLabel
+			backups.diff.backupDuration = curentBackupDuration
+			backups.diff.backupDelta = currentBackup.Info.Delta
+			backups.diff.backupSize = currentBackup.Info.Size
+			backups.diff.backupRepoDelta = currentBackup.Info.Repository.Delta
+			backups.diff.backupRepoDeltaMap = currentBackup.Info.Repository.DeltaMap
+			backups.diff.backupRepoSize = currentBackup.Info.Repository.Size
+			backups.diff.backupRepoSizeMap = currentBackup.Info.Repository.SizeMap
+			backups.diff.backupError = currentBackup.Error
 		}
 		if currentBackupTime.After(backups.incr.backupTime) {
 			backups.incr.backupTime = currentBackupTime
 			backups.incr.backupLabel = currentBackupLabel
+			backups.incr.backupDuration = curentBackupDuration
+			backups.incr.backupDelta = currentBackup.Info.Delta
+			backups.incr.backupSize = currentBackup.Info.Size
+			backups.incr.backupRepoDelta = currentBackup.Info.Repository.Delta
+			backups.incr.backupRepoDeltaMap = currentBackup.Info.Repository.DeltaMap
+			backups.incr.backupRepoSize = currentBackup.Info.Repository.Size
+			backups.incr.backupRepoSizeMap = currentBackup.Info.Repository.SizeMap
+			backups.incr.backupError = currentBackup.Error
 		}
 	case "diff":
 		if currentBackupTime.After(backups.diff.backupTime) {
 			backups.diff.backupTime = currentBackupTime
 			backups.diff.backupLabel = currentBackupLabel
+			backups.diff.backupDuration = curentBackupDuration
+			backups.diff.backupDelta = currentBackup.Info.Delta
+			backups.diff.backupSize = currentBackup.Info.Size
+			backups.diff.backupRepoDelta = currentBackup.Info.Repository.Delta
+			backups.diff.backupRepoDeltaMap = currentBackup.Info.Repository.DeltaMap
+			backups.diff.backupRepoSize = currentBackup.Info.Repository.Size
+			backups.diff.backupRepoSizeMap = currentBackup.Info.Repository.SizeMap
+			backups.diff.backupError = currentBackup.Error
 		}
 		if currentBackupTime.After(backups.incr.backupTime) {
 			backups.incr.backupTime = currentBackupTime
 			backups.incr.backupLabel = currentBackupLabel
+			backups.incr.backupDuration = curentBackupDuration
+			backups.incr.backupDelta = currentBackup.Info.Delta
+			backups.incr.backupSize = currentBackup.Info.Size
+			backups.incr.backupRepoDelta = currentBackup.Info.Repository.Delta
+			backups.incr.backupRepoDeltaMap = currentBackup.Info.Repository.DeltaMap
+			backups.incr.backupRepoSize = currentBackup.Info.Repository.Size
+			backups.incr.backupRepoSizeMap = currentBackup.Info.Repository.SizeMap
+			backups.incr.backupError = currentBackup.Error
 		}
 	case "incr":
 		if currentBackupTime.After(backups.incr.backupTime) {
 			backups.incr.backupTime = currentBackupTime
 			backups.incr.backupLabel = currentBackupLabel
+			backups.incr.backupDuration = curentBackupDuration
+			backups.incr.backupDelta = currentBackup.Info.Delta
+			backups.incr.backupSize = currentBackup.Info.Size
+			backups.incr.backupRepoDelta = currentBackup.Info.Repository.Delta
+			backups.incr.backupRepoDeltaMap = currentBackup.Info.Repository.DeltaMap
+			backups.incr.backupRepoSize = currentBackup.Info.Repository.Size
+			backups.incr.backupRepoSizeMap = currentBackup.Info.Repository.SizeMap
+			backups.incr.backupError = currentBackup.Error
 		}
 	}
 }
