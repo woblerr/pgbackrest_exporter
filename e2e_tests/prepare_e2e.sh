@@ -12,6 +12,7 @@ PG_DATA="/var/lib/postgresql/13/${PG_CLUSTER}"
 BACKREST_STANZA="demo"
 EXPORTER_COMMAND="/etc/pgbackrest/pgbackrest_exporter \
 --backrest.database-count \
+--backrest.database-parallel-processes=2 \
 --backrest.database-count-latest"
 
 # Enable checksums.
