@@ -245,17 +245,17 @@ pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 1
 //nolint:unparam
 func templateLastBackup() lastBackupsStruct {
 	return lastBackupsStruct{
-		backupStruct{"20210607-092423F", "full", time.Unix(1623706322, 0)},
-		backupStruct{"20210607-092423F", "diff", time.Unix(1623706322, 0)},
-		backupStruct{"20210607-092423F", "incr", time.Unix(1623706322, 0)},
+		backupStruct{"20210607-092423F", "full", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false)},
+		backupStruct{"20210607-092423F", "diff", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false)},
+		backupStruct{"20210607-092423F", "incr", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false)},
 	}
 }
 
 //nolint:unparam
 func templateLastBackupDifferent() lastBackupsStruct {
 	return lastBackupsStruct{
-		backupStruct{"20220926-201857F", "full", time.Unix(1623706322, 0)},
-		backupStruct{"20220926-201857F_20220926-201901D", "diff", time.Unix(1623706322, 0)},
-		backupStruct{"20220926-201857F_20220926-202454I", "incr", time.Unix(1623706322, 0)},
+		backupStruct{"20220926-201857F", "full", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false)},
+		backupStruct{"20220926-201857F_20220926-201901D", "diff", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false)},
+		backupStruct{"20220926-201857F_20220926-202454I", "incr", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false)},
 	}
 }
