@@ -209,3 +209,7 @@ func getLogger() log.Logger {
 func ptrToVal[T any](v *T) T {
 	return *v
 }
+
+func valToPtr[T any](v T) *T {
+	return &v
+}

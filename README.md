@@ -85,6 +85,38 @@ The metrics provided by the client.
 
     Labels: backup_type, stanza.
 
+* `pgbackrest_backup_last_duration_seconds` - backup duration for the last full, differential or incremental backup.
+
+    Labels: backup_type, stanza.
+
+* `pgbackrest_backup_last_size_bytes` - full uncompressed size of the database in the last full, differential or incremental backup.
+
+    Labels: backup_type, stanza.
+
+* `pgbackrest_backup_last_delta_bytes` - amount of data in the database to actually backup in the last full, differential or incremental backup.
+
+    Labels: backup_type, stanza.
+
+* `pgbackrest_backup_last_repo_size_bytes` - full compressed files size to restore the database from the last full, differential or incremental backup.
+
+    Labels: backup_type, stanza.
+
+* `pgbackrest_backup_last_repo_delta_bytes` - compressed files size in the last full, differential or incremental backup.
+
+    Labels: backup_type, stanza.
+
+* `pgbackrest_backup_last_repo_size_map_bytes` - size of block incremental map in the last full, differential or incremental backup.
+
+    Labels: backup_type, stanza.
+
+* `pgbackrest_backup_last_repo_delta_map_bytes` - size of block incremental delta map in the last full, differential or incremental backup.
+
+    Labels: backup_type, stanza.
+
+* `pgbackrest_backup_last_error_status` - error status in the last full, differential or incremental backup
+
+    Labels: backup_type, stanza.
+
 * `pgbackrest_wal_archive_status` - current WAL archive status.
 
     Labels: database_id, pg_version, repo_key, stanza, wal_max, wal_min.
@@ -168,6 +200,8 @@ Flags:
       --backrest.backup-type=""  Specific backup type for collecting metrics. One of: [full, incr, diff].
       --[no-]backrest.database-count  
                                  Exposing the number of databases in backups.
+      --backrest.database-parallel-processes=1  
+                                 Number of parallel processes for collecting information about databases.
       --[no-]backrest.database-count-latest  
                                  Exposing the number of databases in the latest backups.
       --[no-]backrest.verbose-wal  
@@ -213,6 +247,9 @@ This flag works for `pgBackRest >= v2.41`.<br>
 For earlier pgBackRest versions there will be an error like: `option 'set' is currently only valid for text output`.<br>
 For a significant numbers of stanzas and backups, this may require much more additional time to collect metrics. Each stanza requires pgBackRest execution for backups to get data.
 
+The flag `--backrest.database-parallel-processes` allows to increase the number of parallel processes for collecting information about databases in backups.<br>
+This flag is valid only when the flag `--backrest.database-count` is specified.
+
 When flag `--backrest.database-count-latest` is specified - information about the number of databases in the last full, differential or incremental backup is collected.<br>
 This flag works for `pgBackRest >= v2.41`.<br>
 For earlier pgBackRest versions there will be an error like: `option 'set' is currently only valid for text output`.<br>
@@ -234,6 +271,7 @@ Environment variables supported by this image:
 * `BACKUP_TYPE` - specific backup type for collecting metrics, default `""`;
 * `VERBOSE_WAL` - enabling additional labels for WAL metrics, default `false`;
 * `DATABASE_COUNT` - exposing the number of databases in backups, default `false`;
+* `DATABASE_PARALLEL_PROCESSES` - number of parallel processes for collecting information about databases in backups, default `1`;
 * `DATABASE_COUNT_LATEST` - exposing the number of databases in the latest backups, default `false`.
 
 #### Pull

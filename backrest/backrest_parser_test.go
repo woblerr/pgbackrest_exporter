@@ -231,15 +231,40 @@ func TestConcatExecArgs(t *testing.T) {
 }
 
 func TestCompareLastBackups(t *testing.T) {
-	fullDate := parseDate("2021-07-21 00:01:01")
-	diffDate := parseDate("2021-07-21 00:05:01")
-	incrDate := parseDate("2021-07-21 00:10:01")
-	lastBackups := lastBackupsStruct{}
+	var (
+		size    *int64
+		archive struct {
+			StartWAL string "json:\"start\""
+			StopWAL  string "json:\"stop\""
+		}
+		backrestInfo struct {
+			Format  int    "json:\"format\""
+			Version string "json:\"version\""
+		}
+		link *[]struct {
+			Destination string "json:\"destination\""
+			Name        string "json:\"name\""
+		}
+		tablespace *[]struct {
+			Destination string `json:"destination"`
+			Name        string `json:"name"`
+			OID         int    `json:"oid"`
+		}
+		lsn struct {
+			StartLSN string "json:\"start\""
+			StopLSN  string "json:\"stop\""
+		}
+	)
+	fullDate := parseDate("2021-07-21 00:01:04")
+	diffDate := parseDate("2021-07-21 00:05:04")
+	incrDate := parseDate("2021-07-21 00:10:04")
+	backuptTestRepoDeltaMap := valToPtr(int64(12))
+	backupTestRepoSizeMap := valToPtr(int64(100))
+	BackupTestError := valToPtr(false)
+	lastBackups := initLastBackupStruct()
 	type args struct {
-		backups       *lastBackupsStruct
-		currentBackup time.Time
-		backupLabel   string
-		backupType    string
+		backups    *lastBackupsStruct
+		backupTest backup
 	}
 	tests := []struct {
 		name string
@@ -247,34 +272,125 @@ func TestCompareLastBackups(t *testing.T) {
 		want lastBackupsStruct
 	}{
 		{"compareLastBackupsFull",
-			args{&lastBackups, fullDate, "20210721-000101F", "full"},
+			args{
+				&lastBackups,
+				backup{
+					archive,
+					backrestInfo,
+					databaseID{1, 1},
+					nil,
+					BackupTestError,
+					backupInfo{
+						24316343,
+						struct {
+							Delta    int64  "json:\"delta\""
+							DeltaMap *int64 "json:\"delta-map\""
+							Size     *int64 "json:\"size\""
+							SizeMap  *int64 "json:\"size-map\""
+						}{2969514, backuptTestRepoDeltaMap, size, backupTestRepoSizeMap},
+						24316343,
+					},
+					"20210721-000101F",
+					link,
+					lsn,
+					"",
+					[]string{""},
+					tablespace,
+					struct {
+						Start int64 "json:\"start\""
+						Stop  int64 "json:\"stop\""
+					}{1626825661, 1626825664},
+					"full",
+				},
+			},
 			lastBackupsStruct{
-				backupStruct{"20210721-000101F", "", fullDate},
-				backupStruct{"20210721-000101F", "", fullDate},
-				backupStruct{"20210721-000101F", "", fullDate},
+				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, BackupTestError},
+				backupStruct{"20210721-000101F", "diff", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, BackupTestError},
+				backupStruct{"20210721-000101F", "incr", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, BackupTestError},
 			},
 		},
 		{"compareLastBackupsDiff",
-			args{&lastBackups, diffDate, "20210721-000101F_20210721-000501D", "diff"},
+			args{
+				&lastBackups,
+				backup{
+					archive,
+					backrestInfo,
+					databaseID{1, 1},
+					nil,
+					BackupTestError,
+					backupInfo{
+						2431634,
+						struct {
+							Delta    int64  "json:\"delta\""
+							DeltaMap *int64 "json:\"delta-map\""
+							Size     *int64 "json:\"size\""
+							SizeMap  *int64 "json:\"size-map\""
+						}{296951, backuptTestRepoDeltaMap, size, backupTestRepoSizeMap},
+						2431634,
+					},
+					"20210721-000101F_20210721-000501D",
+					link,
+					lsn,
+					"20210721-000101F",
+					[]string{""},
+					tablespace,
+					struct {
+						Start int64 "json:\"start\""
+						Stop  int64 "json:\"stop\""
+					}{1626825901, 1626825904},
+					"diff",
+				},
+			},
 			lastBackupsStruct{
-				backupStruct{"20210721-000101F", "", fullDate},
-				backupStruct{"20210721-000101F_20210721-000501D", "", diffDate},
-				backupStruct{"20210721-000101F_20210721-000501D", "", diffDate},
+				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, BackupTestError},
+				backupStruct{"20210721-000101F_20210721-000501D", "diff", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, BackupTestError},
+				backupStruct{"20210721-000101F_20210721-000501D", "incr", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, BackupTestError},
 			},
 		},
+
 		{"compareLastBackupsIncr",
-			args{&lastBackups, incrDate, "20210721-000101F_20210721-001001I", "incr"},
+			args{
+				&lastBackups,
+				backup{
+					archive,
+					backrestInfo,
+					databaseID{1, 1},
+					nil,
+					BackupTestError,
+					backupInfo{
+						243163,
+						struct {
+							Delta    int64  "json:\"delta\""
+							DeltaMap *int64 "json:\"delta-map\""
+							Size     *int64 "json:\"size\""
+							SizeMap  *int64 "json:\"size-map\""
+						}{29695, backuptTestRepoDeltaMap, size, backupTestRepoSizeMap},
+						243163,
+					},
+					"20210721-000101F_20210721-001001I",
+					link,
+					lsn,
+					"20210721-000101F_20210721-000501D",
+					[]string{""},
+					tablespace,
+					struct {
+						Start int64 "json:\"start\""
+						Stop  int64 "json:\"stop\""
+					}{1626826201, 1626826204},
+					"incr",
+				},
+			},
 			lastBackupsStruct{
-				backupStruct{"20210721-000101F", "", fullDate},
-				backupStruct{"20210721-000101F_20210721-000501D", "", diffDate},
-				backupStruct{"20210721-000101F_20210721-001001I", "", incrDate},
+				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, BackupTestError},
+				backupStruct{"20210721-000101F_20210721-000501D", "diff", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, BackupTestError},
+				backupStruct{"20210721-000101F_20210721-001001I", "incr", incrDate, 3, 243163, 243163, 29695, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, BackupTestError},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			compareLastBackups(tt.args.backups, tt.args.currentBackup, tt.args.backupLabel, tt.args.backupType)
-			if !reflect.DeepEqual(*tt.args.backups, tt.want) {
+			compareLastBackups(tt.args.backups, tt.args.backupTest)
+			if *tt.args.backups != tt.want {
 				t.Errorf("\nVariables do not match:\n%v\nwant:\n%v", *tt.args.backups, tt.want)
 			}
 		})
@@ -661,7 +777,11 @@ func templateStanzaRepoAbsent(walMax, walMin string, size int64) stanza {
 }
 
 func parseDate(value string) time.Time {
-	valueReturn, err := time.Parse(layout, value)
+	loc, err := time.LoadLocation("Local")
+	if err != nil {
+		panic(err)
+	}
+	valueReturn, err := time.ParseInLocation(layout, value, loc)
 	if err != nil {
 		panic(err)
 	}
@@ -804,28 +924,28 @@ func TestCheckBackupDatabaseRef(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "Empty backupData",
+			name: "EmptyBackupData",
 			args: struct{ backupData []stanza }{
 				backupData: []stanza{},
 			},
 			want: false,
 		},
 		{
-			name: "Empty backup",
+			name: "EmptyBackup",
 			args: struct{ backupData []stanza }{
 				backupData: []stanza{{Backup: []backup{}}},
 			},
 			want: false,
 		},
 		{
-			name: "Nil DatabaseRef",
+			name: "NilDatabaseRef",
 			args: struct{ backupData []stanza }{
 				backupData: []stanza{{Backup: []backup{{DatabaseRef: nil}}}},
 			},
 			want: false,
 		},
 		{
-			name: "Non-nil DatabaseRef",
+			name: "NonNilDatabaseRef",
 			args: struct{ backupData []stanza }{
 				backupData: []stanza{{Backup: []backup{{DatabaseRef: &[]databaseRef{{"postgres", 13425}}}}}},
 			},

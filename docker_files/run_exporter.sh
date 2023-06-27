@@ -16,7 +16,7 @@ EXPORTER_COMMAND="/etc/pgbackrest/pgbackrest_exporter \
 [ "${VERBOSE_WAL}" == "true" ] &&  EXPORTER_COMMAND="${EXPORTER_COMMAND} --backrest.verbose-wal"
 
 # Check variable for exposing the number of databases in backups.
-[ "${DATABASE_COUNT}" == "true" ] &&  EXPORTER_COMMAND="${EXPORTER_COMMAND} --backrest.database-count"
+[ "${DATABASE_COUNT}" == "true" ] &&  EXPORTER_COMMAND="${EXPORTER_COMMAND} --backrest.database-count --backrest.database-parallel-processes=${DATABASE_PARALLEL_PROCESSES}"
 
 # Check variable for exposing the number of databases in the latest backups.
 [ "${DATABASE_COUNT_LATEST}" == "true" ] &&  EXPORTER_COMMAND="${EXPORTER_COMMAND} --backrest.database-count-latest"
