@@ -129,6 +129,16 @@ The metrics provided by the client.
 
     Labels: version.
 
+### Additional description of metrics
+
+For `pgbackrest_*_last_*` metrics for differential backups (`backup_type="diff"`) the following logic is applied:
+* if the last backup was full, the metric will take full backup value;
+* otherwise, the value will be set.
+
+For `pgbackrest_*_last_*` metrics for incremental backups (`backup_type="incr"`) the following logic is applied:
+* if the last backup was full or differential, the metric will take full or differential backup value;
+* otherwise, the value will be set. 
+
 ## Compatibility with pgBackRest versions
 
 The number of collected metrics may vary depending on pgBackRest version. 
@@ -210,7 +220,7 @@ Flags:
       --log.format=logfmt        Output format of log messages. One of: [logfmt, json]
 ```
 
-#### Additional description of flags.
+#### Additional description of flags
 
 Custom `config` and/or custom `config-include-path` for `pgbackrest` command can be specified via `--backrest.config` and `--backrest.config-include-path` flags. Full paths must be specified.<br>
 For example, `--backrest.config=/tmp/pgbackrest.conf` and/or `--backrest.config-include-path=/tmp/pgbackrest/conf.d`.
