@@ -271,6 +271,7 @@ Environment variables supported by this image:
 * `BACKUP_TYPE` - specific backup type for collecting metrics, default `""`;
 * `VERBOSE_WAL` - enabling additional labels for WAL metrics, default `false`;
 * `DATABASE_COUNT` - exposing the number of databases in backups, default `false`;
+* `DATABASE_PARALLEL_PROCESSES` - number of parallel processes for collecting information about databases in backups, default `1`;
 * `DATABASE_COUNT_LATEST` - exposing the number of databases in the latest backups, default `false`.
 
 #### Pull
