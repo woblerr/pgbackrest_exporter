@@ -200,6 +200,8 @@ Flags:
       --backrest.backup-type=""  Specific backup type for collecting metrics. One of: [full, incr, diff].
       --[no-]backrest.database-count  
                                  Exposing the number of databases in backups.
+      --backrest.database-parallel-processes=1  
+                                 Number of parallel processes for collecting information about databases.
       --[no-]backrest.database-count-latest  
                                  Exposing the number of databases in the latest backups.
       --[no-]backrest.verbose-wal  
@@ -244,6 +246,9 @@ When flag `--backrest.database-count` is specified - information about the numbe
 This flag works for `pgBackRest >= v2.41`.<br>
 For earlier pgBackRest versions there will be an error like: `option 'set' is currently only valid for text output`.<br>
 For a significant numbers of stanzas and backups, this may require much more additional time to collect metrics. Each stanza requires pgBackRest execution for backups to get data.
+
+The flag `--backrest.database-parallel-processes` allows to increase the number of parallel processes for collecting information about databases in backups.<br>
+This flag is valid only when the flag `--backrest.database-count` is specified.
 
 When flag `--backrest.database-count-latest` is specified - information about the number of databases in the last full, differential or incremental backup is collected.<br>
 This flag works for `pgBackRest >= v2.41`.<br>
