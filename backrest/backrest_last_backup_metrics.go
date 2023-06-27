@@ -80,14 +80,14 @@ var (
 			"stanza"})
 	pgbrStanzaBackupLastRepoBackupSizeMapMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_last_repo_delta_map_bytes",
-		Help: "Size of block incremental delta map in the last full, differential or incremental backup..",
+		Help: "Size of block incremental delta map in the last full, differential or incremental backup.",
 	},
 		[]string{
 			"backup_type",
 			"stanza"})
 	pgbrStanzaBackupLastErrorMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_last_error_status",
-		Help: "Backup error status.",
+		Help: "Error status in the last full, differential or incremental backup.",
 	},
 		[]string{
 			"backup_type",

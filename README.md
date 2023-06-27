@@ -85,6 +85,38 @@ The metrics provided by the client.
 
     Labels: backup_type, stanza.
 
+* `pgbackrest_backup_last_duration_seconds` - backup duration for the last full, differential or incremental backup.
+
+    Labels: backup_type, stanza.
+
+* `pgbackrest_backup_last_size_bytes` - full uncompressed size of the database in the last full, differential or incremental backup.
+
+    Labels: backup_type, stanza.
+
+* `pgbackrest_backup_last_delta_bytes` - amount of data in the database to actually backup in the last full, differential or incremental backup.
+
+    Labels: backup_type, stanza.
+
+* `pgbackrest_backup_last_repo_size_bytes` - full compressed files size to restore the database from the last full, differential or incremental backup.
+
+    Labels: backup_type, stanza.
+
+* `pgbackrest_backup_last_repo_delta_bytes` - compressed files size in the last full, differential or incremental backup.
+
+    Labels: backup_type, stanza.
+
+* `pgbackrest_backup_last_repo_size_map_bytes` - size of block incremental map in the last full, differential or incremental backup.
+
+    Labels: backup_type, stanza.
+
+* `pgbackrest_backup_last_repo_delta_map_bytes` - size of block incremental delta map in the last full, differential or incremental backup.
+
+    Labels: backup_type, stanza.
+
+* `pgbackrest_backup_last_error_status` - error status in the last full, differential or incremental backup
+
+    Labels: backup_type, stanza.
+
 * `pgbackrest_wal_archive_status` - current WAL archive status.
 
     Labels: database_id, pg_version, repo_key, stanza, wal_max, wal_min.
