@@ -267,7 +267,7 @@ For a significant number of stanzas, this may require additional time to collect
 
 ### Building and running docker
 
-By default, pgBackRest version is `2.45`. Another version can be specified via arguments.
+By default, pgBackRest version is `2.46`. Another version can be specified via arguments.
 For base image used [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest) image.
 
 Environment variables supported by this image:
