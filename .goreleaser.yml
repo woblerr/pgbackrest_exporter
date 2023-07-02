@@ -21,8 +21,7 @@ archives:
     files:
       - LICENSE
     format: tar.gz
-    name_template: >-
-      {{ .Binary }}-{{ .Version }}-{{ if eq .Os "darwin" }}macos{{ else }}{{ .Os }}{{ end }}-{{ if eq .Arch "amd64" }}x86_64{{ else }}{{ .Arch }}{{ end }}
+    name_template: '{{ .Binary }}-{{ .Version }}-{{ if eq .Os "darwin" }}macos{{ else }}{{ .Os }}{{ end }}-{{ if eq .Arch "amd64" }}x86_64{{ else }}{{ .Arch }}{{ end }}'
     wrap_in_directory: true
     rlcp: true
 
