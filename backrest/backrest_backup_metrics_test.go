@@ -31,7 +31,10 @@ func TestGetBackupMetrics(t *testing.T) {
 		testText            string
 		testLastBackups     lastBackupsStruct
 	}
-	templateMetrics := `# HELP pgbackrest_backup_delta_bytes Amount of data in the database to actually backup.
+	templateMetrics := `# HELP pgbackrest_backup_annotations Number of annotations in backup.
+# TYPE pgbackrest_backup_annotations gauge
+pgbackrest_backup_annotations{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 1
+# HELP pgbackrest_backup_delta_bytes Amount of data in the database to actually backup.
 # TYPE pgbackrest_backup_delta_bytes gauge
 pgbackrest_backup_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
 # HELP pgbackrest_backup_duration_seconds Backup duration.
@@ -70,21 +73,24 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 					[]databaseRef{{"postgres", 13425}},
 					true,
 					12,
-					100).Name,
+					100,
+					annotation{"testkey": "testvalue"}).Name,
 				templateStanza(
 					"000000010000000000000004",
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
 					true,
 					12,
-					100).Backup,
+					100,
+					annotation{"testkey": "testvalue"}).Backup,
 				templateStanza(
 					"000000010000000000000004",
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
 					true,
 					12,
-					100).DB,
+					100,
+					annotation{"testkey": "testvalue"}).DB,
 				true,
 				setUpMetricValue,
 				templateMetrics,
@@ -93,7 +99,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 			mockStruct{
 				`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 					`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
-					`"backup":[{"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
+					`"backup":[{"annotation":{"testkey": "testvalue"},"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
 					`"backrest":{"format":5,"version":"2.45"},"database":{"id":1,"repo-key":1},` +
 					`"database-ref":[{"name":"postgres","oid":13412}],"error":true,"error-list":["base/1/3351"],` +
 					`"info":{"delta":24316343,"repository":{"delta":2969512, "delta-map":12,"size-map":100},"size":24316343},` +
@@ -125,6 +131,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 				pgbrStanzaBackupRepoBackupSizeMetric,
 				pgbrStanzaBackupRepoBackupSizeMapMetric,
 				pgbrStanzaBackupErrorMetric,
+				pgbrStanzaBackupAnnotationsMetric,
 			)
 			metricFamily, err := reg.Gather()
 			if err != nil {
@@ -148,8 +155,8 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 }
 
 // Absent metrics:
-// 	- pgbackrest_backup_repo_size_map_bytes
-//  - pgbackrest_backup_repo_delta_map_bytes
+//   - pgbackrest_backup_repo_size_map_bytes
+//   - pgbackrest_backup_repo_delta_map_bytes
 //
 // pgBackrest version < 2.44.
 //
@@ -164,7 +171,10 @@ func TestGetRepoMapMetricsAbsent(t *testing.T) {
 		testText            string
 		testLastBackups     lastBackupsStruct
 	}
-	templateMetrics := `# HELP pgbackrest_backup_delta_bytes Amount of data in the database to actually backup.
+	templateMetrics := `# HELP pgbackrest_backup_annotations Number of annotations in backup.
+# TYPE pgbackrest_backup_annotations gauge
+pgbackrest_backup_annotations{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 1
+# HELP pgbackrest_backup_delta_bytes Amount of data in the database to actually backup.
 # TYPE pgbackrest_backup_delta_bytes gauge
 pgbackrest_backup_delta_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 2.4316343e+07
 # HELP pgbackrest_backup_duration_seconds Backup duration.
@@ -198,17 +208,20 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 					"000000010000000000000004",
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
-					true, 2969514).Name,
+					true, 2969514,
+					annotation{"testkey": "testvalue"}).Name,
 				templateStanzaRepoMapSizesAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
-					true, 2969514).Backup,
+					true, 2969514,
+					annotation{"testkey": "testvalue"}).Backup,
 				templateStanzaRepoMapSizesAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
-					true, 2969514).DB,
+					true, 2969514,
+					annotation{"testkey": "testvalue"}).DB,
 				true,
 				setUpMetricValue,
 				templateMetrics,
@@ -237,6 +250,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 				pgbrStanzaBackupRepoBackupSetSizeMetric,
 				pgbrStanzaBackupRepoBackupSizeMetric,
 				pgbrStanzaBackupErrorMetric,
+				pgbrStanzaBackupAnnotationsMetric,
 			)
 			metricFamily, err := reg.Gather()
 			if err != nil {
@@ -263,6 +277,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 //   - pgbackrest_backup_databases
 //   - pgbackrest_backup_repo_size_map_bytes
 //   - pgbackrest_backup_repo_delta_map_bytes
+//   - pgbackrest_backup_annotations
 //
 // pgBackrest version < 2.41.
 //
@@ -312,19 +327,22 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
 					true,
-					2969514).Name,
+					2969514,
+					nil).Name,
 				templateStanzaRepoMapSizesAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
 					true,
-					2969514).Backup,
+					2969514,
+					nil).Backup,
 				templateStanzaRepoMapSizesAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
 					true,
-					2969514).DB,
+					2969514,
+					nil).DB,
 				true,
 				setUpMetricValue,
 				templateMetrics,
@@ -380,6 +398,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 //   - pgbackrest_backup_databases
 //   - pgbackrest_backup_repo_size_map_bytes
 //   - pgbackrest_backup_repo_delta_map_bytes
+//   - pgbackrest_backup_annotations
 //
 // Labels:
 //   - lsn_start=""
@@ -491,6 +510,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",d
 //   - pgbackrest_backup_databases
 //   - pgbackrest_backup_repo_size_map_bytes
 //   - pgbackrest_backup_repo_delta_map_bytes
+//   - pgbackrest_backup_annotations
 //
 // Labels:
 //   - repo_key="0"
@@ -624,30 +644,33 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 					[]databaseRef{{"postgres", 13425}},
 					true,
 					12,
-					100).Name,
+					100,
+					annotation{"testkey": "testvalue"}).Name,
 				templateStanza(
 					"000000010000000000000004",
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
 					true,
 					12,
-					100).Backup,
+					100,
+					annotation{"testkey": "testvalue"}).Backup,
 				templateStanza(
 					"000000010000000000000004",
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
 					true,
 					12,
-					100).DB,
+					100,
+					annotation{"testkey": "testvalue"}).DB,
 				true,
 				fakeSetUpMetricValue,
-				8,
-				8,
+				9,
+				9,
 			},
 			mockStruct{
 				`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 					`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
-					`"backup":[{"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
+					`"backup":[{"annotation":{"testkey": "testvalue"},"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
 					`"backrest":{"format":5,"version":"2.41"},"database":{"id":1,"repo-key":1},` +
 					`"database-ref":[{"name":"postgres","oid":13412}],"error":true,"error-list":["base/1/3351"],` +
 					`"info":{"delta":24316343,"repository":{"delta":2969512, "delta-map":12,"size-map":100},"size":24316343},` +
@@ -671,28 +694,31 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
 					true,
-					2969514).Name,
+					2969514,
+					annotation{"testkey": "testvalue"}).Name,
 				templateStanzaRepoMapSizesAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
 					true,
-					2969514).Backup,
+					2969514,
+					annotation{"testkey": "testvalue"}).Backup,
 				templateStanzaRepoMapSizesAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
 					true,
-					2969514).DB,
+					2969514,
+					annotation{"testkey": "testvalue"}).DB,
 				true,
 				fakeSetUpMetricValue,
-				7,
-				7,
+				8,
+				8,
 			},
 			mockStruct{
 				`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 					`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
-					`"backup":[{"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
+					`"backup":[{annotation:{"testkey": "testvalue"},"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
 					`"backrest":{"format":5,"version":"2.41"},"database":{"id":1,"repo-key":1},` +
 					`"database-ref":[{"name":"postgres","oid":13412}],"error":true,"error-list":["base/1/3351"],` +
 					`"info":{"delta":24316343,"repository":{"delta":2969512,"size":2969512},"size":24316343},` +
