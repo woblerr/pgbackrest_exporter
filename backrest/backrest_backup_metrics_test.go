@@ -670,7 +670,7 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 			mockStruct{
 				`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 					`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
-					`"backup":[{"annotation":{"testkey": "testvalue"},"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
+					`"backup":[{"annotation":{"testkey":"testvalue"},"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
 					`"backrest":{"format":5,"version":"2.41"},"database":{"id":1,"repo-key":1},` +
 					`"database-ref":[{"name":"postgres","oid":13412}],"error":true,"error-list":["base/1/3351"],` +
 					`"info":{"delta":24316343,"repository":{"delta":2969512, "delta-map":12,"size-map":100},"size":24316343},` +
@@ -718,7 +718,7 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 			mockStruct{
 				`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 					`"max":"000000010000000000000002","min":"000000010000000000000001"}],` +
-					`"backup":[{annotation:{"testkey": "testvalue"},"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
+					`"backup":[{"annotation":{"testkey":"testvalue"},"archive":{"start":"000000010000000000000002","stop":"000000010000000000000002"},` +
 					`"backrest":{"format":5,"version":"2.41"},"database":{"id":1,"repo-key":1},` +
 					`"database-ref":[{"name":"postgres","oid":13412}],"error":true,"error-list":["base/1/3351"],` +
 					`"info":{"delta":24316343,"repository":{"delta":2969512,"size":2969512},"size":24316343},` +
