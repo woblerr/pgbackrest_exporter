@@ -33,7 +33,12 @@ func TestGetBackupLastMetrics(t *testing.T) {
 		setUpMetricValueFun setUpMetricValueFunType
 		testText            string
 	}
-	templateMetrics := `# HELP pgbackrest_backup_since_last_completion_seconds Seconds since the last completed full, differential or incremental backup.
+	templateMetrics := `# HELP pgbackrest_backup_last_annotations Number of annotations in the last full, differential or incremental backup.
+# TYPE pgbackrest_backup_last_annotations gauge
+pgbackrest_backup_last_annotations{backup_type="diff",stanza="demo"} 0
+pgbackrest_backup_last_annotations{backup_type="full",stanza="demo"} 1
+pgbackrest_backup_last_annotations{backup_type="incr",stanza="demo"} 0
+# HELP pgbackrest_backup_since_last_completion_seconds Seconds since the last completed full, differential or incremental backup.
 # TYPE pgbackrest_backup_since_last_completion_seconds gauge
 pgbackrest_backup_since_last_completion_seconds{backup_type="diff",stanza="demo"} 9.223372036854776e+09
 pgbackrest_backup_since_last_completion_seconds{backup_type="full",stanza="demo"} 9.223372036854776e+09
@@ -52,7 +57,8 @@ pgbackrest_backup_since_last_completion_seconds{backup_type="incr",stanza="demo"
 					[]databaseRef{{"postgres", 13425}},
 					true,
 					12,
-					100).Name,
+					100,
+					annotation{"testkey": "testvalue"}).Name,
 				templateLastBackupDifferent(),
 				currentUnixTimeForTests,
 				setUpMetricValue,
@@ -65,7 +71,10 @@ pgbackrest_backup_since_last_completion_seconds{backup_type="incr",stanza="demo"
 			resetMetrics()
 			getBackupLastMetrics(tt.args.stanzaName, tt.args.lastBackups, tt.args.currentUnixTime, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
-			reg.MustRegister(pgbrStanzaBackupSinceLastCompletionSecondsMetric)
+			reg.MustRegister(
+				pgbrStanzaBackupSinceLastCompletionSecondsMetric,
+				pgbrStanzaBackupLastAnnotationsMetric,
+			)
 			metricFamily, err := reg.Gather()
 			if err != nil {
 				fmt.Println(err)
@@ -118,7 +127,8 @@ pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 1
 					[]databaseRef{{"postgres", 13425}},
 					true,
 					12,
-					100).Name,
+					100,
+					annotation{"testkey": "testvalue"}).Name,
 				templateLastBackup(),
 				currentUnixTimeForTests,
 				setUpMetricValue,
@@ -128,7 +138,7 @@ pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 1
 				mockStruct{
 					`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 						`"max":"000000010000000000000010","min":"000000010000000000000001"}],` +
-						`"backup":[{"archive":{"start":"000000010000000000000003","stop":"000000010000000000000004"},` +
+						`"backup":[{"annotation":{"testkey":"testvalue"},"archive":{"start":"000000010000000000000003","stop":"000000010000000000000004"},` +
 						`"backrest":{"format":5,"version":"2.41"},"database":{"id":1,"repo-key":1},` +
 						`"database-ref":[{"name":"postgres","oid":13412}],"error":false,` +
 						`"info":{"delta":32230330,"repository":{"delta":3970793,"size":3970793},"size":32230330},` +
@@ -143,7 +153,7 @@ pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 1
 				mockStruct{
 					`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 						`"max":"000000010000000000000010","min":"000000010000000000000001"}],` +
-						`"backup":[{"archive":{"start":"000000010000000000000003","stop":"000000010000000000000004"},` +
+						`"backup":[{"annotation":{"testkey":"testvalue"},"archive":{"start":"000000010000000000000003","stop":"000000010000000000000004"},` +
 						`"backrest":{"format":5,"version":"2.41"},"database":{"id":1,"repo-key":1},` +
 						`"database-ref":[{"name":"postgres","oid":13412}],"error":false,` +
 						`"info":{"delta":32230330,"repository":{"delta":3970793,"size":3970793},"size":32230330},` +
@@ -158,7 +168,7 @@ pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 1
 				mockStruct{
 					`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 						`"max":"000000010000000000000010","min":"000000010000000000000001"}],` +
-						`"backup":[{"archive":{"start":"000000010000000000000003","stop":"000000010000000000000004"},` +
+						`"backup":["annotation":{"testkey":"testvalue"},"archive":{"start":"000000010000000000000003","stop":"000000010000000000000004"},` +
 						`"backrest":{"format":5,"version":"2.41"},"database":{"id":1,"repo-key":1},` +
 						`"database-ref":[{"name":"postgres","oid":13412}],"error":false,` +
 						`"info":{"delta":32230330,"repository":{"delta":3970793,"size":3970793},"size":32230330},` +
@@ -187,7 +197,8 @@ pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 1
 					[]databaseRef{{"postgres", 13425}},
 					true,
 					12,
-					100).Name,
+					100,
+					nil).Name,
 				templateLastBackupDifferent(),
 				currentUnixTimeForTests,
 				setUpMetricValue,
@@ -245,17 +256,17 @@ pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 1
 //nolint:unparam
 func templateLastBackup() lastBackupsStruct {
 	return lastBackupsStruct{
-		backupStruct{"20210607-092423F", "full", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false)},
-		backupStruct{"20210607-092423F", "diff", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false)},
-		backupStruct{"20210607-092423F", "incr", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false)},
+		backupStruct{"20210607-092423F", "full", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), valToPtr(annotation{"testkey": "testvalue"})},
+		backupStruct{"20210607-092423F", "diff", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), valToPtr(annotation{"testkey": "testvalue"})},
+		backupStruct{"20210607-092423F", "incr", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), valToPtr(annotation{"testkey": "testvalue"})},
 	}
 }
 
 //nolint:unparam
 func templateLastBackupDifferent() lastBackupsStruct {
 	return lastBackupsStruct{
-		backupStruct{"20220926-201857F", "full", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false)},
-		backupStruct{"20220926-201857F_20220926-201901D", "diff", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false)},
-		backupStruct{"20220926-201857F_20220926-202454I", "incr", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false)},
+		backupStruct{"20220926-201857F", "full", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), valToPtr(annotation{"testkey": "testvalue"})},
+		backupStruct{"20220926-201857F_20220926-201901D", "diff", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), nil},
+		backupStruct{"20220926-201857F_20220926-202454I", "incr", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), nil},
 	}
 }
