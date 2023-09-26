@@ -92,6 +92,13 @@ var (
 		[]string{
 			"backup_type",
 			"stanza"})
+	pgbrStanzaBackupLastAnnotationsMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_backup_last_annotations",
+		Help: "Number of annotations in the last full, differential or incremental backup.",
+	},
+		[]string{
+			"backup_type",
+			"stanza"})
 )
 
 // Set backup metrics:
@@ -104,6 +111,7 @@ var (
 //   - pgbackrest_backup_last_repo_delta_bytes
 //   - pgbackrest_backup_last_repo_delta_map_bytes
 //   - pgbackrest_backup_last_error_status
+//   - pgbackrest_backup_last_annotations
 func getBackupLastMetrics(stanzaName string, lastBackups lastBackupsStruct, currentUnixTime int64, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
 	// If full backup exists, the values of metrics for differential and
 	// incremental backups also will be set.
@@ -200,6 +208,32 @@ func getBackupLastMetrics(stanzaName string, lastBackups lastBackupsStruct, curr
 					pgbrStanzaBackupLastErrorMetric,
 					"pgbackrest_backup_last_error_status",
 					convertBoolToFloat64(*backup.backupError),
+					setUpMetricValueFun,
+					logger,
+					backup.backupType,
+					stanzaName,
+				)
+			}
+			// Number of backup annotations.
+			// Information about number of annotations in backup has appeared since pgBackRest v2.41.
+			// The metric is always set.
+			// For last backups, unlike specific backups, it makes sense to always specify
+			// this metric so the metric is not lost, even if the backup does not have annotations.
+			if backup.backupAnnotation != nil {
+				setUpMetric(
+					pgbrStanzaBackupLastAnnotationsMetric,
+					"pgbackrest_backup_last_annotations",
+					float64(len(*backup.backupAnnotation)),
+					setUpMetricValueFun,
+					logger,
+					backup.backupType,
+					stanzaName,
+				)
+			} else {
+				setUpMetric(
+					pgbrStanzaBackupLastAnnotationsMetric,
+					"pgbackrest_backup_annotations",
+					0,
 					setUpMetricValueFun,
 					logger,
 					backup.backupType,
@@ -306,4 +340,5 @@ func resetLastBackupMetrics() {
 	pgbrStanzaBackupLastRepoBackupSizeMetric.Reset()
 	pgbrStanzaBackupLastRepoBackupSizeMapMetric.Reset()
 	pgbrStanzaBackupLastErrorMetric.Reset()
+	pgbrStanzaBackupLastAnnotationsMetric.Reset()
 }

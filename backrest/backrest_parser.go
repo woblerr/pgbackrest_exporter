@@ -27,6 +27,7 @@ type backupStruct struct {
 	backupRepoSize     *int64
 	backupRepoSizeMap  *int64
 	backupError        *bool
+	backupAnnotation   *annotation
 }
 type lastBackupsStruct struct {
 	full backupStruct
