@@ -147,7 +147,8 @@ For `pgbackrest_*_last_*` metrics for incremental backups (`backup_type="incr"`)
 * if the last backup was full or differential, the metric will take full or differential backup value;
 * otherwise, the value will be set. 
 
-Metric `pgbackrest_backup_annotations` is set only for backups that have annotations. If there are no annotations, no metrics will be set for this backup.
+Metric `pgbackrest_backup_annotations` is set only for backups that have annotations.
+If there are no annotations, the metric won't be set for this backup.
 
 ## Compatibility with pgBackRest versions
 
