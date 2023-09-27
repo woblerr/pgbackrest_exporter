@@ -77,7 +77,15 @@ The metrics provided by the client.
 
     Labels: backup_name, backup_type, database_id, repo_key, stanza.
 
+* `pgbackrest_backup_annotations` - number of annotations in backup.
+
+    Labels: backup_name, backup_type, database_id, repo_key, stanza.
+
 * `pgbackrest_backup_since_last_completion_seconds` - seconds since the last completed full, differential or incremental backup.
+
+    Labels: backup_type, stanza.
+
+* `pgbackrest_backup_last_annotations` - number of annotations in the last full, differential or incremental backup.
 
     Labels: backup_type, stanza.
 
@@ -139,6 +147,9 @@ For `pgbackrest_*_last_*` metrics for incremental backups (`backup_type="incr"`)
 * if the last backup was full or differential, the metric will take full or differential backup value;
 * otherwise, the value will be set. 
 
+Metric `pgbackrest_backup_annotations` is set only for backups that have annotations.
+If there are no annotations, the metric won't be set for this backup.
+
 ## Compatibility with pgBackRest versions
 
 The number of collected metrics may vary depending on pgBackRest version. 
@@ -162,7 +173,11 @@ For different versions, some metrics may not be collected or have insignificant 
 
     The following metrics will be absent: 
     * `pgbackrest_backup_databases`,
-    * `pgbackrest_backup_last_databases`.
+    * `pgbackrest_backup_last_databases`,
+    * `pgbackrest_backup_annotations`.
+
+    For `pgbackrest_backup_last_annotations` metric the values will always be `0`.
+.
 
 * `pgBackRest < v2.38`
 
@@ -174,7 +189,9 @@ For different versions, some metrics may not be collected or have insignificant 
 
 * `pgBackRest < v2.32`
 
-    The following metric will be absent: `pgbackrest_repo_status`. For other metrics label will be `repo_key="0"`.
+    The following metric will be absent: `pgbackrest_repo_status`. 
+
+    For other metrics label will be `repo_key="0"`.
 
 ## Getting Started
 ### Building and running

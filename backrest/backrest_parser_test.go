@@ -260,7 +260,8 @@ func TestCompareLastBackups(t *testing.T) {
 	incrDate := parseDate("2021-07-21 00:10:04")
 	backuptTestRepoDeltaMap := valToPtr(int64(12))
 	backupTestRepoSizeMap := valToPtr(int64(100))
-	BackupTestError := valToPtr(false)
+	backupTestAnnotation := valToPtr(annotation{"testkey": "testvalue"})
+	backupTestError := valToPtr(false)
 	lastBackups := initLastBackupStruct()
 	type args struct {
 		backups    *lastBackupsStruct
@@ -275,11 +276,12 @@ func TestCompareLastBackups(t *testing.T) {
 			args{
 				&lastBackups,
 				backup{
+					backupTestAnnotation,
 					archive,
 					backrestInfo,
 					databaseID{1, 1},
 					nil,
-					BackupTestError,
+					backupTestError,
 					backupInfo{
 						24316343,
 						struct {
@@ -304,20 +306,21 @@ func TestCompareLastBackups(t *testing.T) {
 				},
 			},
 			lastBackupsStruct{
-				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, BackupTestError},
-				backupStruct{"20210721-000101F", "diff", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, BackupTestError},
-				backupStruct{"20210721-000101F", "incr", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, BackupTestError},
+				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation},
+				backupStruct{"20210721-000101F", "diff", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation},
+				backupStruct{"20210721-000101F", "incr", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation},
 			},
 		},
 		{"compareLastBackupsDiff",
 			args{
 				&lastBackups,
 				backup{
+					nil,
 					archive,
 					backrestInfo,
 					databaseID{1, 1},
 					nil,
-					BackupTestError,
+					backupTestError,
 					backupInfo{
 						2431634,
 						struct {
@@ -342,21 +345,21 @@ func TestCompareLastBackups(t *testing.T) {
 				},
 			},
 			lastBackupsStruct{
-				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, BackupTestError},
-				backupStruct{"20210721-000101F_20210721-000501D", "diff", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, BackupTestError},
-				backupStruct{"20210721-000101F_20210721-000501D", "incr", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, BackupTestError},
+				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation},
+				backupStruct{"20210721-000101F_20210721-000501D", "diff", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, nil},
+				backupStruct{"20210721-000101F_20210721-000501D", "incr", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, nil},
 			},
 		},
-
 		{"compareLastBackupsIncr",
 			args{
 				&lastBackups,
 				backup{
+					nil,
 					archive,
 					backrestInfo,
 					databaseID{1, 1},
 					nil,
-					BackupTestError,
+					backupTestError,
 					backupInfo{
 						243163,
 						struct {
@@ -381,9 +384,9 @@ func TestCompareLastBackups(t *testing.T) {
 				},
 			},
 			lastBackupsStruct{
-				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, BackupTestError},
-				backupStruct{"20210721-000101F_20210721-000501D", "diff", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, BackupTestError},
-				backupStruct{"20210721-000101F_20210721-001001I", "incr", incrDate, 3, 243163, 243163, 29695, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, BackupTestError},
+				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation},
+				backupStruct{"20210721-000101F_20210721-000501D", "diff", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, nil},
+				backupStruct{"20210721-000101F_20210721-001001I", "incr", incrDate, 3, 243163, 243163, 29695, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, nil},
 			},
 		},
 	}
@@ -434,7 +437,7 @@ func fakeSetUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...
 }
 
 //nolint:unparam
-func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus bool, deltaMap, sizeMap int64) stanza {
+func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus bool, deltaMap, sizeMap int64, backupAnnotation annotation) stanza {
 	var (
 		size *int64
 		link *[]struct {
@@ -453,6 +456,7 @@ func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus bool
 		},
 		[]backup{
 			{
+				&backupAnnotation,
 				struct {
 					StartWAL string "json:\"start\""
 					StopWAL  string "json:\"stop\""
@@ -521,7 +525,7 @@ func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus bool
 }
 
 //nolint:unparam
-func templateStanzaRepoMapSizesAbsent(walMax, walMin string, dbRef []databaseRef, errorStatus bool, size int64) stanza {
+func templateStanzaRepoMapSizesAbsent(walMax, walMin string, dbRef []databaseRef, errorStatus bool, size int64, backupAnnotation annotation) stanza {
 	var (
 		deltaMap, sizeMap *int64
 		link              *[]struct {
@@ -540,6 +544,7 @@ func templateStanzaRepoMapSizesAbsent(walMax, walMin string, dbRef []databaseRef
 		},
 		[]backup{
 			{
+				&backupAnnotation,
 				struct {
 					StartWAL string "json:\"start\""
 					StopWAL  string "json:\"stop\""
@@ -622,6 +627,7 @@ func templateStanzaErrorAbsent(walMax, walMin string, size int64) stanza {
 			Name        string `json:"name"`
 			OID         int    `json:"oid"`
 		}
+		backrestAnnotation *annotation
 	)
 	return stanza{
 		[]archive{
@@ -629,6 +635,7 @@ func templateStanzaErrorAbsent(walMax, walMin string, size int64) stanza {
 		},
 		[]backup{
 			{
+				backrestAnnotation,
 				struct {
 					StartWAL string "json:\"start\""
 					StopWAL  string "json:\"stop\""
@@ -711,16 +718,19 @@ func templateStanzaRepoAbsent(walMax, walMin string, size int64) stanza {
 			Name        string `json:"name"`
 			OID         int    `json:"oid"`
 		}
+		backrestAnnotation *annotation
 	)
 	return stanza{
 		[]archive{
 			{databaseID{1, 0}, "13-1", walMax, walMin},
 		},
 		[]backup{
-			{struct {
-				StartWAL string "json:\"start\""
-				StopWAL  string "json:\"stop\""
-			}{"000000010000000000000002", "000000010000000000000002"},
+			{
+				backrestAnnotation,
+				struct {
+					StartWAL string "json:\"start\""
+					StopWAL  string "json:\"stop\""
+				}{"000000010000000000000002", "000000010000000000000002"},
 				struct {
 					Format  int    "json:\"format\""
 					Version string "json:\"version\""
@@ -839,14 +849,16 @@ func TestGetParsedSpecificBackupInfoDataErrors(t *testing.T) {
 					[]databaseRef{{"postgres", 13425}},
 					true,
 					12,
-					100).Name,
+					100,
+					annotation{"testkey": "testvalue"}).Name,
 				templateStanza(
 					"000000010000000000000004",
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
 					true,
 					12,
-					100).Backup[0].Label,
+					100,
+					annotation{"testkey": "testvalue"}).Backup[0].Label,
 				3,
 			},
 			// Imitate error, when pgBackRest binary not found.

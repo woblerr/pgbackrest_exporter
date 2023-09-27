@@ -39,21 +39,27 @@ esac
 
 # A simple test to check the number of metrics.
 # Format: regex for metric | repetitions.
+#
+# Additional comments:
+#  - for '^pgbackrest_backup_last_annotations{.*} 0$|3' zero is correct,
+#    because we creare full and diff backups in repo 2 without any annotations.
 declare -a REGEX_LIST=(
-    '^pgbackrest_backup_databases{.*,backup_type="full",.*} 2|2'
-    '^pgbackrest_backup_databases{.*,backup_type="diff",.*,repo_key="2".*} 2|1'
+    '^pgbackrest_backup_annotations{.*,backup_type="full",.*} 1$|1'
+    '^pgbackrest_backup_databases{.*,backup_type="full",.*} 2$|2'
+    '^pgbackrest_backup_databases{.*,backup_type="diff",.*,repo_key="2".*} 2$|1'
     '^pgbackrest_backup_delta_bytes{.*}|3'
     '^pgbackrest_backup_duration_seconds{.*}|3'
     '^pgbackrest_backup_error_status{.*,backup_type="full",.*} 0$|2'
     '^pgbackrest_backup_error_status{.*,backup_type="diff",.*,repo_key="2".*} 1$|1'
     '^pgbackrest_backup_info{.*,block_incr="n",.*} 1$|1'
     '^pgbackrest_backup_info{.*,block_incr="y",.*} 1$|2'
+    '^pgbackrest_backup_last_annotations{.*} 0$|3'
     '^pgbackrest_backup_last_databases{.*}|3'
     '^pgbackrest_backup_last_delta_bytes{.*}|3'
     '^pgbackrest_backup_last_duration_seconds{.*}|3'
-    '^pgbackrest_backup_last_error_status{backup_type="full",.*} 0|1'
-    '^pgbackrest_backup_last_error_status{backup_type="diff",.*} 1|1'
-    '^pgbackrest_backup_last_error_status{backup_type="incr",.*} 1|1'
+    '^pgbackrest_backup_last_error_status{backup_type="full",.*} 0$|1'
+    '^pgbackrest_backup_last_error_status{backup_type="diff",.*} 1$|1'
+    '^pgbackrest_backup_last_error_status{backup_type="incr",.*} 1$|1'
     '^pgbackrest_backup_last_repo_delta_bytes{.*}|3'
     '^pgbackrest_backup_last_repo_delta_map_bytes{.*}|3'
     '^pgbackrest_backup_last_repo_size_map_bytes{.*}|3'

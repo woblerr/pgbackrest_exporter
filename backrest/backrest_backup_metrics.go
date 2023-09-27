@@ -145,6 +145,16 @@ var (
 			"database_id",
 			"repo_key",
 			"stanza"})
+	pgbrStanzaBackupAnnotationsMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_backup_annotations",
+		Help: "Number of annotations in backup.",
+	},
+		[]string{
+			"backup_name",
+			"backup_type",
+			"database_id",
+			"repo_key",
+			"stanza"})
 	pgbrStanzaBackupDatabasesMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_databases",
 		Help: "Number of databases in backup.",
@@ -169,6 +179,7 @@ var (
 //   - pgbackrest_backup_repo_delta_bytes
 //   - pgbackrest_backup_repo_delta_map_bytes
 //   - pgbackrest_backup_error_status
+//   - pgbackrest_backup_annotations
 //
 // And returns info about last backups.
 func getBackupMetrics(stanzaName string, backupData []backup, dbData []db, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) lastBackupsStruct {
@@ -332,6 +343,24 @@ func getBackupMetrics(stanzaName string, backupData []backup, dbData []db, setUp
 				stanzaName,
 			)
 		}
+		// Number of backup annotations.
+		// Information about annotations in backup has appeared since pgBackRest v2.41.
+		// The metric is set only for backups that have annotations.
+		// If there are no annotations, no metrics will be set for this backup.
+		if backup.Annotation != nil {
+			setUpMetric(
+				pgbrStanzaBackupAnnotationsMetric,
+				"pgbackrest_backup_annotations",
+				float64(len(*backup.Annotation)),
+				setUpMetricValueFun,
+				logger,
+				backup.Label,
+				backup.Type,
+				strconv.Itoa(backup.Database.ID),
+				strconv.Itoa(backup.Database.RepoKey),
+				stanzaName,
+			)
+		}
 		compareLastBackups(&lastBackups, backup)
 	}
 	return lastBackups
@@ -381,6 +410,7 @@ func resetBackupMetrics() {
 	pgbrStanzaBackupRepoBackupSizeMapMetric.Reset()
 	pgbrStanzaBackupErrorMetric.Reset()
 	pgbrStanzaBackupDatabasesMetric.Reset()
+	pgbrStanzaBackupAnnotationsMetric.Reset()
 
 }
 

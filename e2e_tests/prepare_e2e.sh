@@ -24,15 +24,19 @@ psql -c "create database ${PG_DATABASE}"
 db_oid=$(psql -t -c "select OID from pg_database where datname='demo_db';")
 # Create stanza.
 pgbackrest stanza-create --stanza ${BACKREST_STANZA} --log-level-console warn
-# Create full backup for stanza  in repo1.
-pgbackrest backup --stanza ${BACKREST_STANZA} --type full --log-level-console warn
+# Create full backup for stanza in repo1.
+pgbackrest backup --stanza ${BACKREST_STANZA} --type full --repo 1 --log-level-console warn
+# Get the name of created backup in repo1.
+backup_name=$(pgbackrest info --output json --type full --repo 1 --log-level-console warn | jq --raw-output '.[].backup[].label')
+# Create annotation for the backup in repo1.
+pgbackrest annotate --stanza ${BACKREST_STANZA} --annotation "testkey=testvalue" --set ${backup_name} --repo 1 --log-level-console warn
 # Create full bakup for stanza in repo2 with block incremental.
 pgbackrest backup --stanza ${BACKREST_STANZA} --type full --repo 2 --repo2-bundle --repo2-block --log-level-console warn --beta
 # Currupt database file.
 db_file=$(find ${PG_DATA}/base/${db_oid} -type f -regextype egrep -regex '.*/([0-9]){4}$' -print | head -n 1)
 echo "currupt" >> ${db_file} 
 # Create diff backup with corrupted databse file in repo2 with block incremental.
-pgbackrest backup --stanza ${BACKREST_STANZA} --type diff  --repo 2 --repo2-bundle --repo2-block --log-level-console warn --beta
+pgbackrest backup --stanza ${BACKREST_STANZA} --type diff --repo 2 --repo2-bundle --repo2-block --log-level-console warn --beta
 # Update exporter params.
 [[ ! -z ${EXPORTER_CONFIG} ]] && EXPORTER_COMMAND="${EXPORTER_COMMAND} --web.config.file=${EXPORTER_CONFIG}"
 # Run pgbackrest_exporter.

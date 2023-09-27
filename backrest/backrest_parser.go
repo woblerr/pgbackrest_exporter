@@ -27,6 +27,7 @@ type backupStruct struct {
 	backupRepoSize     *int64
 	backupRepoSizeMap  *int64
 	backupError        *bool
+	backupAnnotation   *annotation
 }
 type lastBackupsStruct struct {
 	full backupStruct
@@ -209,6 +210,7 @@ func compareLastBackups(backups *lastBackupsStruct, currentBackup backup) {
 			backups.full.backupRepoSize = currentBackup.Info.Repository.Size
 			backups.full.backupRepoSizeMap = currentBackup.Info.Repository.SizeMap
 			backups.full.backupError = currentBackup.Error
+			backups.full.backupAnnotation = currentBackup.Annotation
 		}
 		if currentBackupTime.After(backups.diff.backupTime) {
 			backups.diff.backupTime = currentBackupTime
@@ -221,6 +223,7 @@ func compareLastBackups(backups *lastBackupsStruct, currentBackup backup) {
 			backups.diff.backupRepoSize = currentBackup.Info.Repository.Size
 			backups.diff.backupRepoSizeMap = currentBackup.Info.Repository.SizeMap
 			backups.diff.backupError = currentBackup.Error
+			backups.diff.backupAnnotation = currentBackup.Annotation
 		}
 		if currentBackupTime.After(backups.incr.backupTime) {
 			backups.incr.backupTime = currentBackupTime
@@ -233,6 +236,7 @@ func compareLastBackups(backups *lastBackupsStruct, currentBackup backup) {
 			backups.incr.backupRepoSize = currentBackup.Info.Repository.Size
 			backups.incr.backupRepoSizeMap = currentBackup.Info.Repository.SizeMap
 			backups.incr.backupError = currentBackup.Error
+			backups.incr.backupAnnotation = currentBackup.Annotation
 		}
 	case "diff":
 		if currentBackupTime.After(backups.diff.backupTime) {
@@ -246,6 +250,7 @@ func compareLastBackups(backups *lastBackupsStruct, currentBackup backup) {
 			backups.diff.backupRepoSize = currentBackup.Info.Repository.Size
 			backups.diff.backupRepoSizeMap = currentBackup.Info.Repository.SizeMap
 			backups.diff.backupError = currentBackup.Error
+			backups.diff.backupAnnotation = currentBackup.Annotation
 		}
 		if currentBackupTime.After(backups.incr.backupTime) {
 			backups.incr.backupTime = currentBackupTime
@@ -258,6 +263,7 @@ func compareLastBackups(backups *lastBackupsStruct, currentBackup backup) {
 			backups.incr.backupRepoSize = currentBackup.Info.Repository.Size
 			backups.incr.backupRepoSizeMap = currentBackup.Info.Repository.SizeMap
 			backups.incr.backupError = currentBackup.Error
+			backups.incr.backupAnnotation = currentBackup.Annotation
 		}
 	case "incr":
 		if currentBackupTime.After(backups.incr.backupTime) {
@@ -271,6 +277,7 @@ func compareLastBackups(backups *lastBackupsStruct, currentBackup backup) {
 			backups.incr.backupRepoSize = currentBackup.Info.Repository.Size
 			backups.incr.backupRepoSizeMap = currentBackup.Info.Repository.SizeMap
 			backups.incr.backupError = currentBackup.Error
+			backups.incr.backupAnnotation = currentBackup.Annotation
 		}
 	}
 }

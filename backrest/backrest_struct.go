@@ -42,6 +42,7 @@ type databaseID struct {
 }
 
 //	"backup": [{
+//	  "annotation": {},
 //	  "archive": {
 //	      "start": "string",
 //	      "stop": "string"
@@ -67,7 +68,8 @@ type databaseID struct {
 //	  "type": "string"
 //	}]
 type backup struct {
-	Archive struct {
+	Annotation *annotation `json:"annotation"`
+	Archive    struct {
 		StartWAL string `json:"start"`
 		StopWAL  string `json:"stop"`
 	} `json:"archive"`
@@ -101,6 +103,12 @@ type backup struct {
 	} `json:"timestamp"`
 	Type string `json:"type"`
 }
+
+//	"annotation": {
+//		"string": "string",
+//		"string":"string"
+//	}
+type annotation map[string]string
 
 //	"database-ref": [{
 //	  "name": "string",
