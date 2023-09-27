@@ -170,7 +170,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     env: 
-      goreleaser_version: "v1.18.2"
+      goreleaser_version: "v1.20.0"
     steps:
       - name: Set up go 1.20
         uses: actions/setup-go@v3
@@ -191,7 +191,7 @@ jobs:
         with:
           distribution: goreleaser
           version: ${{ env.goreleaser_version }}
-          args: check
+          args: check .goreleaser.yml
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4
