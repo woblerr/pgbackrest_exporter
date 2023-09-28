@@ -15,7 +15,7 @@ The metrics are collected based on result of `pgbackrest info --output json` com
 | ----------- | ------------------ | ------------- | --------------- |
 | `pgbackrest_stanza_status` | current stanza status | stanza | Values description:<br> `0` - ok,<br> `1` - missing stanza path,<br> `2` - no valid backups,<br> `3` - missing stanza data,<br> `4` - different across repos,<br> `5` - database mismatch across repos,<br> `6` - requested backup not found,<br> `99` - other. |
 
-Repository metrics.
+### Repository metrics
 
 | Metric | Description |  Labels | Additional Info |
 | ----------- | ------------------ | ------------- | --------------- |
