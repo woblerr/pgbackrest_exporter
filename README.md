@@ -36,6 +36,11 @@ Repository metrics.
 | `pgbackrest_backup_repo_size_bytes` | full compressed files size to restore the database from backup | backup_name, backup_type, database_id, repo_key, stanza | |
 | `pgbackrest_backup_repo_delta_map_bytes` | size of block incremental delta map | backup_name, backup_type, database_id, repo_key, stanza | |
 | `pgbackrest_backup_repo_size_map_bytes` | size of block incremental map | backup_name, backup_type, database_id, repo_key, stanza | |
+
+### Last backup metrics
+
+| Metric | Description |  Labels | Additional Info |
+| ----------- | ------------------ | ------------- | --------------- |
 | `pgbackrest_backup_since_last_completion_seconds` | seconds since the last completed full, differential or incremental backup | backup_type, stanza | |
 | `pgbackrest_backup_last_annotations` | number of annotations in the last full, differential or incremental backup | backup_type, stanza | |
 | `pgbackrest_backup_last_databases` | number of databases in the last full, differential or incremental backup | backup_type, stanza | |
