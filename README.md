@@ -9,133 +9,55 @@ Prometheus exporter for [pgBackRest](https://pgbackrest.org/).
 The metrics are collected based on result of `pgbackrest info --output json` command. By default, the metrics are collected for all stanzas received by command. You can specify stanzas to collect metrics. You need to run exporter on the same host where pgBackRest was installed or inside Docker.
 
 ## Collected metrics
+### Stanza metrics
 
-The metrics provided by the client.
+| Metric | Description |  Labels | Additional Info |
+| ----------- | ------------------ | ------------- | --------------- |
+| `pgbackrest_stanza_status` | current stanza status | stanza | Values description:<br> `0` - ok,<br> `1` - missing stanza path,<br> `2` - no valid backups,<br> `3` - missing stanza data,<br> `4` - different across repos,<br> `5` - database mismatch across repos,<br> `6` - requested backup not found,<br> `99` - other. |
 
-* `pgbackrest_stanza_status` - current stanza status.
+Repository metrics.
 
-    Labels: stanza.
+| Metric | Description |  Labels | Additional Info |
+| ----------- | ------------------ | ------------- | --------------- |
+| `pgbackrest_repo_status` | current repository status | cipher, repo_key, stanza | Values description:<br> `0` - ok,<br> `1` - missing stanza path,<br> `2` - no valid backups,<br> `3` - missing stanza data,<br> `4` - different across repos,<br> `5` - database mismatch across repos,<br> `6` - requested backup not found,<br> `99` - other |
 
-* `pgbackrest_repo_status` - current repository status.
+### Backup metrics
 
-    Labels: cipher, repo_key, stanza.
+| Metric | Description |  Labels | Additional Info |
+| ----------- | ------------------ | ------------- | --------------- |
+| `pgbackrest_backup_annotations` | number of annotations in backup | backup_name, backup_type, database_id, repo_key, stanza | |
+| `pgbackrest_backup_databases` | number of databases in backup | backup_name, backup_type, database_id, repo_key | |
+| `pgbackrest_backup_duration_seconds` | backup duration in seconds | backup_name, backup_type, database_id, repo_key, stanza, start_time, stop_time | |
+| `pgbackrest_backup_error_status` | backup error status | backup_name, backup_type, database_id, repo_key, stanza | Values description:<br> `0` - backup doesn't contain page checksum errors,<br> `1` - backup contains one or more page checksum errors. To display the list of errors, you need manually run the command like `pgbackrest info --stanza stanza --set backup_name --repo repo_key`. |
+| `pgbackrest_backup_info` | backup info | backrest_ver, backup_name, backup_type, block_incr, database_id, lsn_start, lsn_stop, pg_version, prior, repo_key, stanza, wal_start, wal_stop | Values description:<br> `1` - info about backup is exist. |
+| `pgbackrest_backup_delta_bytes` | amount of data in the database to actually backup | backup_name, backup_type, database_id, repo_key, stanza | |
+| `pgbackrest_backup_size_bytes` | full uncompressed size of the database | backup_name, backup_type, database_id, repo_key, stanza | |
+| `pgbackrest_backup_repo_delta_bytes` | compressed files size in backup | backup_name, backup_type, database_id, repo_key, stanza | |
+| `pgbackrest_backup_repo_size_bytes` | full compressed files size to restore the database from backup | backup_name, backup_type, database_id, repo_key, stanza | |
+| `pgbackrest_backup_repo_delta_map_bytes` | size of block incremental delta map | backup_name, backup_type, database_id, repo_key, stanza | |
+| `pgbackrest_backup_repo_size_map_bytes` | size of block incremental map | backup_name, backup_type, database_id, repo_key, stanza | |
+| `pgbackrest_backup_since_last_completion_seconds` | seconds since the last completed full, differential or incremental backup | backup_type, stanza | |
+| `pgbackrest_backup_last_annotations` | number of annotations in the last full, differential or incremental backup | backup_type, stanza | |
+| `pgbackrest_backup_last_databases` | number of databases in the last full, differential or incremental backup | backup_type, stanza | |
+| `pgbackrest_backup_last_duration_seconds` | backup duration for the last full, differential or incremental backup | backup_type, stanza | |
+| `pgbackrest_backup_last_error_status` | error status in the last full, differential or incremental backup | backup_type, stanza | |
+| `pgbackrest_backup_last_delta_bytes` | amount of data in the database to actually backup in the last full, differential or incremental backup | backup_type, stanza | |
+| `pgbackrest_backup_last_size_bytes` | full uncompressed size of the database in the last full, differential or incremental backup | backup_type, stanza | |
+| `pgbackrest_backup_last_repo_delta_bytes` | compressed files size in the last full, differential or incremental backup | backup_type, stanza | |
+| `pgbackrest_backup_last_repo_size_bytes` | full compressed files size to restore the database from the last full, differential or incremental backup | backup_type, stanza | |
+| `pgbackrest_backup_last_repo_size_map_bytes` | size of block incremental map in the last full, differential or incremental backup | backup_type, stanza | |
+| `pgbackrest_backup_last_repo_delta_map_bytes` | size of block incremental delta map in the last full, differential or incremental backup | backup_type, stanza | |
 
-    Values description for stanza and repo statuses:
-    - `0`: ok,
-    - `1`: missing stanza path,
-    - `2`: no valid backups,
-    - `3`: missing stanza data,
-    - `4`: different across repos,
-    - `5`: database mismatch across repos,
-    - `6`: requested backup not found,
-    - `99`: other.
+### WAL metrics
+| Metric | Description |  Labels | Additional Info |
+| ----------- | ------------------ | ------------- | --------------- |
+| `pgbackrest_wal_archive_status` | current WAL archive status | database_id, pg_version, repo_key, stanza, wal_max, wal_min | Values description:<br> `0` - any one of WALMin and WALMax have empty value, there is no correct information about WAL archiving,<br> `1` - both WALMin and WALMax have no empty values, there is correct information about WAL archiving. |
 
-* `pgbackrest_backup_info` - backup info.
+### Exporter metrics
 
-    Labels: backrest_ver, backup_name, backup_type, block_incr, database_id, lsn_start, lsn_stop, pg_version, prior, repo_key, stanza, wal_start, wal_stop.
-
-    Values description:
-     - `1` - info about backup is exist.
-
-* `pgbackrest_backup_duration_seconds` - backup duration in seconds.
-
-    Labels: backup_name, backup_type, database_id, repo_key, stanza, start_time, stop_time.
-
-* `pgbackrest_backup_size_bytes` - full uncompressed size of the database.
-
-    Labels: backup_name, backup_type, database_id, repo_key, stanza.
-
-* `pgbackrest_backup_delta_bytes` - amount of data in the database to actually backup.
-
-    Labels: backup_name, backup_type, database_id, repo_key, stanza.
-
-* `pgbackrest_backup_repo_size_bytes` - full compressed files size to restore the database from backup.
-
-    Labels: backup_name, backup_type, database_id, repo_key, stanza.
-
-* `pgbackrest_backup_repo_delta_bytes` - compressed files size in backup.
-
-    Labels: backup_name, backup_type, database_id, repo_key, stanza.
-
-* `pgbackrest_backup_repo_size_map_bytes` - size of block incremental map.
-
-    Labels: backup_name, backup_type, database_id, repo_key, stanza.
-
-* `pgbackrest_backup_repo_delta_map_bytes` - size of block incremental delta map.
-
-    Labels: backup_name, backup_type, database_id, repo_key, stanza.
-
-* `pgbackrest_backup_error_status` - backup error status.
-
-    Labels: backup_name, backup_type, database_id, repo_key, stanza.
-
-    Values description:
-    - `0` - backup doesn't contain page checksum errors,
-    - `1` - backup contains one or more page checksum errors. To display the list of errors, you need manually run the command like `pgbackrest info --stanza stanza --set backup_name --repo repo_key`.
-
-* `pgbackrest_backup_databases` - number of databases in backup.
-
-    Labels: backup_name, backup_type, database_id, repo_key, stanza.
-
-* `pgbackrest_backup_annotations` - number of annotations in backup.
-
-    Labels: backup_name, backup_type, database_id, repo_key, stanza.
-
-* `pgbackrest_backup_since_last_completion_seconds` - seconds since the last completed full, differential or incremental backup.
-
-    Labels: backup_type, stanza.
-
-* `pgbackrest_backup_last_annotations` - number of annotations in the last full, differential or incremental backup.
-
-    Labels: backup_type, stanza.
-
-* `pgbackrest_backup_last_databases` - number of databases in the last full, differential or incremental backup.
-
-    Labels: backup_type, stanza.
-
-* `pgbackrest_backup_last_duration_seconds` - backup duration for the last full, differential or incremental backup.
-
-    Labels: backup_type, stanza.
-
-* `pgbackrest_backup_last_size_bytes` - full uncompressed size of the database in the last full, differential or incremental backup.
-
-    Labels: backup_type, stanza.
-
-* `pgbackrest_backup_last_delta_bytes` - amount of data in the database to actually backup in the last full, differential or incremental backup.
-
-    Labels: backup_type, stanza.
-
-* `pgbackrest_backup_last_repo_size_bytes` - full compressed files size to restore the database from the last full, differential or incremental backup.
-
-    Labels: backup_type, stanza.
-
-* `pgbackrest_backup_last_repo_delta_bytes` - compressed files size in the last full, differential or incremental backup.
-
-    Labels: backup_type, stanza.
-
-* `pgbackrest_backup_last_repo_size_map_bytes` - size of block incremental map in the last full, differential or incremental backup.
-
-    Labels: backup_type, stanza.
-
-* `pgbackrest_backup_last_repo_delta_map_bytes` - size of block incremental delta map in the last full, differential or incremental backup.
-
-    Labels: backup_type, stanza.
-
-* `pgbackrest_backup_last_error_status` - error status in the last full, differential or incremental backup
-
-    Labels: backup_type, stanza.
-
-* `pgbackrest_wal_archive_status` - current WAL archive status.
-
-    Labels: database_id, pg_version, repo_key, stanza, wal_max, wal_min.
-
-    Values description:
-    - `0` - any one of WALMin and WALMax have empty value, there is no correct information about WAL archiving,
-    - `1` - both WALMin and WALMax have no empty values, there is correct information about WAL archiving.
-
-* `pgbackrest_exporter_info` - information about pgBackRest exporter.
-
-    Labels: version.
+| Metric | Description |  Labels | Additional Info |
+| ----------- | ------------------ | ------------- | --------------- |
+| `pgbackrest_exporter_info` | information about pgBackRest exporter | version | |
 
 ### Additional description of metrics
 
