@@ -91,4 +91,7 @@ func getStanzaMetrics(stanzaName string, stanzaStatus status, setUpMetricValueFu
 
 func resetStanzaMetrics() {
 	pgbrStanzaStatusMetric.Reset()
+	pgbrStanzaLockStatusMetric.Reset()
+	pgbrStanzaBackupInProgressTotalMetric.Reset()
+	pgbrStanzaBackupInProgressCompleteMetric.Reset()
 }
