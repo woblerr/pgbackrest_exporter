@@ -60,7 +60,7 @@ func getStanzaMetrics(stanzaName string, stanzaStatus status, setUpMetricValueFu
 	// May be this functionality will be added in the future.
 	// When creating dashboards, this should be remembered.
 	setUpMetric(
-		pgbrStanzaStatusMetric,
+		pgbrStanzaLockStatusMetric,
 		"pgbackrest_stanza_lock_status",
 		convertBoolToFloat64(stanzaStatus.Lock.Backup.Held),
 		setUpMetricValueFun,
