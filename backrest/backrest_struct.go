@@ -183,7 +183,9 @@ type status struct {
 	Code int `json:"code"`
 	Lock struct {
 		Backup struct {
-			Held bool `json:"held"`
+			Held         bool   `json:"held"`
+			SizeTotal    *int64 `json:"size"`
+			SizeComplete *int64 `json:"size-cplt"`
 		} `json:"backup"`
 	} `json:"lock"`
 	Message string `json:"message"`

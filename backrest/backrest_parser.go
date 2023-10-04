@@ -303,6 +303,14 @@ func convertBoolToFloat64(value bool) float64 {
 	return 0
 }
 
+// Convert pointer (int64) to float64.
+func convertInt64PointerToFloat64(value *int64) float64 {
+	if value != nil {
+		return float64(*value)
+	}
+	return 0
+}
+
 func getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, backupLabel string, logger log.Logger) ([]stanza, error) {
 	stanzaDataSpecific, err := getSpecificBackupInfoData(config, configIncludePath, stanzaName, backupLabel, logger)
 	if err != nil {

@@ -13,6 +13,9 @@ The metrics are collected based on result of `pgbackrest info --output json` com
 
 | Metric | Description |  Labels | Additional Info |
 | ----------- | ------------------ | ------------- | --------------- |
+| `pgbackrest_stanza_backup_compete_bytes` | completed size for backup in progress | stanza | |
+| `pgbackrest_stanza_backup_total_bytes` | total size for backup in progress | stanza | |
+| `pgbackrest_stanza_lock_status` | current stanza lock status | stanza | Values description:<br> `0` - no active operation with stanza,<br> `1` - one of the commands is running for stanza: backup, expire or stanza-*. |
 | `pgbackrest_stanza_status` | current stanza status | stanza | Values description:<br> `0` - ok,<br> `1` - missing stanza path,<br> `2` - no valid backups,<br> `3` - missing stanza data,<br> `4` - different across repos,<br> `5` - database mismatch across repos,<br> `6` - requested backup not found,<br> `99` - other. |
 
 ### Repository metrics
@@ -77,11 +80,24 @@ For `pgbackrest_*_last_*` metrics for incremental backups (`backup_type="incr"`)
 Metric `pgbackrest_backup_annotations` is set only for backups that have annotations.
 If there are no annotations, the metric won't be set for this backup.
 
+If `pgbackrest_stanza_lock_status` metric is `1`, than one of the commands is running for stanza: `backup`, `expire` or `stanza-*`.
+With a very high probability it is `backup/expire`.
+
+For `pgBackRest >= v2.48` it is possible to determine whether the backup is running:
+* if `pgbackrest_stanza_backup_compete_bytes` and `pgbackrest_stanza_backup_total_bytes` metric
+s are different from `0` and `pgbackrest_stanza_lock_status` metric is equal to `1`, then a backup is running;
+* if `pgbackrest_stanza_backup_compete_bytes` and `pgbackrest_stanza_backup_total_bytes` metric
+s are equal to `0` and `pgbackrest_stanza_lock_status` metric is equal to `1`, then one of the commands is running for stanza: `expire` or `stanza-*`. With a very high probability it is `expire`.
+
 ## Compatibility with pgBackRest versions
 
 The number of collected metrics may vary depending on pgBackRest version. 
 
 For different versions, some metrics may not be collected or have insignificant label values:
+
+* `pgBackRest < v2.48`
+
+    For `pgbackrest_stanza_backup_compete_bytes` and `pgbackrest_stanza_backup_total_bytes` metrics the values will always be `0`.
 
 * `pgBackRest >= v2.45`
   
@@ -104,7 +120,6 @@ For different versions, some metrics may not be collected or have insignificant 
     * `pgbackrest_backup_annotations`.
 
     For `pgbackrest_backup_last_annotations` metric the values will always be `0`.
-.
 
 * `pgBackRest < v2.38`
 
@@ -211,7 +226,7 @@ For a significant number of stanzas, this may require additional time to collect
 
 ### Building and running docker
 
-By default, pgBackRest version is `2.46`. Another version can be specified via arguments.
+By default, pgBackRest version is `2.48`. Another version can be specified via arguments.
 For base image used [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest) image.
 
 Environment variables supported by this image:

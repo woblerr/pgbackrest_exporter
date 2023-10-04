@@ -437,7 +437,7 @@ func fakeSetUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...
 }
 
 //nolint:unparam
-func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus bool, deltaMap, sizeMap int64, backupAnnotation annotation) stanza {
+func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus, stanzaLock bool, deltaMap, sizeMap, stanzaSizeTotal, stanzaSizeComplete int64, backupAnnotation annotation) stanza {
 	var (
 		size *int64
 		link *[]struct {
@@ -512,12 +512,16 @@ func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus bool
 			0,
 			struct {
 				Backup struct {
-					Held bool "json:\"held\""
+					Held         bool   "json:\"held\""
+					SizeTotal    *int64 `json:"size"`
+					SizeComplete *int64 `json:"size-cplt"`
 				} "json:\"backup\""
 			}{
 				struct {
-					Held bool "json:\"held\""
-				}{false},
+					Held         bool   "json:\"held\""
+					SizeTotal    *int64 `json:"size"`
+					SizeComplete *int64 `json:"size-cplt"`
+				}{stanzaLock, &stanzaSizeTotal, &stanzaSizeComplete},
 			},
 			"ok",
 		},
@@ -527,8 +531,8 @@ func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus bool
 //nolint:unparam
 func templateStanzaRepoMapSizesAbsent(walMax, walMin string, dbRef []databaseRef, errorStatus bool, size int64, backupAnnotation annotation) stanza {
 	var (
-		deltaMap, sizeMap *int64
-		link              *[]struct {
+		deltaMap, sizeMap, stanzaSizeTotal, stanzaSizeComplete *int64
+		link                                                   *[]struct {
 			Destination string "json:\"destination\""
 			Name        string "json:\"name\""
 		}
@@ -600,12 +604,16 @@ func templateStanzaRepoMapSizesAbsent(walMax, walMin string, dbRef []databaseRef
 			0,
 			struct {
 				Backup struct {
-					Held bool "json:\"held\""
+					Held         bool   "json:\"held\""
+					SizeTotal    *int64 `json:"size"`
+					SizeComplete *int64 `json:"size-cplt"`
 				} "json:\"backup\""
 			}{
 				struct {
-					Held bool "json:\"held\""
-				}{false},
+					Held         bool   "json:\"held\""
+					SizeTotal    *int64 `json:"size"`
+					SizeComplete *int64 `json:"size-cplt"`
+				}{false, stanzaSizeTotal, stanzaSizeComplete},
 			},
 			"ok",
 		},
@@ -615,10 +623,10 @@ func templateStanzaRepoMapSizesAbsent(walMax, walMin string, dbRef []databaseRef
 //nolint:unparam
 func templateStanzaErrorAbsent(walMax, walMin string, size int64) stanza {
 	var (
-		errorStatus       *bool
-		deltaMap, sizeMap *int64
-		dbRef             *[]databaseRef
-		link              *[]struct {
+		errorStatus                                            *bool
+		deltaMap, sizeMap, stanzaSizeTotal, stanzaSizeComplete *int64
+		dbRef                                                  *[]databaseRef
+		link                                                   *[]struct {
 			Destination string "json:\"destination\""
 			Name        string "json:\"name\""
 		}
@@ -691,12 +699,16 @@ func templateStanzaErrorAbsent(walMax, walMin string, size int64) stanza {
 			0,
 			struct {
 				Backup struct {
-					Held bool "json:\"held\""
+					Held         bool   "json:\"held\""
+					SizeTotal    *int64 `json:"size"`
+					SizeComplete *int64 `json:"size-cplt"`
 				} "json:\"backup\""
 			}{
 				struct {
-					Held bool "json:\"held\""
-				}{false},
+					Held         bool   "json:\"held\""
+					SizeTotal    *int64 `json:"size"`
+					SizeComplete *int64 `json:"size-cplt"`
+				}{false, stanzaSizeTotal, stanzaSizeComplete},
 			},
 			"ok",
 		},
@@ -706,10 +718,10 @@ func templateStanzaErrorAbsent(walMax, walMin string, size int64) stanza {
 //nolint:unparam
 func templateStanzaRepoAbsent(walMax, walMin string, size int64) stanza {
 	var (
-		errorStatus       *bool
-		deltaMap, sizeMap *int64
-		dbRef             *[]databaseRef
-		link              *[]struct {
+		errorStatus                                            *bool
+		deltaMap, sizeMap, stanzaSizeTotal, stanzaSizeComplete *int64
+		dbRef                                                  *[]databaseRef
+		link                                                   *[]struct {
 			Destination string "json:\"destination\""
 			Name        string "json:\"name\""
 		}
@@ -774,12 +786,16 @@ func templateStanzaRepoAbsent(walMax, walMin string, size int64) stanza {
 			0,
 			struct {
 				Backup struct {
-					Held bool "json:\"held\""
+					Held         bool   "json:\"held\""
+					SizeTotal    *int64 `json:"size"`
+					SizeComplete *int64 `json:"size-cplt"`
 				} "json:\"backup\""
 			}{
 				struct {
-					Held bool "json:\"held\""
-				}{false},
+					Held         bool   "json:\"held\""
+					SizeTotal    *int64 `json:"size"`
+					SizeComplete *int64 `json:"size-cplt"`
+				}{false, stanzaSizeTotal, stanzaSizeComplete},
 			},
 			"ok",
 		},
@@ -848,16 +864,22 @@ func TestGetParsedSpecificBackupInfoDataErrors(t *testing.T) {
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
 					true,
+					false,
 					12,
 					100,
+					0,
+					0,
 					annotation{"testkey": "testvalue"}).Name,
 				templateStanza(
 					"000000010000000000000004",
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
 					true,
+					false,
 					12,
 					100,
+					0,
+					0,
 					annotation{"testkey": "testvalue"}).Backup[0].Label,
 				3,
 			},

@@ -229,6 +229,7 @@ func getBackupMetrics(stanzaName string, backupData []backup, dbData []db, setUp
 				stanzaName,
 			)
 		}
+		// Backup info.
 		//  1 - info about backup is exist.
 		setUpMetric(
 			pgbrStanzaBackupInfoMetric,
