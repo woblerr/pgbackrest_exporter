@@ -59,6 +59,9 @@ func getStanzaMetrics(stanzaName string, stanzaStatus status, setUpMetricValueFu
 	// then it's exactly backup. However, pgBackRest currently don't return any statuses in this place.
 	// May be this functionality will be added in the future.
 	// When creating dashboards, this should be remembered.
+	// Stanza lock statuses:
+	//  0: "no active operation with stanza",
+	//  1: one of the commands is running for stanza: backup, expire or stanza-*".
 	setUpMetric(
 		pgbrStanzaLockStatusMetric,
 		"pgbackrest_stanza_lock_status",
