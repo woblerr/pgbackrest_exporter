@@ -118,28 +118,26 @@ func getBackupLastMetrics(stanzaName string, lastBackups lastBackupsStruct, curr
 	// If not - metrics won't be set.
 	if !lastBackups.full.backupTime.IsZero() {
 		for _, backup := range []backupStruct{lastBackups.full, lastBackups.diff, lastBackups.incr} {
-			if backup.backupRepoSizeMap != nil && backup.backupRepoDeltaMap != nil {
-				// Repo backup map size for last backups.
-				setUpMetric(
-					pgbrStanzaBackupLastRepoBackupSetSizeMapMetric,
-					"pgbackrest_backup_last_repo_size_map_bytes",
-					float64(*backup.backupRepoSizeMap),
-					setUpMetricValueFun,
-					logger,
-					backup.backupType,
-					stanzaName,
-				)
-				// Repo backup delta map size for last backups.
-				setUpMetric(
-					pgbrStanzaBackupLastRepoBackupSizeMapMetric,
-					"pgbackrest_backup_last_repo_delta_map_bytes",
-					float64(*backup.backupRepoDeltaMap),
-					setUpMetricValueFun,
-					logger,
-					backup.backupType,
-					stanzaName,
-				)
-			}
+			// Repo backup map size for last backups.
+			setUpMetric(
+				pgbrStanzaBackupLastRepoBackupSetSizeMapMetric,
+				"pgbackrest_backup_last_repo_size_map_bytes",
+				convertInt64PointerToFloat64(backup.backupRepoSizeMap),
+				setUpMetricValueFun,
+				logger,
+				backup.backupType,
+				stanzaName,
+			)
+			// Repo backup delta map size for last backups.
+			setUpMetric(
+				pgbrStanzaBackupLastRepoBackupSizeMapMetric,
+				"pgbackrest_backup_last_repo_delta_map_bytes",
+				convertInt64PointerToFloat64(backup.backupRepoDeltaMap),
+				setUpMetricValueFun,
+				logger,
+				backup.backupType,
+				stanzaName,
+			)
 			// Seconds since the last completed backups.
 			setUpMetric(
 				pgbrStanzaBackupSinceLastCompletionSecondsMetric,
@@ -181,17 +179,15 @@ func getBackupLastMetrics(stanzaName string, lastBackups lastBackupsStruct, curr
 				stanzaName,
 			)
 			// Repo backup set size.
-			if backup.backupRepoSize != nil {
-				setUpMetric(
-					pgbrStanzaBackupLastRepoBackupSetSizeMetric,
-					"pgbackrest_backup_last_repo_size_bytes",
-					float64(*backup.backupRepoSize),
-					setUpMetricValueFun,
-					logger,
-					backup.backupType,
-					stanzaName,
-				)
-			}
+			setUpMetric(
+				pgbrStanzaBackupLastRepoBackupSetSizeMetric,
+				"pgbackrest_backup_last_repo_size_bytes",
+				convertInt64PointerToFloat64(backup.backupRepoSize),
+				setUpMetricValueFun,
+				logger,
+				backup.backupType,
+				stanzaName,
+			)
 			// Repo backup size.
 			setUpMetric(
 				pgbrStanzaBackupLastRepoBackupSizeMetric,

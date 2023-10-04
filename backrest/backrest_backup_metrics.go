@@ -202,33 +202,37 @@ func getBackupMetrics(stanzaName string, backupData []backup, dbData []db, setUp
 		if backup.Info.Repository.SizeMap != nil && backup.Info.Repository.DeltaMap != nil {
 			// The block incremental backup functionality is used.
 			blockIncr = "y"
-			// Repo backup map size.
-			setUpMetric(
-				pgbrStanzaBackupRepoBackupSetSizeMapMetric,
-				"pgbackrest_backup_repo_size_map_bytes",
-				float64(*backup.Info.Repository.SizeMap),
-				setUpMetricValueFun,
-				logger,
-				backup.Label,
-				backup.Type,
-				strconv.Itoa(backup.Database.ID),
-				strconv.Itoa(backup.Database.RepoKey),
-				stanzaName,
-			)
-			// Repo backup delta map size.
-			setUpMetric(
-				pgbrStanzaBackupRepoBackupSizeMapMetric,
-				"pgbackrest_backup_repo_delta_map_bytes",
-				float64(*backup.Info.Repository.DeltaMap),
-				setUpMetricValueFun,
-				logger,
-				backup.Label,
-				backup.Type,
-				strconv.Itoa(backup.Database.ID),
-				strconv.Itoa(backup.Database.RepoKey),
-				stanzaName,
-			)
 		}
+		// Repo backup map size.
+		// If value is absent, metric will be set to 0.
+		// It's necessary to avoid flapping time series.
+		setUpMetric(
+			pgbrStanzaBackupRepoBackupSetSizeMapMetric,
+			"pgbackrest_backup_repo_size_map_bytes",
+			convertInt64PointerToFloat64(backup.Info.Repository.SizeMap),
+			setUpMetricValueFun,
+			logger,
+			backup.Label,
+			backup.Type,
+			strconv.Itoa(backup.Database.ID),
+			strconv.Itoa(backup.Database.RepoKey),
+			stanzaName,
+		)
+		// Repo backup delta map size.
+		// If value is absent, metric will be set to 0.
+		// It's necessary to avoid flapping time series.
+		setUpMetric(
+			pgbrStanzaBackupRepoBackupSizeMapMetric,
+			"pgbackrest_backup_repo_delta_map_bytes",
+			convertInt64PointerToFloat64(backup.Info.Repository.DeltaMap),
+			setUpMetricValueFun,
+			logger,
+			backup.Label,
+			backup.Type,
+			strconv.Itoa(backup.Database.ID),
+			strconv.Itoa(backup.Database.RepoKey),
+			stanzaName,
+		)
 		// Backup info.
 		//  1 - info about backup is exist.
 		setUpMetric(
@@ -298,20 +302,20 @@ func getBackupMetrics(stanzaName string, backupData []backup, dbData []db, setUp
 		// See https://github.com/pgbackrest/pgbackrest/commit/6252c0e4485caee362edec13302a5f735a69bff4
 		// and https://github.com/pgbackrest/pgbackrest/projects/2#card-87759001
 		// This behavior may change in future pgBackRest releases.
-		if backup.Info.Repository.Size != nil {
-			setUpMetric(
-				pgbrStanzaBackupRepoBackupSetSizeMetric,
-				"pgbackrest_backup_repo_size_bytes",
-				float64(*backup.Info.Repository.Size),
-				setUpMetricValueFun,
-				logger,
-				backup.Label,
-				backup.Type,
-				strconv.Itoa(backup.Database.ID),
-				strconv.Itoa(backup.Database.RepoKey),
-				stanzaName,
-			)
-		}
+		// If value is absent, metric will be set to 0.
+		// It's necessary to avoid flapping time series.
+		setUpMetric(
+			pgbrStanzaBackupRepoBackupSetSizeMetric,
+			"pgbackrest_backup_repo_size_bytes",
+			convertInt64PointerToFloat64(backup.Info.Repository.Size),
+			setUpMetricValueFun,
+			logger,
+			backup.Label,
+			backup.Type,
+			strconv.Itoa(backup.Database.ID),
+			strconv.Itoa(backup.Database.RepoKey),
+			stanzaName,
+		)
 		// Repo backup size.
 		setUpMetric(
 			pgbrStanzaBackupRepoBackupSizeMetric,

@@ -17,8 +17,7 @@ import (
 // pgBackrest version = latest.
 // With '--backrest.database-count' flag.
 // The case when the backup is performed with block incremental feature flags.
-// Absent metrics:
-//   - pgbackrest_backup_repo_size_bytes
+// Metric pgbackrest_backup_repo_size_bytes is set to 0.
 //
 //nolint:dupl
 func TestGetBackupMetrics(t *testing.T) {
@@ -52,6 +51,9 @@ pgbackrest_backup_repo_delta_bytes{backup_name="20210607-092423F",backup_type="f
 # HELP pgbackrest_backup_repo_delta_map_bytes Size of block incremental delta map.
 # TYPE pgbackrest_backup_repo_delta_map_bytes gauge
 pgbackrest_backup_repo_delta_map_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 12
+# HELP pgbackrest_backup_repo_size_bytes Full compressed files size to restore the database from backup.
+# TYPE pgbackrest_backup_repo_size_bytes gauge
+pgbackrest_backup_repo_size_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 0
 # HELP pgbackrest_backup_repo_size_map_bytes Size of block incremental map.
 # TYPE pgbackrest_backup_repo_size_map_bytes gauge
 pgbackrest_backup_repo_size_map_bytes{backup_name="20210607-092423F",backup_type="full",database_id="1",repo_key="1",stanza="demo"} 100
@@ -682,8 +684,8 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 					annotation{"testkey": "testvalue"}).DB,
 				true,
 				fakeSetUpMetricValue,
-				9,
-				9,
+				10,
+				10,
 			},
 			mockStruct{
 				`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
@@ -730,8 +732,8 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 					annotation{"testkey": "testvalue"}).DB,
 				true,
 				fakeSetUpMetricValue,
-				8,
-				8,
+				10,
+				10,
 			},
 			mockStruct{
 				`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
