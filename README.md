@@ -101,16 +101,13 @@ For different versions, some metrics may not be collected or have insignificant 
 
 * `pgBackRest >= v2.45`
   
-    The following metric will be absent for block incremental backups: 
-    * `pgbackrest_backup_repo_size_bytes`.
+    For `pgbackrest_backup_repo_size_bytes` metric the values will be `0` for block incremental backups.
 
 * `pgBackRest < v2.44`
 
-    The following metrics will be absent: 
-    * `pgbackrest_backup_repo_size_map_bytes`,
-    * `pgbackrest_backup_repo_delta_map_bytes`.
+    For `pgbackrest_backup_repo_size_map_bytes` and `pgbackrest_backup_repo_delta_map_bytes` metrics the values will always be `0`.
 
-    For `pgbackrest_backup_info` metric label `block_incr` will be absent.
+    For `pgbackrest_backup_info` metric label `block_incr` will always be `n`.
 
 * `pgBackRest < v2.41`
 
