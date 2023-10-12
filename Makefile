@@ -20,7 +20,7 @@ test:
 test-e2e:
 	@echo "Run end-to-end tests for $(APP_NAME)"
 	@if [ -n "$(DOCKER_CONTAINER_E2E)" ]; then docker rm -f "$(DOCKER_CONTAINER_E2E)"; fi;
-	DOCKER_BUILDKIT=1 docker build --pull -f e2e_tests/Dockerfile --build-arg BACKREST_VERSION=$(BACKREST_VERSION) --build-arg DOCKER_BACKREST_VERSION=$(DOCKER_BACKREST_VERSION) -t $(APP_NAME)_e2e .
+	DOCKER_BUILDKIT=1 docker build --pull -f e2e_tests/Dockerfile --build-arg REPO_BUILD_TAG=$(BRANCH)-$(GIT_REV) --build-arg BACKREST_VERSION=$(BACKREST_VERSION) --build-arg DOCKER_BACKREST_VERSION=$(DOCKER_BACKREST_VERSION) -t $(APP_NAME)_e2e .
 	$(call e2e_basic)
 	$(call e2e_tls_auth,/e2e_tests/web_config_empty.yml,false,false)
 	$(call e2e_tls_auth,/e2e_tests/web_config_TLS_noAuth.yml,true,false)
