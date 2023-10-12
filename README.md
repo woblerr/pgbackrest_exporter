@@ -8,6 +8,10 @@ Prometheus exporter for [pgBackRest](https://pgbackrest.org/).
 
 The metrics are collected based on result of `pgbackrest info --output json` command. By default, the metrics are collected for all stanzas received by command. You can specify stanzas to collect metrics. You need to run exporter on the same host where pgBackRest was installed or inside Docker.
 
+## Grafana dashboard
+
+To get a dashboard for visualizing the collected metrics, you can use a ready-made dashboard [pgBackRest Exporter Dashboard](https://grafana.com/grafana/dashboards/17709-pgbackrest-exporter-dashboard/) or make your own.
+
 ## Collected metrics
 ### Stanza metrics
 
@@ -493,7 +497,3 @@ Run the end-to-end tests:
 ```bash
 make test-e2e
 ```
-
-### Grafana dashboard
-
-To get a dashboard for visualizing the collected metrics, you can use a ready-made dashboard [pgBackRest Exporter Dashboard](https://grafana.com/grafana/dashboards/17709-pgbackrest-exporter-dashboard/) or make your own.
