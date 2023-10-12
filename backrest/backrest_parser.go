@@ -355,6 +355,7 @@ func resetMetrics() {
 	resetBackupMetrics()
 	resetLastBackupMetrics()
 	resetWALMetrics()
+	resetExporterMetrics()
 }
 
 func checkBackupDatabaseRef(backupData []stanza) bool {
