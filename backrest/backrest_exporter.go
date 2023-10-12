@@ -69,8 +69,8 @@ func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas []s
 	// If stanza not set - perform a single loop step to get metrics for all stanzas.
 	for _, stanza := range stanzas {
 		// Flag to check if pgBackRest get info for this stanza.
-		// By default it's set to true.
-		// If we get error form pgBackRest when getting info for stanza, flag will be set to false.
+		// By default, it's set to true.
+		// If we get an error from pgBackRest when getting info for stanza, flag will be set to false.
 		getDataSuccessStatus := true
 		// Check that stanza from the include list is not in the exclude list.
 		// If stanza not set - checking for entry into the exclude list will be performed later.
@@ -121,7 +121,7 @@ func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas []s
 		} else {
 			// When stanza is specified in both include and exclude lists, a warning is displayed in the log
 			// and data for this stanza is not collected.
-			// It is necessary to set zero metric value for such a stanza.
+			// It is necessary to set zero metric value for this stanza.
 			getDataSuccessStatus = false
 			getExporterStatusMetrics(stanza, getDataSuccessStatus, setUpMetricValue, logger)
 			level.Warn(logger).Log("msg", "Stanza is specified in include and exclude lists", "stanza", stanza)
