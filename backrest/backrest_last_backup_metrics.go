@@ -22,18 +22,7 @@ var (
 	},
 		[]string{
 			"backup_type",
-			"stanza"})
-	// Differential backup is always based on last full,
-	// if the last backup was full, the metric will take full backup value.
-	// Incremental backup is always based on last full or differential,
-	// if the last backup was full or differential, the metric will take
-	// full or differential backup value.
-	pgbrStanzaBackupLastDatabasesMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_backup_last_databases",
-		Help: "Number of databases in the last full, differential or incremental backup.",
-	},
-		[]string{
-			"backup_type",
+			"block_incr",
 			"stanza"})
 	pgbrStanzaBackupLastDurationMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_last_duration_seconds",
@@ -41,6 +30,7 @@ var (
 	},
 		[]string{
 			"backup_type",
+			"block_incr",
 			"stanza",
 		})
 	pgbrStanzaBackupLastDatabaseSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -49,6 +39,7 @@ var (
 	},
 		[]string{
 			"backup_type",
+			"block_incr",
 			"stanza"})
 	pgbrStanzaBackupLastDatabaseBackupSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_last_delta_bytes",
@@ -56,6 +47,7 @@ var (
 	},
 		[]string{
 			"backup_type",
+			"block_incr",
 			"stanza"})
 	pgbrStanzaBackupLastRepoBackupSetSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_last_repo_size_bytes",
@@ -63,6 +55,7 @@ var (
 	},
 		[]string{
 			"backup_type",
+			"block_incr",
 			"stanza"})
 	pgbrStanzaBackupLastRepoBackupSetSizeMapMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_last_repo_size_map_bytes",
@@ -70,6 +63,7 @@ var (
 	},
 		[]string{
 			"backup_type",
+			"block_incr",
 			"stanza"})
 	pgbrStanzaBackupLastRepoBackupSizeMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_last_repo_delta_bytes",
@@ -77,6 +71,7 @@ var (
 	},
 		[]string{
 			"backup_type",
+			"block_incr",
 			"stanza"})
 	pgbrStanzaBackupLastRepoBackupSizeMapMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_last_repo_delta_map_bytes",
@@ -84,6 +79,7 @@ var (
 	},
 		[]string{
 			"backup_type",
+			"block_incr",
 			"stanza"})
 	pgbrStanzaBackupLastErrorMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_last_error_status",
@@ -91,6 +87,7 @@ var (
 	},
 		[]string{
 			"backup_type",
+			"block_incr",
 			"stanza"})
 	pgbrStanzaBackupLastAnnotationsMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_last_annotations",
@@ -98,7 +95,20 @@ var (
 	},
 		[]string{
 			"backup_type",
-			"stanza"})
+			"block_incr",
+			"stanza",
+		})
+	pgbrStanzaBackupLastDatabasesMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_backup_last_databases",
+		Help: "Number of databases in the last full, differential or incremental backup.",
+	},
+		[]string{
+			// Don't change this order.
+			// See function processSpecificBackupData().
+			"backup_type",
+			"stanza",
+			"block_incr",
+		})
 )
 
 // Set backup metrics:
@@ -126,6 +136,7 @@ func getBackupLastMetrics(stanzaName string, lastBackups lastBackupsStruct, curr
 				setUpMetricValueFun,
 				logger,
 				backup.backupType,
+				backup.backupBlockIncr,
 				stanzaName,
 			)
 			// Repo backup delta map size for last backups.
@@ -136,6 +147,7 @@ func getBackupLastMetrics(stanzaName string, lastBackups lastBackupsStruct, curr
 				setUpMetricValueFun,
 				logger,
 				backup.backupType,
+				backup.backupBlockIncr,
 				stanzaName,
 			)
 			// Seconds since the last completed backups.
@@ -146,6 +158,7 @@ func getBackupLastMetrics(stanzaName string, lastBackups lastBackupsStruct, curr
 				setUpMetricValueFun,
 				logger,
 				backup.backupType,
+				backup.backupBlockIncr,
 				stanzaName,
 			)
 			// Backup durations in seconds for last backups.
@@ -156,6 +169,7 @@ func getBackupLastMetrics(stanzaName string, lastBackups lastBackupsStruct, curr
 				setUpMetricValueFun,
 				logger,
 				backup.backupType,
+				backup.backupBlockIncr,
 				stanzaName,
 			)
 			// Database size for last backups.
@@ -166,6 +180,7 @@ func getBackupLastMetrics(stanzaName string, lastBackups lastBackupsStruct, curr
 				setUpMetricValueFun,
 				logger,
 				backup.backupType,
+				backup.backupBlockIncr,
 				stanzaName,
 			)
 			// Database backup size for last backups.
@@ -176,6 +191,7 @@ func getBackupLastMetrics(stanzaName string, lastBackups lastBackupsStruct, curr
 				setUpMetricValueFun,
 				logger,
 				backup.backupType,
+				backup.backupBlockIncr,
 				stanzaName,
 			)
 			// Repo backup set size.
@@ -186,6 +202,7 @@ func getBackupLastMetrics(stanzaName string, lastBackups lastBackupsStruct, curr
 				setUpMetricValueFun,
 				logger,
 				backup.backupType,
+				backup.backupBlockIncr,
 				stanzaName,
 			)
 			// Repo backup size.
@@ -196,46 +213,33 @@ func getBackupLastMetrics(stanzaName string, lastBackups lastBackupsStruct, curr
 				setUpMetricValueFun,
 				logger,
 				backup.backupType,
+				backup.backupBlockIncr,
 				stanzaName,
 			)
 			// Backup error status.
-			if backup.backupError != nil {
-				setUpMetric(
-					pgbrStanzaBackupLastErrorMetric,
-					"pgbackrest_backup_last_error_status",
-					convertBoolToFloat64(*backup.backupError),
-					setUpMetricValueFun,
-					logger,
-					backup.backupType,
-					stanzaName,
-				)
-			}
+			setUpMetric(
+				pgbrStanzaBackupLastErrorMetric,
+				"pgbackrest_backup_last_error_status",
+				convertBoolPointerToFloat64(backup.backupError),
+				setUpMetricValueFun,
+				logger,
+				backup.backupType,
+				backup.backupBlockIncr,
+				stanzaName,
+			)
 			// Number of backup annotations.
 			// Information about number of annotations in backup has appeared since pgBackRest v2.41.
-			// The metric is always set.
-			// For last backups, unlike specific backups, it makes sense to always specify
-			// this metric so the metric is not lost, even if the backup does not have annotations.
-			if backup.backupAnnotation != nil {
-				setUpMetric(
-					pgbrStanzaBackupLastAnnotationsMetric,
-					"pgbackrest_backup_last_annotations",
-					float64(len(*backup.backupAnnotation)),
-					setUpMetricValueFun,
-					logger,
-					backup.backupType,
-					stanzaName,
-				)
-			} else {
-				setUpMetric(
-					pgbrStanzaBackupLastAnnotationsMetric,
-					"pgbackrest_backup_annotations",
-					0,
-					setUpMetricValueFun,
-					logger,
-					backup.backupType,
-					stanzaName,
-				)
-			}
+			// If there are no annotations, the metric will be set to 0 for this backup.
+			setUpMetric(
+				pgbrStanzaBackupLastAnnotationsMetric,
+				"pgbackrest_backup_last_annotations",
+				convertAnnotationPointerToFloat64(backup.backupAnnotation),
+				setUpMetricValueFun,
+				logger,
+				backup.backupType,
+				backup.backupBlockIncr,
+				stanzaName,
+			)
 		}
 	}
 }
@@ -248,7 +252,7 @@ func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, l
 	// If name for diff backup is equal to full, there is no point in re-receiving data.
 	if lastBackups.diff.backupLabel != lastBackups.full.backupLabel {
 		wg.Add(1)
-		go func(backupLabel, backupType string) {
+		go func(backupLabel, backupType, backupBlockIncr string) {
 			defer wg.Done()
 			processSpecificBackupData(
 				config,
@@ -259,13 +263,15 @@ func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, l
 				"pgbackrest_backup_last_databases",
 				pgbrStanzaBackupLastDatabasesMetric,
 				setUpMetricValueFun,
-				logger)
-		}(lastBackups.diff.backupLabel, lastBackups.diff.backupType)
+				logger,
+				backupBlockIncr,
+			)
+		}(lastBackups.diff.backupLabel, lastBackups.diff.backupType, lastBackups.diff.backupBlockIncr)
 	}
 	// If name for diff backup is equal to full, there is no point in re-receiving data.
 	if lastBackups.incr.backupLabel != lastBackups.diff.backupLabel {
 		wg.Add(1)
-		go func(backupLabel, backupType string) {
+		go func(backupLabel, backupType, backupBlockIncr string) {
 			defer wg.Done()
 			processSpecificBackupData(
 				config,
@@ -276,8 +282,10 @@ func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, l
 				"pgbackrest_backup_last_databases",
 				pgbrStanzaBackupLastDatabasesMetric,
 				setUpMetricValueFun,
-				logger)
-		}(lastBackups.incr.backupLabel, lastBackups.incr.backupType)
+				logger,
+				backupBlockIncr,
+			)
+		}(lastBackups.incr.backupLabel, lastBackups.incr.backupType, lastBackups.incr.backupBlockIncr)
 	}
 	// Try to get info for full backup.
 	parseStanzaDataSpecific, err := getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, lastBackups.full.backupLabel, logger)
@@ -289,39 +297,46 @@ func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, l
 			"err", err,
 		)
 	}
-	if checkBackupDatabaseRef(parseStanzaDataSpecific) {
-		// Number of databases in the last full backup.
+	if len(parseStanzaDataSpecific) == 0 || len(parseStanzaDataSpecific[0].Backup) == 0 {
+		level.Warn(logger).Log("msg", "No backup data returned",
+			"stanza", stanzaName,
+			"backup", lastBackups.full.backupLabel,
+		)
+	}
+	// Number of databases in the last full backup.
+	setUpMetric(
+		pgbrStanzaBackupLastDatabasesMetric,
+		"pgbackrest_backup_last_databases",
+		convertDatabaseRefPointerToFloat(parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
+		setUpMetricValueFun,
+		logger,
+		lastBackups.full.backupType,
+		stanzaName,
+		lastBackups.full.backupBlockIncr,
+	)
+	if lastBackups.diff.backupLabel == lastBackups.full.backupLabel {
 		setUpMetric(
 			pgbrStanzaBackupLastDatabasesMetric,
 			"pgbackrest_backup_last_databases",
-			float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
+			convertDatabaseRefPointerToFloat(parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
 			setUpMetricValueFun,
 			logger,
-			lastBackups.full.backupType,
+			lastBackups.diff.backupType,
 			stanzaName,
+			lastBackups.diff.backupBlockIncr,
 		)
-		if lastBackups.diff.backupLabel == lastBackups.full.backupLabel {
-			setUpMetric(
-				pgbrStanzaBackupLastDatabasesMetric,
-				"pgbackrest_backup_last_databases",
-				float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
-				setUpMetricValueFun,
-				logger,
-				lastBackups.diff.backupType,
-				stanzaName,
-			)
-		}
-		if lastBackups.incr.backupLabel == lastBackups.diff.backupLabel {
-			setUpMetric(
-				pgbrStanzaBackupLastDatabasesMetric,
-				"pgbackrest_backup_last_databases",
-				float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
-				setUpMetricValueFun,
-				logger,
-				lastBackups.incr.backupType,
-				stanzaName,
-			)
-		}
+	}
+	if lastBackups.incr.backupLabel == lastBackups.diff.backupLabel {
+		setUpMetric(
+			pgbrStanzaBackupLastDatabasesMetric,
+			"pgbackrest_backup_last_databases",
+			convertDatabaseRefPointerToFloat(parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
+			setUpMetricValueFun,
+			logger,
+			lastBackups.incr.backupType,
+			stanzaName,
+			lastBackups.incr.backupBlockIncr,
+		)
 	}
 }
 

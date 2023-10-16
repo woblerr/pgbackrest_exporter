@@ -28,6 +28,7 @@ type backupStruct struct {
 	backupRepoSizeMap  *int64
 	backupError        *bool
 	backupAnnotation   *annotation
+	backupBlockIncr    string
 }
 type lastBackupsStruct struct {
 	full backupStruct
@@ -193,7 +194,7 @@ func setUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...stri
 	return nil
 }
 
-func compareLastBackups(backups *lastBackupsStruct, currentBackup backup) {
+func compareLastBackups(backups *lastBackupsStruct, currentBackup backup, blockIncr string) {
 	currentBackupTime := time.Unix(currentBackup.Timestamp.Stop, 0)
 	curentBackupDuration := time.Unix(currentBackup.Timestamp.Stop, 0).Sub(time.Unix(currentBackup.Timestamp.Start, 0)).Seconds()
 	currentBackupLabel := currentBackup.Label
@@ -211,6 +212,7 @@ func compareLastBackups(backups *lastBackupsStruct, currentBackup backup) {
 			backups.full.backupRepoSizeMap = currentBackup.Info.Repository.SizeMap
 			backups.full.backupError = currentBackup.Error
 			backups.full.backupAnnotation = currentBackup.Annotation
+			backups.full.backupBlockIncr = blockIncr
 		}
 		if currentBackupTime.After(backups.diff.backupTime) {
 			backups.diff.backupTime = currentBackupTime
@@ -224,6 +226,7 @@ func compareLastBackups(backups *lastBackupsStruct, currentBackup backup) {
 			backups.diff.backupRepoSizeMap = currentBackup.Info.Repository.SizeMap
 			backups.diff.backupError = currentBackup.Error
 			backups.diff.backupAnnotation = currentBackup.Annotation
+			backups.diff.backupBlockIncr = blockIncr
 		}
 		if currentBackupTime.After(backups.incr.backupTime) {
 			backups.incr.backupTime = currentBackupTime
@@ -237,6 +240,7 @@ func compareLastBackups(backups *lastBackupsStruct, currentBackup backup) {
 			backups.incr.backupRepoSizeMap = currentBackup.Info.Repository.SizeMap
 			backups.incr.backupError = currentBackup.Error
 			backups.incr.backupAnnotation = currentBackup.Annotation
+			backups.incr.backupBlockIncr = blockIncr
 		}
 	case "diff":
 		if currentBackupTime.After(backups.diff.backupTime) {
@@ -251,6 +255,7 @@ func compareLastBackups(backups *lastBackupsStruct, currentBackup backup) {
 			backups.diff.backupRepoSizeMap = currentBackup.Info.Repository.SizeMap
 			backups.diff.backupError = currentBackup.Error
 			backups.diff.backupAnnotation = currentBackup.Annotation
+			backups.diff.backupBlockIncr = blockIncr
 		}
 		if currentBackupTime.After(backups.incr.backupTime) {
 			backups.incr.backupTime = currentBackupTime
@@ -264,6 +269,7 @@ func compareLastBackups(backups *lastBackupsStruct, currentBackup backup) {
 			backups.incr.backupRepoSizeMap = currentBackup.Info.Repository.SizeMap
 			backups.incr.backupError = currentBackup.Error
 			backups.incr.backupAnnotation = currentBackup.Annotation
+			backups.incr.backupBlockIncr = blockIncr
 		}
 	case "incr":
 		if currentBackupTime.After(backups.incr.backupTime) {
@@ -278,6 +284,7 @@ func compareLastBackups(backups *lastBackupsStruct, currentBackup backup) {
 			backups.incr.backupRepoSizeMap = currentBackup.Info.Repository.SizeMap
 			backups.incr.backupError = currentBackup.Error
 			backups.incr.backupAnnotation = currentBackup.Annotation
+			backups.incr.backupBlockIncr = blockIncr
 		}
 	}
 }
@@ -293,22 +300,6 @@ func stanzaNotInExclude(stanza string, listExclude []string) bool {
 		}
 	}
 	return true
-}
-
-// Convert bool to float64.
-func convertBoolToFloat64(value bool) float64 {
-	if value {
-		return 1
-	}
-	return 0
-}
-
-// Convert pointer (int64) to float64.
-func convertInt64PointerToFloat64(value *int64) float64 {
-	if value != nil {
-		return float64(*value)
-	}
-	return 0
 }
 
 func getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, backupLabel string, logger log.Logger) ([]stanza, error) {
@@ -358,16 +349,17 @@ func resetMetrics() {
 	resetExporterMetrics()
 }
 
-func checkBackupDatabaseRef(backupData []stanza) bool {
-	// In a normal situation, only one element with one backup should be returned.
-	// If more than one element or one backup is returned, there is may be a bug in pgBackRest.
-	// If it's not a bug, then this part will need to be refactoring.
-	// Use *[]struct() type for backup.DatabaseRef.
-	if (len(backupData) != 0 && len(backupData[0].Backup) != 0) &&
-		backupData[0].Backup[0].DatabaseRef != nil {
-		return true
+func (backup backup) checkBackupIncremental() string {
+	// Block incremental map is used for block level backup.
+	// If one value from 'size-map' or 'delta-map' is nil, and other has correct value,
+	// it looks like a bug in pgBackRest.
+	// See https://github.com/pgbackrest/pgbackrest/blob/3feed389a2199454db68e446851323498b45db20/src/command/info/info.c#L459-L463
+	// Relation - backupInfoRepoSizeMap != NULL, where backupInfoRepoSizeMap is related to SizeMap (size-map).
+	if backup.Info.Repository.SizeMap != nil && backup.Info.Repository.DeltaMap != nil {
+		// The block incremental backup functionality is used.
+		return "y"
 	}
-	return false
+	return "n"
 }
 
 func processSpecificBackupData(config, configIncludePath, stanzaName, backupLabel, backupType, metricName string, metric *prometheus.GaugeVec, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger, addLabels ...string) {
@@ -381,16 +373,24 @@ func processSpecificBackupData(config, configIncludePath, stanzaName, backupLabe
 		)
 		return
 	}
-	labels := append([]string{backupType, stanzaName}, addLabels...)
-	if checkBackupDatabaseRef(parseStanzaDataSpecific) {
-		// Number of databases in the last differential or incremental backup.
-		setUpMetric(
-			metric,
-			metricName,
-			float64(len(*parseStanzaDataSpecific[0].Backup[0].DatabaseRef)),
-			setUpMetricValueFun,
-			logger,
-			labels...,
+	// In a normal situation, only one element with one backup should be returned.
+	// If more than one element or one backup is returned, there is may be a bug in pgBackRest.
+	// If it's not a bug, then this part will need to be refactoring.
+	// Use *[]struct() type for backup.DatabaseRef.
+	if len(parseStanzaDataSpecific) == 0 || len(parseStanzaDataSpecific[0].Backup) == 0 {
+		level.Warn(logger).Log("msg", "No backup data returned",
+			"stanza", stanzaName,
+			"backup", backupLabel,
 		)
+		return
 	}
+	labels := append([]string{backupType, stanzaName}, addLabels...)
+	setUpMetric(
+		metric,
+		metricName,
+		convertDatabaseRefPointerToFloat(parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
+		setUpMetricValueFun,
+		logger,
+		labels...,
+	)
 }
