@@ -75,6 +75,7 @@ declare -a REGEX_LIST=(
     '^pgbackrest_backup_since_last_completion_seconds{.*}|3'
     '^pgbackrest_backup_size_bytes{.*}|3'
     '^pgbackrest_exporter_info{.*} 1$|1'
+    '^pgbackrest_exporter_status{stanza="all-stanzas"} 1$|1'
     '^pgbackrest_repo_status{.*,repo_key="1".*} 0$|1'
     '^pgbackrest_repo_status{.*,repo_key="2".*} 0$|1'
     '^pgbackrest_stanza_backup_compete_bytes{.*} 0$|1'

@@ -8,6 +8,10 @@ Prometheus exporter for [pgBackRest](https://pgbackrest.org/).
 
 The metrics are collected based on result of `pgbackrest info --output json` command. By default, the metrics are collected for all stanzas received by command. You can specify stanzas to collect metrics. You need to run exporter on the same host where pgBackRest was installed or inside Docker.
 
+## Grafana dashboard
+
+To get a dashboard for visualizing the collected metrics, you can use a ready-made dashboard [pgBackRest Exporter Dashboard](https://grafana.com/grafana/dashboards/17709-pgbackrest-exporter-dashboard/) or make your own.
+
 ## Collected metrics
 ### Stanza metrics
 
@@ -66,6 +70,7 @@ The metrics are collected based on result of `pgbackrest info --output json` com
 | Metric | Description |  Labels | Additional Info |
 | ----------- | ------------------ | ------------- | --------------- |
 | `pgbackrest_exporter_info` | information about pgBackRest exporter | version | |
+| `pgbackrest_exporter_status` | pgBackRest exporter get data status | stanza | Values description:<br> `0` - errors occurred when fetching information from pgBackRest,<br> `1` - information successfully fetched from pgBackRest. |
 
 ### Additional description of metrics
 
@@ -75,7 +80,11 @@ For `pgbackrest_*_last_*` metrics for differential backups (`backup_type="diff"`
 
 For `pgbackrest_*_last_*` metrics for incremental backups (`backup_type="incr"`) the following logic is applied:
 * if the last backup was full or differential, the metric will take full or differential backup value;
-* otherwise, the value will be set. 
+* otherwise, the value will be set.
+
+For `pgbackrest_exporter_status` metric the following logic is applied:
+* if the information is collected for all available stanzas, the `stanza` label value will be `all-stanzas`;
+* otherwise, the stanza name will be set.
 
 Metric `pgbackrest_backup_annotations` is set only for backups that have annotations.
 If there are no annotations, the metric won't be set for this backup.
@@ -485,7 +494,3 @@ Run the end-to-end tests:
 ```bash
 make test-e2e
 ```
-
-### Grafana dashboard
-
-To get a dashboard for visualizing the collected metrics, you can use a ready-made dashboard [pgBackRest Exporter Dashboard](https://grafana.com/grafana/dashboards/17709-pgbackrest-exporter-dashboard/) or make your own.
