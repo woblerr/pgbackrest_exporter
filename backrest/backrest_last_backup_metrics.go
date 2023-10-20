@@ -287,6 +287,7 @@ func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, l
 			)
 		}(lastBackups.incr.backupLabel, lastBackups.incr.backupType, lastBackups.incr.backupBlockIncr)
 	}
+	var metricValue float64 = 0
 	// Try to get info for full backup.
 	parseStanzaDataSpecific, err := getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, lastBackups.full.backupLabel, logger)
 	if err != nil {
@@ -297,7 +298,10 @@ func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, l
 			"err", err,
 		)
 	}
-	if len(parseStanzaDataSpecific) == 0 || len(parseStanzaDataSpecific[0].Backup) == 0 {
+	if (len(parseStanzaDataSpecific) != 0 && len(parseStanzaDataSpecific[0].Backup) != 0) &&
+		parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil {
+		metricValue = convertDatabaseRefPointerToFloat(parseStanzaDataSpecific[0].Backup[0].DatabaseRef)
+	} else {
 		level.Warn(logger).Log("msg", "No backup data returned",
 			"stanza", stanzaName,
 			"backup", lastBackups.full.backupLabel,
@@ -307,7 +311,7 @@ func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, l
 	setUpMetric(
 		pgbrStanzaBackupLastDatabasesMetric,
 		"pgbackrest_backup_last_databases",
-		convertDatabaseRefPointerToFloat(parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
+		metricValue,
 		setUpMetricValueFun,
 		logger,
 		lastBackups.full.backupType,
@@ -318,7 +322,7 @@ func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, l
 		setUpMetric(
 			pgbrStanzaBackupLastDatabasesMetric,
 			"pgbackrest_backup_last_databases",
-			convertDatabaseRefPointerToFloat(parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
+			metricValue,
 			setUpMetricValueFun,
 			logger,
 			lastBackups.diff.backupType,
@@ -330,7 +334,7 @@ func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, l
 		setUpMetric(
 			pgbrStanzaBackupLastDatabasesMetric,
 			"pgbackrest_backup_last_databases",
-			convertDatabaseRefPointerToFloat(parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
+			metricValue,
 			setUpMetricValueFun,
 			logger,
 			lastBackups.incr.backupType,

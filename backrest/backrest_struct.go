@@ -106,7 +106,7 @@ type backup struct {
 
 //	"annotation": {
 //		"string": "string",
-//		"string":"string"
+//		"string": "string"
 //	}
 type annotation map[string]string
 

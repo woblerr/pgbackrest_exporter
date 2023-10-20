@@ -363,6 +363,7 @@ func (backup backup) checkBackupIncremental() string {
 }
 
 func processSpecificBackupData(config, configIncludePath, stanzaName, backupLabel, backupType, metricName string, metric *prometheus.GaugeVec, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger, addLabels ...string) {
+	var metricValue float64 = 0
 	parseStanzaDataSpecific, err := getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, backupLabel, logger)
 	if err != nil {
 		level.Error(logger).Log(
@@ -371,24 +372,25 @@ func processSpecificBackupData(config, configIncludePath, stanzaName, backupLabe
 			"backup", backupLabel,
 			"err", err,
 		)
-		return
 	}
 	// In a normal situation, only one element with one backup should be returned.
 	// If more than one element or one backup is returned, there is may be a bug in pgBackRest.
 	// If it's not a bug, then this part will need to be refactoring.
 	// Use *[]struct() type for backup.DatabaseRef.
-	if len(parseStanzaDataSpecific) == 0 || len(parseStanzaDataSpecific[0].Backup) == 0 {
+	if (len(parseStanzaDataSpecific) != 0 && len(parseStanzaDataSpecific[0].Backup) != 0) &&
+		parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil {
+		metricValue = convertDatabaseRefPointerToFloat(parseStanzaDataSpecific[0].Backup[0].DatabaseRef)
+	} else {
 		level.Warn(logger).Log("msg", "No backup data returned",
 			"stanza", stanzaName,
 			"backup", backupLabel,
 		)
-		return
 	}
 	labels := append([]string{backupType, stanzaName}, addLabels...)
 	setUpMetric(
 		metric,
 		metricName,
-		convertDatabaseRefPointerToFloat(parseStanzaDataSpecific[0].Backup[0].DatabaseRef),
+		metricValue,
 		setUpMetricValueFun,
 		logger,
 		labels...,
