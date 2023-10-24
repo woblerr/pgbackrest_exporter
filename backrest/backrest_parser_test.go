@@ -1062,6 +1062,8 @@ func templateLastBackupDifferent() lastBackupsStruct {
 }
 
 // Implement custom comparators for testing.
+//
+//nolint:gocyclo
 func compareBackupStructs(a, b backupStruct) bool {
 	if a.backupLabel != b.backupLabel {
 		return false
