@@ -503,7 +503,7 @@ func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus, sta
 			{1, 1, 6970977677138971135, "13"},
 		},
 		"demo",
-		[]repo{
+		valToPtr([]repo{
 			{"none",
 				1,
 				struct {
@@ -511,7 +511,7 @@ func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus, sta
 					Message string "json:\"message\""
 				}{0, "ok"},
 			},
-		},
+		}),
 		status{
 			0,
 			struct {
@@ -595,7 +595,7 @@ func templateStanzaRepoMapSizesAbsent(walMax, walMin string, dbRef []databaseRef
 			{1, 1, 6970977677138971135, "13"},
 		},
 		"demo",
-		[]repo{
+		valToPtr([]repo{
 			{"none",
 				1,
 				struct {
@@ -603,7 +603,7 @@ func templateStanzaRepoMapSizesAbsent(walMax, walMin string, dbRef []databaseRef
 					Message string "json:\"message\""
 				}{0, "ok"},
 			},
-		},
+		}),
 		status{
 			0,
 			struct {
@@ -688,7 +688,7 @@ func templateStanzaDBsAbsent(walMax, walMin string, dbRef []databaseRef, errorSt
 			{1, 1, 6970977677138971135, "13"},
 		},
 		"demo",
-		[]repo{
+		valToPtr([]repo{
 			{"none",
 				1,
 				struct {
@@ -696,7 +696,7 @@ func templateStanzaDBsAbsent(walMax, walMin string, dbRef []databaseRef, errorSt
 					Message string "json:\"message\""
 				}{0, "ok"},
 			},
-		},
+		}),
 		status{
 			0,
 			struct {
@@ -782,7 +782,7 @@ func templateStanzaErrorAbsent(walMax, walMin string, size int64) stanza {
 			{1, 1, 6970977677138971135, "13"},
 		},
 		"demo",
-		[]repo{
+		valToPtr([]repo{
 			{"none",
 				1,
 				struct {
@@ -790,7 +790,7 @@ func templateStanzaErrorAbsent(walMax, walMin string, size int64) stanza {
 					Message string "json:\"message\""
 				}{0, "ok"},
 			},
-		},
+		}),
 		status{
 			0,
 			struct {
@@ -817,6 +817,7 @@ func templateStanzaRepoAbsent(walMax, walMin string, size int64) stanza {
 		errorStatus                                            *bool
 		deltaMap, sizeMap, stanzaSizeTotal, stanzaSizeComplete *int64
 		dbRef                                                  *[]databaseRef
+		repoInfo                                               *[]repo
 		link                                                   *[]struct {
 			Destination string "json:\"destination\""
 			Name        string "json:\"name\""
@@ -877,7 +878,7 @@ func templateStanzaRepoAbsent(walMax, walMin string, size int64) stanza {
 			{1, 0, 6970977677138971135, "13"},
 		},
 		"demo",
-		[]repo{},
+		repoInfo,
 		status{
 			0,
 			struct {

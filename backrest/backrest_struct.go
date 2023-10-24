@@ -15,7 +15,7 @@ type stanza struct {
 	Cipher  string    `json:"cipher"`
 	DB      []db      `json:"db"`
 	Name    string    `json:"name"`
-	Repo    []repo    `json:"repo"`
+	Repo    *[]repo   `json:"repo"`
 	Status  status    `json:"status"`
 }
 

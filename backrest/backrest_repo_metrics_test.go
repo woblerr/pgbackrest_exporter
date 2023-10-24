@@ -16,14 +16,10 @@ import (
 func TestRepoMetrics(t *testing.T) {
 	type args struct {
 		stanzaName          string
-		repoData            []repo
+		repoData            *[]repo
 		setUpMetricValueFun setUpMetricValueFunType
 		testText            string
 	}
-	templateMetrics := `# HELP pgbackrest_repo_status Current repository status.
-# TYPE pgbackrest_repo_status gauge
-pgbackrest_repo_status{cipher="none",repo_key="1",stanza="demo"} 0
-`
 	tests := []struct {
 		name string
 		args args
@@ -54,13 +50,34 @@ pgbackrest_repo_status{cipher="none",repo_key="1",stanza="demo"} 0
 					0,
 					annotation{"testkey": "testvalue"}).Repo,
 				setUpMetricValue,
-				templateMetrics,
+				`# HELP pgbackrest_repo_status Current repository status.
+# TYPE pgbackrest_repo_status gauge
+pgbackrest_repo_status{cipher="none",repo_key="1",stanza="demo"} 0
+`,
+			},
+		},
+		{
+			"getRepoMetricsRepoAbsent",
+			args{
+				templateStanzaRepoAbsent(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					2969514).Name,
+				templateStanzaRepoAbsent(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					2969514).Repo,
+				setUpMetricValue,
+				`# HELP pgbackrest_repo_status Current repository status.
+# TYPE pgbackrest_repo_status gauge
+pgbackrest_repo_status{cipher="none",repo_key="0",stanza="demo"} 0
+`,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resetMetrics()
+			resetRepoMetrics()
 			getRepoMetrics(tt.args.stanzaName, tt.args.repoData, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(pgbrRepoStatusMetric)
@@ -84,7 +101,7 @@ pgbackrest_repo_status{cipher="none",repo_key="1",stanza="demo"} 0
 func TestGetRepoMetricsErrorsAndDebugs(t *testing.T) {
 	type args struct {
 		stanzaName          string
-		repoData            []repo
+		repoData            *[]repo
 		setUpMetricValueFun setUpMetricValueFunType
 		errorsCount         int
 		debugsCount         int
