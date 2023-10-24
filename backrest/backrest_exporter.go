@@ -104,15 +104,13 @@ func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas []s
 					getBackupLastMetrics(singleStanza.Name, lastBackups, currentUnixTime, setUpMetricValue, logger)
 					// If the calculation of the number of databases in backups is enabled.
 					// Information about number of databases in specific backup has appeared since pgBackRest v2.41.
-					// In versions < v2.41 this is missing and the metric does not need to be collected.
-					// getParsedSpecificBackupInfoData will return error in this case.
+					// In versions < v2.41 this is missing and the metric will be set to 0.
 					if backupDBCount {
 						getBackupDBCountMetrics(backupDBCountParallelProcesses, config, configIncludePath, singleStanza.Name, singleStanza.Backup, setUpMetricValue, logger)
 					}
 					// If the calculation of the number of databases in latest backups is enabled.
 					// Information about number of databases in specific backup has appeared since pgBackRest v2.41.
-					// In versions < v2.41 this is missing and the metric does not need to be collected.
-					// getParsedSpecificBackupInfoData will return error in this case.
+					// In versions < v2.41 this is missing and the metric will be set to 0.
 					if backupDBCountLatest {
 						getBackupLastDBCountMetrics(config, configIncludePath, singleStanza.Name, lastBackups, setUpMetricValue, logger)
 					}

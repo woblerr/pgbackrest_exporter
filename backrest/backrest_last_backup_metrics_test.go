@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os/exec"
 	"testing"
-	"time"
 
 	"github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -35,14 +34,54 @@ func TestGetBackupLastMetrics(t *testing.T) {
 	}
 	templateMetrics := `# HELP pgbackrest_backup_last_annotations Number of annotations in the last full, differential or incremental backup.
 # TYPE pgbackrest_backup_last_annotations gauge
-pgbackrest_backup_last_annotations{backup_type="diff",stanza="demo"} 0
-pgbackrest_backup_last_annotations{backup_type="full",stanza="demo"} 1
-pgbackrest_backup_last_annotations{backup_type="incr",stanza="demo"} 0
+pgbackrest_backup_last_annotations{backup_type="diff",block_incr="y",stanza="demo"} 0
+pgbackrest_backup_last_annotations{backup_type="full",block_incr="y",stanza="demo"} 1
+pgbackrest_backup_last_annotations{backup_type="incr",block_incr="y",stanza="demo"} 0
+# HELP pgbackrest_backup_last_delta_bytes Amount of data in the database to actually backup in the last full, differential or incremental backup.
+# TYPE pgbackrest_backup_last_delta_bytes gauge
+pgbackrest_backup_last_delta_bytes{backup_type="diff",block_incr="y",stanza="demo"} 3.223033e+07
+pgbackrest_backup_last_delta_bytes{backup_type="full",block_incr="y",stanza="demo"} 2.4316343e+07
+pgbackrest_backup_last_delta_bytes{backup_type="incr",block_incr="y",stanza="demo"} 3.223033e+07
+# HELP pgbackrest_backup_last_duration_seconds Backup duration for the last full, differential or incremental backup.
+# TYPE pgbackrest_backup_last_duration_seconds gauge
+pgbackrest_backup_last_duration_seconds{backup_type="diff",block_incr="y",stanza="demo"} 3
+pgbackrest_backup_last_duration_seconds{backup_type="full",block_incr="y",stanza="demo"} 3
+pgbackrest_backup_last_duration_seconds{backup_type="incr",block_incr="y",stanza="demo"} 3
+# HELP pgbackrest_backup_last_error_status Error status in the last full, differential or incremental backup.
+# TYPE pgbackrest_backup_last_error_status gauge
+pgbackrest_backup_last_error_status{backup_type="diff",block_incr="y",stanza="demo"} 0
+pgbackrest_backup_last_error_status{backup_type="full",block_incr="y",stanza="demo"} 0
+pgbackrest_backup_last_error_status{backup_type="incr",block_incr="y",stanza="demo"} 0
+# HELP pgbackrest_backup_last_repo_delta_bytes Compressed files size in the last full, differential or incremental backup.
+# TYPE pgbackrest_backup_last_repo_delta_bytes gauge
+pgbackrest_backup_last_repo_delta_bytes{backup_type="diff",block_incr="y",stanza="demo"} 2.969514e+06
+pgbackrest_backup_last_repo_delta_bytes{backup_type="full",block_incr="y",stanza="demo"} 2.969514e+06
+pgbackrest_backup_last_repo_delta_bytes{backup_type="incr",block_incr="y",stanza="demo"} 2.969514e+06
+# HELP pgbackrest_backup_last_repo_delta_map_bytes Size of block incremental delta map in the last full, differential or incremental backup.
+# TYPE pgbackrest_backup_last_repo_delta_map_bytes gauge
+pgbackrest_backup_last_repo_delta_map_bytes{backup_type="diff",block_incr="y",stanza="demo"} 12
+pgbackrest_backup_last_repo_delta_map_bytes{backup_type="full",block_incr="y",stanza="demo"} 12
+pgbackrest_backup_last_repo_delta_map_bytes{backup_type="incr",block_incr="y",stanza="demo"} 12
+# HELP pgbackrest_backup_last_repo_size_bytes Full compressed files size to restore the database from the last full, differential or incremental backup.
+# TYPE pgbackrest_backup_last_repo_size_bytes gauge
+pgbackrest_backup_last_repo_size_bytes{backup_type="diff",block_incr="y",stanza="demo"} 0
+pgbackrest_backup_last_repo_size_bytes{backup_type="full",block_incr="y",stanza="demo"} 0
+pgbackrest_backup_last_repo_size_bytes{backup_type="incr",block_incr="y",stanza="demo"} 0
+# HELP pgbackrest_backup_last_repo_size_map_bytes Size of block incremental map in the last full, differential or incremental backup.
+# TYPE pgbackrest_backup_last_repo_size_map_bytes gauge
+pgbackrest_backup_last_repo_size_map_bytes{backup_type="diff",block_incr="y",stanza="demo"} 100
+pgbackrest_backup_last_repo_size_map_bytes{backup_type="full",block_incr="y",stanza="demo"} 100
+pgbackrest_backup_last_repo_size_map_bytes{backup_type="incr",block_incr="y",stanza="demo"} 100
+# HELP pgbackrest_backup_last_size_bytes Full uncompressed size of the database in the last full, differential or incremental backup.
+# TYPE pgbackrest_backup_last_size_bytes gauge
+pgbackrest_backup_last_size_bytes{backup_type="diff",block_incr="y",stanza="demo"} 3.223033e+07
+pgbackrest_backup_last_size_bytes{backup_type="full",block_incr="y",stanza="demo"} 2.4316343e+07
+pgbackrest_backup_last_size_bytes{backup_type="incr",block_incr="y",stanza="demo"} 3.223033e+07
 # HELP pgbackrest_backup_since_last_completion_seconds Seconds since the last completed full, differential or incremental backup.
 # TYPE pgbackrest_backup_since_last_completion_seconds gauge
-pgbackrest_backup_since_last_completion_seconds{backup_type="diff",stanza="demo"} 9.223372036854776e+09
-pgbackrest_backup_since_last_completion_seconds{backup_type="full",stanza="demo"} 9.223372036854776e+09
-pgbackrest_backup_since_last_completion_seconds{backup_type="incr",stanza="demo"} 9.223372036854776e+09
+pgbackrest_backup_since_last_completion_seconds{backup_type="diff",block_incr="y",stanza="demo"} 9.223372036854776e+09
+pgbackrest_backup_since_last_completion_seconds{backup_type="full",block_incr="y",stanza="demo"} 9.223372036854776e+09
+pgbackrest_backup_since_last_completion_seconds{backup_type="incr",block_incr="y",stanza="demo"} 9.223372036854776e+09
 `
 	tests := []struct {
 		name string
@@ -71,11 +110,19 @@ pgbackrest_backup_since_last_completion_seconds{backup_type="incr",stanza="demo"
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resetMetrics()
+			resetLastBackupMetrics()
 			getBackupLastMetrics(tt.args.stanzaName, tt.args.lastBackups, tt.args.currentUnixTime, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupSinceLastCompletionSecondsMetric,
+				pgbrStanzaBackupLastDurationMetric,
+				pgbrStanzaBackupLastDatabaseSizeMetric,
+				pgbrStanzaBackupLastDatabaseBackupSizeMetric,
+				pgbrStanzaBackupLastRepoBackupSetSizeMetric,
+				pgbrStanzaBackupLastRepoBackupSetSizeMapMetric,
+				pgbrStanzaBackupLastRepoBackupSizeMetric,
+				pgbrStanzaBackupLastRepoBackupSizeMapMetric,
+				pgbrStanzaBackupLastErrorMetric,
 				pgbrStanzaBackupLastAnnotationsMetric,
 			)
 			metricFamily, err := reg.Gather()
@@ -106,12 +153,6 @@ func TestGetBackupLastDBCountMetrics(t *testing.T) {
 		setUpMetricValueFun setUpMetricValueFunType
 		testText            string
 	}
-	templateMetrics := `# HELP pgbackrest_backup_last_databases Number of databases in the last full, differential or incremental backup.
-# TYPE pgbackrest_backup_last_databases gauge
-pgbackrest_backup_last_databases{backup_type="diff",stanza="demo"} 1
-pgbackrest_backup_last_databases{backup_type="full",stanza="demo"} 1
-pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 1
-`
 	tests := []struct {
 		name                   string
 		args                   args
@@ -120,7 +161,7 @@ pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 1
 		// All metrics exist and all labels are corrected.
 		// pgBackrest version = latest.
 		{
-			"getBackupLastMetricsSame",
+			"getBackupLastMetricsDatabases",
 			args{
 				"",
 				"",
@@ -138,15 +179,20 @@ pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 1
 				templateLastBackup(),
 				currentUnixTimeForTests,
 				setUpMetricValue,
-				templateMetrics,
+				`# HELP pgbackrest_backup_last_databases Number of databases in the last full, differential or incremental backup.
+# TYPE pgbackrest_backup_last_databases gauge
+pgbackrest_backup_last_databases{backup_type="diff",block_incr="y",stanza="demo"} 1
+pgbackrest_backup_last_databases{backup_type="full",block_incr="y",stanza="demo"} 1
+pgbackrest_backup_last_databases{backup_type="incr",block_incr="y",stanza="demo"} 1
+`,
 			},
 			mockBackupLastStruct{
 				mockStruct{
 					`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 						`"max":"000000010000000000000010","min":"000000010000000000000001"}],` +
 						`"backup":[{"annotation":{"testkey":"testvalue"},"archive":{"start":"000000010000000000000003","stop":"000000010000000000000004"},` +
-						`"backrest":{"format":5,"version":"2.41"},"database":{"id":1,"repo-key":1},` +
-						`"database-ref":[{"name":"postgres","oid":13412}],"error":false,` +
+						`"backrest":{"format":5,"version":"2.48"},"database":{"id":1,"repo-key":1},` +
+						`"database-ref":[{"name":"postgres","oid":13412}],"error":true,` +
 						`"info":{"delta":32230330,"repository":{"delta":3970793,"size":3970793},"size":32230330},` +
 						`"label":"20220926-201857F","link":null,"lsn":{"start":"0/3000028","stop":"0/4000050"},"prior":null,` +
 						`"reference":null,"tablespace":null,"timestamp":{"start":1664223537,"stop":1664223540},"type":"full"}],` +
@@ -160,8 +206,8 @@ pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 1
 					`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 						`"max":"000000010000000000000010","min":"000000010000000000000001"}],` +
 						`"backup":[{"annotation":{"testkey":"testvalue"},"archive":{"start":"000000010000000000000003","stop":"000000010000000000000004"},` +
-						`"backrest":{"format":5,"version":"2.41"},"database":{"id":1,"repo-key":1},` +
-						`"database-ref":[{"name":"postgres","oid":13412}],"error":false,` +
+						`"backrest":{"format":5,"version":"2.48"},"database":{"id":1,"repo-key":1},` +
+						`"database-ref":[{"name":"postgres","oid":13412}],"error":true,` +
 						`"info":{"delta":32230330,"repository":{"delta":3970793,"size":3970793},"size":32230330},` +
 						`"label":"20220926-201857F","link":null,"lsn":{"start":"0/3000028","stop":"0/4000050"},"prior":null,` +
 						`"reference":null,"tablespace":null,"timestamp":{"start":1664223537,"stop":1664223540},"type":"full"}],` +
@@ -175,8 +221,8 @@ pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 1
 					`[{"archive":[{"database":{"id":1,"repo-key":1},"id":"13-1",` +
 						`"max":"000000010000000000000010","min":"000000010000000000000001"}],` +
 						`"backup":["annotation":{"testkey":"testvalue"},"archive":{"start":"000000010000000000000003","stop":"000000010000000000000004"},` +
-						`"backrest":{"format":5,"version":"2.41"},"database":{"id":1,"repo-key":1},` +
-						`"database-ref":[{"name":"postgres","oid":13412}],"error":false,` +
+						`"backrest":{"format":5,"version":"2.48"},"database":{"id":1,"repo-key":1},` +
+						`"database-ref":[{"name":"postgres","oid":13412}],"error":true,` +
 						`"info":{"delta":32230330,"repository":{"delta":3970793,"size":3970793},"size":32230330},` +
 						`"label":"20220926-201857F","link":null,"lsn":{"start":"0/3000028","stop":"0/4000050"},"prior":null,` +
 						`"reference":null,"tablespace":null,"timestamp":{"start":1664223537,"stop":1664223540},"type":"full"}],` +
@@ -197,21 +243,21 @@ pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 1
 			args{
 				"",
 				"",
-				templateStanza(
+				templateStanzaDBsAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
 					[]databaseRef{{"postgres", 13425}},
 					true,
-					false,
-					12,
-					100,
-					0,
-					0,
-					nil).Name,
-				templateLastBackupDifferent(),
+					2969514).Name,
+				templateLastBackupDBsAbsent(),
 				currentUnixTimeForTests,
 				setUpMetricValue,
-				``,
+				`# HELP pgbackrest_backup_last_databases Number of databases in the last full, differential or incremental backup.
+# TYPE pgbackrest_backup_last_databases gauge
+pgbackrest_backup_last_databases{backup_type="diff",block_incr="n",stanza="demo"} 0
+pgbackrest_backup_last_databases{backup_type="full",block_incr="n",stanza="demo"} 0
+pgbackrest_backup_last_databases{backup_type="incr",block_incr="n",stanza="demo"} 0
+`,
 			},
 			mockBackupLastStruct{
 				mockStruct{
@@ -234,7 +280,7 @@ pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 1
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resetMetrics()
+			resetLastBackupMetrics()
 			mockDataBackupLast = tt.mockTestDataBackupLast
 			execCommand = fakeExecCommandSpecificDatabase
 			defer func() { execCommand = exec.Command }()
@@ -259,23 +305,5 @@ pgbackrest_backup_last_databases{backup_type="incr",stanza="demo"} 1
 					"\nVariables do not match, metrics:\n%s\nwant:\n%s", tt.args.testText, out.String())
 			}
 		})
-	}
-}
-
-//nolint:unparam
-func templateLastBackup() lastBackupsStruct {
-	return lastBackupsStruct{
-		backupStruct{"20210607-092423F", "full", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), valToPtr(annotation{"testkey": "testvalue"})},
-		backupStruct{"20210607-092423F", "diff", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), valToPtr(annotation{"testkey": "testvalue"})},
-		backupStruct{"20210607-092423F", "incr", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), valToPtr(annotation{"testkey": "testvalue"})},
-	}
-}
-
-//nolint:unparam
-func templateLastBackupDifferent() lastBackupsStruct {
-	return lastBackupsStruct{
-		backupStruct{"20220926-201857F", "full", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), valToPtr(annotation{"testkey": "testvalue"})},
-		backupStruct{"20220926-201857F_20220926-201901D", "diff", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), nil},
-		backupStruct{"20220926-201857F_20220926-202454I", "incr", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969512, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), nil},
 	}
 }

@@ -105,44 +105,46 @@ The number of collected metrics may vary depending on pgBackRest version.
 For different versions, some metrics may not be collected or have insignificant label values:
 
 * `pgBackRest < v2.48`
-
-    For `pgbackrest_stanza_backup_compete_bytes` and `pgbackrest_stanza_backup_total_bytes` metrics the values will always be `0`.
+    
+    The following metrics will always be `0`:
+    * `pgbackrest_stanza_backup_compete_bytes`,
+    * `pgbackrest_stanza_backup_total_bytes`.
 
 * `pgBackRest >= v2.45`
   
-    The following metric will be absent for block incremental backups: 
-    * `pgbackrest_backup_repo_size_bytes`.
+    For `pgbackrest_backup_repo_size_bytes` metric the values will be `0` for block incremental backups.
 
 * `pgBackRest < v2.44`
 
-    The following metrics will be absent: 
+    The following metrics will always be `0`: 
     * `pgbackrest_backup_repo_size_map_bytes`,
     * `pgbackrest_backup_repo_delta_map_bytes`.
 
-    For `pgbackrest_backup_info` metric label `block_incr` will be absent.
+    For `pgbackrest_backup_*` metrics the label will be `block_incr="n"`.
 
 * `pgBackRest < v2.41`
 
-    The following metrics will be absent: 
+    The following metrics will always be `0`: 
     * `pgbackrest_backup_databases`,
     * `pgbackrest_backup_last_databases`,
-    * `pgbackrest_backup_annotations`.
-
-    For `pgbackrest_backup_last_annotations` metric the values will always be `0`.
+    * `pgbackrest_backup_annotations`,
+    * `pgbackrest_backup_last_annotations`.
 
 * `pgBackRest < v2.38`
 
-    For `pgbackrest_backup_info` metric labels will be `lsn_start=""` and `lsn_stop=""`.
+    For `pgbackrest_backup_info` metric the labels will be `lsn_start="-"` and `lsn_stop="-"`.
 
 * `pgBackRest < v2.36`
 
-    The following metric will be absent: `pgbackrest_backup_error_status`.
+    The following metrics will always be `0`:
+    * `pgbackrest_backup_error_status`.
 
 * `pgBackRest < v2.32`
 
-    The following metric will be absent: `pgbackrest_repo_status`. 
+    The following metrics will always be `0`:
+    * `pgbackrest_repo_status`.
 
-    For other metrics label will be `repo_key="0"`.
+    For all metrics the label will be `repo_key="0"`.
 
 ## Getting Started
 ### Building and running

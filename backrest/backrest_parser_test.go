@@ -266,6 +266,7 @@ func TestCompareLastBackups(t *testing.T) {
 	type args struct {
 		backups    *lastBackupsStruct
 		backupTest backup
+		backupIncr string
 	}
 	tests := []struct {
 		name string
@@ -304,11 +305,12 @@ func TestCompareLastBackups(t *testing.T) {
 					}{1626825661, 1626825664},
 					"full",
 				},
+				"y",
 			},
 			lastBackupsStruct{
-				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation},
-				backupStruct{"20210721-000101F", "diff", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation},
-				backupStruct{"20210721-000101F", "incr", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation},
+				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation, "y"},
+				backupStruct{"20210721-000101F", "diff", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation, "y"},
+				backupStruct{"20210721-000101F", "incr", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation, "y"},
 			},
 		},
 		{"compareLastBackupsDiff",
@@ -343,11 +345,12 @@ func TestCompareLastBackups(t *testing.T) {
 					}{1626825901, 1626825904},
 					"diff",
 				},
+				"y",
 			},
 			lastBackupsStruct{
-				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation},
-				backupStruct{"20210721-000101F_20210721-000501D", "diff", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, nil},
-				backupStruct{"20210721-000101F_20210721-000501D", "incr", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, nil},
+				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation, "y"},
+				backupStruct{"20210721-000101F_20210721-000501D", "diff", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, nil, "y"},
+				backupStruct{"20210721-000101F_20210721-000501D", "incr", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, nil, "y"},
 			},
 		},
 		{"compareLastBackupsIncr",
@@ -382,17 +385,18 @@ func TestCompareLastBackups(t *testing.T) {
 					}{1626826201, 1626826204},
 					"incr",
 				},
+				"y",
 			},
 			lastBackupsStruct{
-				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation},
-				backupStruct{"20210721-000101F_20210721-000501D", "diff", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, nil},
-				backupStruct{"20210721-000101F_20210721-001001I", "incr", incrDate, 3, 243163, 243163, 29695, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, nil},
+				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation, "y"},
+				backupStruct{"20210721-000101F_20210721-000501D", "diff", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, nil, "y"},
+				backupStruct{"20210721-000101F_20210721-001001I", "incr", incrDate, 3, 243163, 243163, 29695, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, nil, "y"},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			compareLastBackups(tt.args.backups, tt.args.backupTest)
+			compareLastBackups(tt.args.backups, tt.args.backupTest, tt.args.backupIncr)
 			if *tt.args.backups != tt.want {
 				t.Errorf("\nVariables do not match:\n%v\nwant:\n%v", *tt.args.backups, tt.want)
 			}
@@ -499,7 +503,7 @@ func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus, sta
 			{1, 1, 6970977677138971135, "13"},
 		},
 		"demo",
-		[]repo{
+		valToPtr([]repo{
 			{"none",
 				1,
 				struct {
@@ -507,7 +511,7 @@ func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus, sta
 					Message string "json:\"message\""
 				}{0, "ok"},
 			},
-		},
+		}),
 		status{
 			0,
 			struct {
@@ -591,7 +595,7 @@ func templateStanzaRepoMapSizesAbsent(walMax, walMin string, dbRef []databaseRef
 			{1, 1, 6970977677138971135, "13"},
 		},
 		"demo",
-		[]repo{
+		valToPtr([]repo{
 			{"none",
 				1,
 				struct {
@@ -599,7 +603,100 @@ func templateStanzaRepoMapSizesAbsent(walMax, walMin string, dbRef []databaseRef
 					Message string "json:\"message\""
 				}{0, "ok"},
 			},
+		}),
+		status{
+			0,
+			struct {
+				Backup struct {
+					Held         bool   "json:\"held\""
+					SizeTotal    *int64 `json:"size"`
+					SizeComplete *int64 `json:"size-cplt"`
+				} "json:\"backup\""
+			}{
+				struct {
+					Held         bool   "json:\"held\""
+					SizeTotal    *int64 `json:"size"`
+					SizeComplete *int64 `json:"size-cplt"`
+				}{false, stanzaSizeTotal, stanzaSizeComplete},
+			},
+			"ok",
 		},
+	}
+}
+
+//nolint:unparam
+func templateStanzaDBsAbsent(walMax, walMin string, dbRef []databaseRef, errorStatus bool, size int64) stanza {
+	var (
+		deltaMap, sizeMap, stanzaSizeTotal, stanzaSizeComplete *int64
+		link                                                   *[]struct {
+			Destination string "json:\"destination\""
+			Name        string "json:\"name\""
+		}
+		tablespace *[]struct {
+			Destination string `json:"destination"`
+			Name        string `json:"name"`
+			OID         int    `json:"oid"`
+		}
+		backupTestAnnotation *annotation
+	)
+	return stanza{
+		[]archive{
+			{databaseID{1, 1}, "13-1", walMax, walMin},
+		},
+		[]backup{
+			{
+				backupTestAnnotation,
+				struct {
+					StartWAL string "json:\"start\""
+					StopWAL  string "json:\"stop\""
+				}{"000000010000000000000002", "000000010000000000000002"},
+				struct {
+					Format  int    "json:\"format\""
+					Version string "json:\"version\""
+				}{5, "2.41"},
+				databaseID{1, 1},
+				&dbRef,
+				&errorStatus,
+				backupInfo{
+					24316343,
+					struct {
+						Delta    int64  "json:\"delta\""
+						DeltaMap *int64 "json:\"delta-map\""
+						Size     *int64 "json:\"size\""
+						SizeMap  *int64 "json:\"size-map\""
+					}{2969514, deltaMap, &size, sizeMap},
+					24316343,
+				},
+				"20210607-092423F",
+				link,
+				struct {
+					StartLSN string "json:\"start\""
+					StopLSN  string "json:\"stop\""
+				}{"0/2000028", "0/2000100"},
+				"",
+				[]string{""},
+				tablespace,
+				struct {
+					Start int64 "json:\"start\""
+					Stop  int64 "json:\"stop\""
+				}{1623057863, 1623057866},
+				"full",
+			},
+		},
+		"none",
+		[]db{
+			{1, 1, 6970977677138971135, "13"},
+		},
+		"demo",
+		valToPtr([]repo{
+			{"none",
+				1,
+				struct {
+					Code    int    "json:\"code\""
+					Message string "json:\"message\""
+				}{0, "ok"},
+			},
+		}),
 		status{
 			0,
 			struct {
@@ -635,7 +732,6 @@ func templateStanzaErrorAbsent(walMax, walMin string, size int64) stanza {
 			Name        string `json:"name"`
 			OID         int    `json:"oid"`
 		}
-		backrestAnnotation *annotation
 	)
 	return stanza{
 		[]archive{
@@ -643,7 +739,7 @@ func templateStanzaErrorAbsent(walMax, walMin string, size int64) stanza {
 		},
 		[]backup{
 			{
-				backrestAnnotation,
+				nil,
 				struct {
 					StartWAL string "json:\"start\""
 					StopWAL  string "json:\"stop\""
@@ -686,7 +782,7 @@ func templateStanzaErrorAbsent(walMax, walMin string, size int64) stanza {
 			{1, 1, 6970977677138971135, "13"},
 		},
 		"demo",
-		[]repo{
+		valToPtr([]repo{
 			{"none",
 				1,
 				struct {
@@ -694,7 +790,7 @@ func templateStanzaErrorAbsent(walMax, walMin string, size int64) stanza {
 					Message string "json:\"message\""
 				}{0, "ok"},
 			},
-		},
+		}),
 		status{
 			0,
 			struct {
@@ -721,6 +817,7 @@ func templateStanzaRepoAbsent(walMax, walMin string, size int64) stanza {
 		errorStatus                                            *bool
 		deltaMap, sizeMap, stanzaSizeTotal, stanzaSizeComplete *int64
 		dbRef                                                  *[]databaseRef
+		repoInfo                                               *[]repo
 		link                                                   *[]struct {
 			Destination string "json:\"destination\""
 			Name        string "json:\"name\""
@@ -730,7 +827,7 @@ func templateStanzaRepoAbsent(walMax, walMin string, size int64) stanza {
 			Name        string `json:"name"`
 			OID         int    `json:"oid"`
 		}
-		backrestAnnotation *annotation
+		backupTestAnnotation *annotation
 	)
 	return stanza{
 		[]archive{
@@ -738,7 +835,7 @@ func templateStanzaRepoAbsent(walMax, walMin string, size int64) stanza {
 		},
 		[]backup{
 			{
-				backrestAnnotation,
+				backupTestAnnotation,
 				struct {
 					StartWAL string "json:\"start\""
 					StopWAL  string "json:\"stop\""
@@ -781,7 +878,7 @@ func templateStanzaRepoAbsent(walMax, walMin string, size int64) stanza {
 			{1, 0, 6970977677138971135, "13"},
 		},
 		"demo",
-		[]repo{},
+		repoInfo,
 		status{
 			0,
 			struct {
@@ -812,33 +909,6 @@ func parseDate(value string) time.Time {
 		panic(err)
 	}
 	return valueReturn
-}
-
-func TestConvertBoolToFloat64(t *testing.T) {
-	type args struct {
-		value bool
-	}
-	tests := []struct {
-		name string
-		args args
-		want float64
-	}{
-		{"ConvertBoolToFloat64True",
-			args{true},
-			1,
-		},
-		{"ConvertBoolToFloat64False",
-			args{false},
-			0,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := convertBoolToFloat64(tt.args.value); got != tt.want {
-				t.Errorf("\nVariables do not match:\n%v\nwant:\n%v", got, tt.want)
-			}
-		})
-	}
 }
 
 func TestGetParsedSpecificBackupInfoDataErrors(t *testing.T) {
@@ -950,48 +1020,110 @@ func checkBackupType(a []string, regex string) bool {
 	return false
 }
 
-func TestCheckBackupDatabaseRef(t *testing.T) {
-	type args struct{ backupData []stanza }
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			name: "EmptyBackupData",
-			args: struct{ backupData []stanza }{
-				backupData: []stanza{},
-			},
-			want: false,
-		},
-		{
-			name: "EmptyBackup",
-			args: struct{ backupData []stanza }{
-				backupData: []stanza{{Backup: []backup{}}},
-			},
-			want: false,
-		},
-		{
-			name: "NilDatabaseRef",
-			args: struct{ backupData []stanza }{
-				backupData: []stanza{{Backup: []backup{{DatabaseRef: nil}}}},
-			},
-			want: false,
-		},
-		{
-			name: "NonNilDatabaseRef",
-			args: struct{ backupData []stanza }{
-				backupData: []stanza{{Backup: []backup{{DatabaseRef: &[]databaseRef{{"postgres", 13425}}}}}},
-			},
-			want: true,
-		},
+//nolint:unparam
+func templateLastBackup() lastBackupsStruct {
+	return lastBackupsStruct{
+		backupStruct{"20210607-092423F", "full", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(true), valToPtr(annotation{"testkey": "testvalue"}), "y"},
+		backupStruct{"20210607-092423F", "diff", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(true), valToPtr(annotation{"testkey": "testvalue"}), "y"},
+		backupStruct{"20210607-092423F", "incr", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(true), valToPtr(annotation{"testkey": "testvalue"}), "y"},
 	}
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := checkBackupDatabaseRef(tt.args.backupData); got != tt.want {
-				t.Errorf("\nVariables do not match:\n%v\nwant:\n%v", got, tt.want)
-			}
-		})
+func templateLastBackupRepoMapSizesAbsent() lastBackupsStruct {
+	return lastBackupsStruct{
+		backupStruct{"20210607-092423F", "full", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, valToPtr(true), valToPtr(annotation{"testkey": "testvalue"}), "n"},
+		backupStruct{"20210607-092423F", "diff", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, valToPtr(true), valToPtr(annotation{"testkey": "testvalue"}), "n"},
+		backupStruct{"20210607-092423F", "incr", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, valToPtr(true), valToPtr(annotation{"testkey": "testvalue"}), "n"},
 	}
+}
+
+func templateLastBackupDBsAbsent() lastBackupsStruct {
+	return lastBackupsStruct{
+		backupStruct{"20210607-092423F", "full", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, valToPtr(true), nil, "n"},
+		backupStruct{"20210607-092423F", "diff", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, valToPtr(true), nil, "n"},
+		backupStruct{"20210607-092423F", "incr", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, valToPtr(true), nil, "n"},
+	}
+}
+
+func templateLastBackupErrorAbsent() lastBackupsStruct {
+	return lastBackupsStruct{
+		backupStruct{"20210607-092423F", "full", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, nil, nil, "n"},
+		backupStruct{"20210607-092423F", "diff", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, nil, nil, "n"},
+		backupStruct{"20210607-092423F", "incr", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, nil, nil, "n"},
+	}
+}
+
+//nolint:unparam
+func templateLastBackupDifferent() lastBackupsStruct {
+	return lastBackupsStruct{
+		backupStruct{"20220926-201857F", "full", time.Unix(1623706322, 0), 3, 24316343, 24316343, 2969514, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), valToPtr(annotation{"testkey": "testvalue"}), "y"},
+		backupStruct{"20220926-201857F_20220926-201901D", "diff", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969514, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), nil, "y"},
+		backupStruct{"20220926-201857F_20220926-202454I", "incr", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969514, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), nil, "y"},
+	}
+}
+
+// Implement custom comparators for testing.
+//
+//nolint:gocyclo
+func compareBackupStructs(a, b backupStruct) bool {
+	if a.backupLabel != b.backupLabel {
+		return false
+	}
+	if a.backupType != b.backupType {
+		return false
+	}
+	if !a.backupTime.Equal(b.backupTime) {
+		return false
+	}
+	if a.backupDuration != b.backupDuration {
+		return false
+	}
+	if a.backupDelta != b.backupDelta {
+		return false
+	}
+	if a.backupSize != b.backupSize {
+		return false
+	}
+	if a.backupRepoDelta != b.backupRepoDelta {
+		return false
+	}
+	if a.backupRepoDeltaMap != nil && b.backupRepoDeltaMap != nil {
+		if *a.backupRepoDeltaMap != *b.backupRepoDeltaMap {
+			return false
+		}
+	} else if a.backupRepoDeltaMap != b.backupRepoDeltaMap {
+		return false
+	}
+	if a.backupRepoSize != nil && b.backupRepoSize != nil {
+		if *a.backupRepoSize != *b.backupRepoSize {
+			return false
+		}
+	} else if a.backupRepoSize != b.backupRepoSize {
+		return false
+	}
+	if a.backupRepoSizeMap != nil && b.backupRepoSizeMap != nil {
+		if *a.backupRepoSizeMap != *b.backupRepoSizeMap {
+			return false
+		}
+	} else if a.backupRepoSizeMap != b.backupRepoSizeMap {
+		return false
+	}
+	if a.backupError != nil && b.backupError != nil {
+		if *a.backupError != *b.backupError {
+			return false
+		}
+	} else if a.backupError != b.backupError {
+		return false
+	}
+	if a.backupAnnotation != nil && b.backupAnnotation != nil {
+		if !reflect.DeepEqual(*a.backupAnnotation, *b.backupAnnotation) {
+			return false
+		}
+	} else if a.backupAnnotation != b.backupAnnotation {
+		return false
+	}
+	if a.backupBlockIncr != b.backupBlockIncr {
+		return false
+	}
+	return true
 }
