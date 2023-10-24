@@ -11,8 +11,6 @@ import (
 	"github.com/prometheus/common/expfmt"
 )
 
-var mockDataBackup = mockStruct{}
-
 // All metrics exist and all labels are corrected.
 // pgBackrest version = latest.
 // With '--backrest.database-count' flag.
