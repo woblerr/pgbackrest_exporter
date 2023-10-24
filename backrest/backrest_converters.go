@@ -1,7 +1,5 @@
 package backrest
 
-import "fmt"
-
 // Convert bool to float64.
 func convertBoolToFloat64(value bool) float64 {
 	if value {
@@ -28,7 +26,6 @@ func convertInt64PointerToFloat64(value *int64) float64 {
 
 // Convert pointer (annotation) to float64.
 func convertAnnotationPointerToFloat64(value *annotation) float64 {
-	fmt.Println(value)
 	if value != nil {
 		return float64(len(*value))
 	}
