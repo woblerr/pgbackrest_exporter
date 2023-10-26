@@ -32,33 +32,33 @@ To get a dashboard for visualizing the collected metrics, you can use a ready-ma
 
 | Metric | Description |  Labels | Additional Info |
 | ----------- | ------------------ | ------------- | --------------- |
-| `pgbackrest_backup_annotations` | number of annotations in backup | backup_name, backup_type, database_id, repo_key, stanza | |
-| `pgbackrest_backup_databases` | number of databases in backup | backup_name, backup_type, database_id, repo_key | |
-| `pgbackrest_backup_duration_seconds` | backup duration in seconds | backup_name, backup_type, database_id, repo_key, stanza, start_time, stop_time | |
-| `pgbackrest_backup_error_status` | backup error status | backup_name, backup_type, database_id, repo_key, stanza | Values description:<br> `0` - backup doesn't contain page checksum errors,<br> `1` - backup contains one or more page checksum errors. To display the list of errors, you need manually run the command like `pgbackrest info --stanza stanza --set backup_name --repo repo_key`. |
+| `pgbackrest_backup_annotations` | number of annotations in backup | backup_name, backup_type, database_id, block_incr, repo_key, stanza | |
+| `pgbackrest_backup_databases` | number of databases in backup | backup_name, backup_type, block_incr, database_id, repo_key, stanza | |
+| `pgbackrest_backup_duration_seconds` | backup duration in seconds | backup_name, backup_type, block_incr, database_id, repo_key, stanza, start_time, stop_time | |
+| `pgbackrest_backup_error_status` | backup error status | backup_name, backup_type, block_incr, database_id, repo_key, stanza | Values description:<br> `0` - backup doesn't contain page checksum errors,<br> `1` - backup contains one or more page checksum errors. To display the list of errors, you need manually run the command like `pgbackrest info --stanza stanza --set backup_name --repo repo_key`. |
 | `pgbackrest_backup_info` | backup info | backrest_ver, backup_name, backup_type, block_incr, database_id, lsn_start, lsn_stop, pg_version, prior, repo_key, stanza, wal_start, wal_stop | Values description:<br> `1` - info about backup is exist. |
-| `pgbackrest_backup_delta_bytes` | amount of data in the database to actually backup | backup_name, backup_type, database_id, repo_key, stanza | |
-| `pgbackrest_backup_size_bytes` | full uncompressed size of the database | backup_name, backup_type, database_id, repo_key, stanza | |
-| `pgbackrest_backup_repo_delta_bytes` | compressed files size in backup | backup_name, backup_type, database_id, repo_key, stanza | |
-| `pgbackrest_backup_repo_size_bytes` | full compressed files size to restore the database from backup | backup_name, backup_type, database_id, repo_key, stanza | |
-| `pgbackrest_backup_repo_delta_map_bytes` | size of block incremental delta map | backup_name, backup_type, database_id, repo_key, stanza | |
-| `pgbackrest_backup_repo_size_map_bytes` | size of block incremental map | backup_name, backup_type, database_id, repo_key, stanza | |
+| `pgbackrest_backup_delta_bytes` | amount of data in the database to actually backup | backup_name, backup_type, block_incr, database_id, repo_key, stanza | |
+| `pgbackrest_backup_size_bytes` | full uncompressed size of the database | backup_name, backup_type, block_incr, database_id, repo_key, stanza | |
+| `pgbackrest_backup_repo_delta_bytes` | compressed files size in backup | backup_name, backup_type, block_incr, database_id, repo_key, stanza | |
+| `pgbackrest_backup_repo_size_bytes` | full compressed files size to restore the database from backup | backup_name, backup_type, block_incr, database_id, repo_key, stanza | |
+| `pgbackrest_backup_repo_delta_map_bytes` | size of block incremental delta map | backup_name, backup_type, block_incr, database_id, repo_key, stanza | |
+| `pgbackrest_backup_repo_size_map_bytes` | size of block incremental map | backup_name, backup_type, block_incr,database_id, repo_key, stanza | |
 
 ### Last backup metrics
 
 | Metric | Description |  Labels | Additional Info |
 | ----------- | ------------------ | ------------- | --------------- |
-| `pgbackrest_backup_since_last_completion_seconds` | seconds since the last completed full, differential or incremental backup | backup_type, stanza | |
-| `pgbackrest_backup_last_annotations` | number of annotations in the last full, differential or incremental backup | backup_type, stanza | |
-| `pgbackrest_backup_last_databases` | number of databases in the last full, differential or incremental backup | backup_type, stanza | |
-| `pgbackrest_backup_last_duration_seconds` | backup duration for the last full, differential or incremental backup | backup_type, stanza | |
-| `pgbackrest_backup_last_error_status` | error status in the last full, differential or incremental backup | backup_type, stanza | |
-| `pgbackrest_backup_last_delta_bytes` | amount of data in the database to actually backup in the last full, differential or incremental backup | backup_type, stanza | |
-| `pgbackrest_backup_last_size_bytes` | full uncompressed size of the database in the last full, differential or incremental backup | backup_type, stanza | |
-| `pgbackrest_backup_last_repo_delta_bytes` | compressed files size in the last full, differential or incremental backup | backup_type, stanza | |
-| `pgbackrest_backup_last_repo_size_bytes` | full compressed files size to restore the database from the last full, differential or incremental backup | backup_type, stanza | |
-| `pgbackrest_backup_last_repo_size_map_bytes` | size of block incremental map in the last full, differential or incremental backup | backup_type, stanza | |
-| `pgbackrest_backup_last_repo_delta_map_bytes` | size of block incremental delta map in the last full, differential or incremental backup | backup_type, stanza | |
+| `pgbackrest_backup_since_last_completion_seconds` | seconds since the last completed full, differential or incremental backup | backup_type, block_incr, stanza | |
+| `pgbackrest_backup_last_annotations` | number of annotations in the last full, differential or incremental backup | backup_type, block_incr, stanza | |
+| `pgbackrest_backup_last_databases` | number of databases in the last full, differential or incremental backup | backup_type, block_incr, stanza | |
+| `pgbackrest_backup_last_duration_seconds` | backup duration for the last full, differential or incremental backup | backup_type, block_incr, stanza | |
+| `pgbackrest_backup_last_error_status` | error status in the last full, differential or incremental backup | backup_type, block_incr, stanza | |
+| `pgbackrest_backup_last_delta_bytes` | amount of data in the database to actually backup in the last full, differential or incremental backup | backup_type, block_incr, stanza | |
+| `pgbackrest_backup_last_size_bytes` | full uncompressed size of the database in the last full, differential or incremental backup | backup_type, block_incr, stanza | |
+| `pgbackrest_backup_last_repo_delta_bytes` | compressed files size in the last full, differential or incremental backup | backup_type, block_incr, stanza | |
+| `pgbackrest_backup_last_repo_size_bytes` | full compressed files size to restore the database from the last full, differential or incremental backup | backup_type, block_incr, stanza | |
+| `pgbackrest_backup_last_repo_size_map_bytes` | size of block incremental map in the last full, differential or incremental backup | backup_type, block_incr, stanza | |
+| `pgbackrest_backup_last_repo_delta_map_bytes` | size of block incremental delta map in the last full, differential or incremental backup | backup_type, block_incr, stanza | |
 
 ### WAL metrics
 | Metric | Description |  Labels | Additional Info |
