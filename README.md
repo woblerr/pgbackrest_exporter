@@ -42,7 +42,7 @@ To get a dashboard for visualizing the collected metrics, you can use a ready-ma
 | `pgbackrest_backup_repo_delta_bytes` | compressed files size in backup | backup_name, backup_type, block_incr, database_id, repo_key, stanza | |
 | `pgbackrest_backup_repo_size_bytes` | full compressed files size to restore the database from backup | backup_name, backup_type, block_incr, database_id, repo_key, stanza | |
 | `pgbackrest_backup_repo_delta_map_bytes` | size of block incremental delta map | backup_name, backup_type, block_incr, database_id, repo_key, stanza | |
-| `pgbackrest_backup_repo_size_map_bytes` | size of block incremental map | backup_name, backup_type, block_incr,database_id, repo_key, stanza | |
+| `pgbackrest_backup_repo_size_map_bytes` | size of block incremental map | backup_name, backup_type, block_incr, database_id, repo_key, stanza | |
 
 ### Last backup metrics
 
