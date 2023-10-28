@@ -86,9 +86,6 @@ For `pgbackrest_exporter_status` metric the following logic is applied:
 * if the information is collected for all available stanzas, the `stanza` label value will be `all-stanzas`;
 * otherwise, the stanza name will be set.
 
-Metric `pgbackrest_backup_annotations` is set only for backups that have annotations.
-If there are no annotations, the metric won't be set for this backup.
-
 If `pgbackrest_stanza_lock_status` metric is `1`, than one of the commands is running for stanza: `backup`, `expire` or `stanza-*`.
 With a very high probability it is `backup/expire`.
 
@@ -219,7 +216,8 @@ Custom `backup type` for collecting metrics can be specified via `--backrest.bac
 For example, `--backrest.backup-type=full`.<br>
 For this case, metrics will be collected only for `full` backups.<br>
 This flag works for `pgBackRest >= v2.38`.<br>
-When parameter value is `incr` or `diff`, the following metrics will not be collected: `pgbackrest_backup_since_last_completion_seconds`, `pgbackrest_backup_last_databases`.<br>
+When parameter value is `incr` or `diff`, all `pgbackrest_backup_last_*` metrics will not be collected.<br>
+When parameter value is `full`, the metrics will be as if the last backup was `full` (i.e. the same for `diff` and `incr`).<br>
 For earlier pgBackRest versions there will be an error like: `option 'type' not valid for command 'info'`.
 
 When flag `--backrest.database-count` is specified - information about the number of databases in backup is collected.<br>
