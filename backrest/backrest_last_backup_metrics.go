@@ -123,124 +123,119 @@ var (
 //   - pgbackrest_backup_last_error_status
 //   - pgbackrest_backup_last_annotations
 func getBackupLastMetrics(stanzaName string, lastBackups lastBackupsStruct, currentUnixTime int64, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
-	// If full backup exists, the values of metrics for differential and
-	// incremental backups also will be set.
-	// If not - metrics won't be set.
-	if !lastBackups.full.backupTime.IsZero() {
-		for _, backup := range []backupStruct{lastBackups.full, lastBackups.diff, lastBackups.incr} {
-			// Repo backup map size for last backups.
-			setUpMetric(
-				pgbrStanzaBackupLastRepoBackupSetSizeMapMetric,
-				"pgbackrest_backup_last_repo_size_map_bytes",
-				convertInt64PointerToFloat64(backup.backupRepoSizeMap),
-				setUpMetricValueFun,
-				logger,
-				backup.backupType,
-				backup.backupBlockIncr,
-				stanzaName,
-			)
-			// Repo backup delta map size for last backups.
-			setUpMetric(
-				pgbrStanzaBackupLastRepoBackupSizeMapMetric,
-				"pgbackrest_backup_last_repo_delta_map_bytes",
-				convertInt64PointerToFloat64(backup.backupRepoDeltaMap),
-				setUpMetricValueFun,
-				logger,
-				backup.backupType,
-				backup.backupBlockIncr,
-				stanzaName,
-			)
-			// Seconds since the last completed backups.
-			setUpMetric(
-				pgbrStanzaBackupSinceLastCompletionSecondsMetric,
-				"pgbackrest_backup_since_last_completion_seconds",
-				time.Unix(currentUnixTime, 0).Sub(backup.backupTime).Seconds(),
-				setUpMetricValueFun,
-				logger,
-				backup.backupType,
-				backup.backupBlockIncr,
-				stanzaName,
-			)
-			// Backup durations in seconds for last backups.
-			setUpMetric(
-				pgbrStanzaBackupLastDurationMetric,
-				"pgbackrest_backup_last_duration_seconds",
-				backup.backupDuration,
-				setUpMetricValueFun,
-				logger,
-				backup.backupType,
-				backup.backupBlockIncr,
-				stanzaName,
-			)
-			// Database size for last backups.
-			setUpMetric(
-				pgbrStanzaBackupLastDatabaseSizeMetric,
-				"pgbackrest_backup_last_size_bytes",
-				float64(backup.backupSize),
-				setUpMetricValueFun,
-				logger,
-				backup.backupType,
-				backup.backupBlockIncr,
-				stanzaName,
-			)
-			// Database backup size for last backups.
-			setUpMetric(
-				pgbrStanzaBackupLastDatabaseBackupSizeMetric,
-				"pgbackrest_backup_last_delta_bytes",
-				float64(backup.backupDelta),
-				setUpMetricValueFun,
-				logger,
-				backup.backupType,
-				backup.backupBlockIncr,
-				stanzaName,
-			)
-			// Repo backup set size.
-			setUpMetric(
-				pgbrStanzaBackupLastRepoBackupSetSizeMetric,
-				"pgbackrest_backup_last_repo_size_bytes",
-				convertInt64PointerToFloat64(backup.backupRepoSize),
-				setUpMetricValueFun,
-				logger,
-				backup.backupType,
-				backup.backupBlockIncr,
-				stanzaName,
-			)
-			// Repo backup size.
-			setUpMetric(
-				pgbrStanzaBackupLastRepoBackupSizeMetric,
-				"pgbackrest_backup_last_repo_delta_bytes",
-				float64(backup.backupRepoDelta),
-				setUpMetricValueFun,
-				logger,
-				backup.backupType,
-				backup.backupBlockIncr,
-				stanzaName,
-			)
-			// Backup error status.
-			setUpMetric(
-				pgbrStanzaBackupLastErrorMetric,
-				"pgbackrest_backup_last_error_status",
-				convertBoolPointerToFloat64(backup.backupError),
-				setUpMetricValueFun,
-				logger,
-				backup.backupType,
-				backup.backupBlockIncr,
-				stanzaName,
-			)
-			// Number of backup annotations.
-			// Information about number of annotations in backup has appeared since pgBackRest v2.41.
-			// If there are no annotations, the metric will be set to 0 for this backup.
-			setUpMetric(
-				pgbrStanzaBackupLastAnnotationsMetric,
-				"pgbackrest_backup_last_annotations",
-				convertAnnotationPointerToFloat64(backup.backupAnnotation),
-				setUpMetricValueFun,
-				logger,
-				backup.backupType,
-				backup.backupBlockIncr,
-				stanzaName,
-			)
-		}
+	for _, backup := range []backupStruct{lastBackups.full, lastBackups.diff, lastBackups.incr} {
+		// Repo backup map size for last backups.
+		setUpMetric(
+			pgbrStanzaBackupLastRepoBackupSetSizeMapMetric,
+			"pgbackrest_backup_last_repo_size_map_bytes",
+			convertInt64PointerToFloat64(backup.backupRepoSizeMap),
+			setUpMetricValueFun,
+			logger,
+			backup.backupType,
+			backup.backupBlockIncr,
+			stanzaName,
+		)
+		// Repo backup delta map size for last backups.
+		setUpMetric(
+			pgbrStanzaBackupLastRepoBackupSizeMapMetric,
+			"pgbackrest_backup_last_repo_delta_map_bytes",
+			convertInt64PointerToFloat64(backup.backupRepoDeltaMap),
+			setUpMetricValueFun,
+			logger,
+			backup.backupType,
+			backup.backupBlockIncr,
+			stanzaName,
+		)
+		// Seconds since the last completed backups.
+		setUpMetric(
+			pgbrStanzaBackupSinceLastCompletionSecondsMetric,
+			"pgbackrest_backup_since_last_completion_seconds",
+			time.Unix(currentUnixTime, 0).Sub(backup.backupTime).Seconds(),
+			setUpMetricValueFun,
+			logger,
+			backup.backupType,
+			backup.backupBlockIncr,
+			stanzaName,
+		)
+		// Backup durations in seconds for last backups.
+		setUpMetric(
+			pgbrStanzaBackupLastDurationMetric,
+			"pgbackrest_backup_last_duration_seconds",
+			backup.backupDuration,
+			setUpMetricValueFun,
+			logger,
+			backup.backupType,
+			backup.backupBlockIncr,
+			stanzaName,
+		)
+		// Database size for last backups.
+		setUpMetric(
+			pgbrStanzaBackupLastDatabaseSizeMetric,
+			"pgbackrest_backup_last_size_bytes",
+			float64(backup.backupSize),
+			setUpMetricValueFun,
+			logger,
+			backup.backupType,
+			backup.backupBlockIncr,
+			stanzaName,
+		)
+		// Database backup size for last backups.
+		setUpMetric(
+			pgbrStanzaBackupLastDatabaseBackupSizeMetric,
+			"pgbackrest_backup_last_delta_bytes",
+			float64(backup.backupDelta),
+			setUpMetricValueFun,
+			logger,
+			backup.backupType,
+			backup.backupBlockIncr,
+			stanzaName,
+		)
+		// Repo backup set size.
+		setUpMetric(
+			pgbrStanzaBackupLastRepoBackupSetSizeMetric,
+			"pgbackrest_backup_last_repo_size_bytes",
+			convertInt64PointerToFloat64(backup.backupRepoSize),
+			setUpMetricValueFun,
+			logger,
+			backup.backupType,
+			backup.backupBlockIncr,
+			stanzaName,
+		)
+		// Repo backup size.
+		setUpMetric(
+			pgbrStanzaBackupLastRepoBackupSizeMetric,
+			"pgbackrest_backup_last_repo_delta_bytes",
+			float64(backup.backupRepoDelta),
+			setUpMetricValueFun,
+			logger,
+			backup.backupType,
+			backup.backupBlockIncr,
+			stanzaName,
+		)
+		// Backup error status.
+		setUpMetric(
+			pgbrStanzaBackupLastErrorMetric,
+			"pgbackrest_backup_last_error_status",
+			convertBoolPointerToFloat64(backup.backupError),
+			setUpMetricValueFun,
+			logger,
+			backup.backupType,
+			backup.backupBlockIncr,
+			stanzaName,
+		)
+		// Number of backup annotations.
+		// Information about number of annotations in backup has appeared since pgBackRest v2.41.
+		// If there are no annotations, the metric will be set to 0 for this backup.
+		setUpMetric(
+			pgbrStanzaBackupLastAnnotationsMetric,
+			"pgbackrest_backup_last_annotations",
+			convertAnnotationPointerToFloat64(backup.backupAnnotation),
+			setUpMetricValueFun,
+			logger,
+			backup.backupType,
+			backup.backupBlockIncr,
+			stanzaName,
+		)
 	}
 }
 

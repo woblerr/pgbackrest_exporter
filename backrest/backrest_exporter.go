@@ -101,7 +101,12 @@ func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas []s
 					getWALMetrics(singleStanza.Name, singleStanza.Archive, singleStanza.DB, verboseWAL, setUpMetricValue, logger)
 					// Last backups for current stanza
 					lastBackups := getBackupMetrics(singleStanza.Name, singleStanza.Backup, singleStanza.DB, setUpMetricValue, logger)
-					getBackupLastMetrics(singleStanza.Name, lastBackups, currentUnixTime, setUpMetricValue, logger)
+					// If full backup exists, the values of metrics for differential and
+					// incremental backups also will be set.
+					// If not - metrics won't be set.
+					if !lastBackups.full.backupTime.IsZero() {
+						getBackupLastMetrics(singleStanza.Name, lastBackups, currentUnixTime, setUpMetricValue, logger)
+					}
 					// If the calculation of the number of databases in backups is enabled.
 					// Information about number of databases in specific backup has appeared since pgBackRest v2.41.
 					// In versions < v2.41 this is missing and the metric will be set to 0.
@@ -111,7 +116,7 @@ func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas []s
 					// If the calculation of the number of databases in latest backups is enabled.
 					// Information about number of databases in specific backup has appeared since pgBackRest v2.41.
 					// In versions < v2.41 this is missing and the metric will be set to 0.
-					if backupDBCountLatest {
+					if backupDBCountLatest && !lastBackups.full.backupTime.IsZero() {
 						getBackupLastDBCountMetrics(config, configIncludePath, singleStanza.Name, lastBackups, setUpMetricValue, logger)
 					}
 				}
