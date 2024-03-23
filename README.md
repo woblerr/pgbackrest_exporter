@@ -163,7 +163,7 @@ usage: pgbackrest_exporter [<flags>]
 Flags:
   -h, --[no-]help                Show context-sensitive help (also try --help-long and --help-man).
       --web.endpoint="/metrics"  Endpoint used for metrics.
-      --web.listen-address=:9854 ...  
+      --web.listen-address=127.0.0.1:9854 ...
                                  Addresses on which to expose metrics and web interface. Repeatable for multiple addresses.
       --web.config.file=""       [EXPERIMENTAL] Path to configuration file that can enable TLS or authentication.
       --collect.interval=600     Collecting metrics interval in seconds.
