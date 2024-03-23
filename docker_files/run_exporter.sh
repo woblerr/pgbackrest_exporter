@@ -5,7 +5,7 @@ set -e
 # Basic command for execute pgbackrest_exporter.
 EXPORTER_COMMAND="/etc/pgbackrest/pgbackrest_exporter \
 --web.endpoint=${EXPORTER_ENDPOINT} \
---web.listen-address=:${EXPORTER_PORT} \
+--web.listen-address=127.0.0.1:${EXPORTER_PORT} \
 --web.config.file=${EXPORTER_CONFIG} \
 --collect.interval=${COLLECT_INTERVAL} \
 --backrest.stanza-include=${STANZA_INCLUDE} \
