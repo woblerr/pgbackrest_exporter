@@ -404,7 +404,7 @@ To communicate with pgBackRest TLS server you need correct pgBackRest config, fo
 
 ```ini
 [demo]
-pg1-path=/var/lib/postgresql/13/main
+pg1-path=/var/lib/postgresql/16/main
 
 [global]
 repo1-host=backup
