@@ -54,7 +54,7 @@ func StartPromEndpoint(logger log.Logger) {
 }
 
 // GetPgBackRestInfo get and parse pgBackRest info and set metrics
-func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas []string, stanzasExclude []string, backupDBCount, backupDBCountLatest, verboseWAL bool, backupDBCountParallelProcesses int, logger log.Logger) {
+func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas, stanzasExclude []string, backupDBCount, backupDBCountLatest, verboseWAL bool, backupDBCountParallelProcesses int, logger log.Logger) {
 	// To calculate the time elapsed since the last completed full, differential or incremental backup.
 	// For all stanzas values are calculated relative to one value.
 	currentUnixTime := time.Now().Unix()

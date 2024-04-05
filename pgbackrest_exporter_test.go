@@ -43,7 +43,7 @@ func TestMain(t *testing.T) {
 		if err != nil {
 			t.Errorf("\nGet error during read resp body:\n%v", err)
 		}
-		if len(string(b)) == 0 {
+		if string(b) == "" {
 			t.Errorf("\nGet zero body:\n%s", string(b))
 		}
 	}

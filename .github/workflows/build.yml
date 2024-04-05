@@ -33,7 +33,7 @@ jobs:
       - name: Run linters
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.53.3
+          version: v1.56.2
         env:
           TZ: "Etc/UTC"
 
@@ -170,7 +170,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     env: 
-      goreleaser_version: "v1.20.0"
+      goreleaser_version: "v1.24.0"
     steps:
       - name: Set up go 1.21
         uses: actions/setup-go@v3
