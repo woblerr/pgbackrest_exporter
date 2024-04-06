@@ -235,7 +235,7 @@ For a significant number of stanzas, this may require additional time to collect
 
 ### Building and running docker
 
-By default, pgBackRest version is `2.48`. Another version can be specified via arguments.
+By default, pgBackRest version is `2.51`. Another version can be specified via arguments.
 For base image used [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest) image.
 
 Environment variables supported by this image:
@@ -404,7 +404,7 @@ To communicate with pgBackRest TLS server you need correct pgBackRest config, fo
 
 ```ini
 [demo]
-pg1-path=/var/lib/postgresql/13/main
+pg1-path=/var/lib/postgresql/16/main
 
 [global]
 repo1-host=backup

@@ -7,8 +7,8 @@ EXPORTER_CONFIG="${1}"
 
 PG_CLUSTER="main"
 PG_DATABASE="test_db"
-PG_BIN="/usr/lib/postgresql/13/bin"
-PG_DATA="/var/lib/postgresql/13/${PG_CLUSTER}"
+PG_BIN="/usr/lib/postgresql/16/bin"
+PG_DATA="/var/lib/postgresql/16/${PG_CLUSTER}"
 BACKREST_STANZA="demo"
 EXPORTER_COMMAND="/etc/pgbackrest/pgbackrest_exporter \
 --backrest.database-count \
@@ -18,7 +18,7 @@ EXPORTER_COMMAND="/etc/pgbackrest/pgbackrest_exporter \
 # Enable checksums.
 ${PG_BIN}/pg_checksums -e -D ${PG_DATA}
 # Start postgres.
-pg_ctlcluster 13 ${PG_CLUSTER} start
+pg_ctlcluster 16 ${PG_CLUSTER} start
 # Create  database.
 psql -c "create database ${PG_DATABASE}"
 db_oid=$(psql -t -c "select OID from pg_database where datname='demo_db';")

@@ -1,8 +1,8 @@
-ARG BACKREST_VERSION="2.48"
-ARG DOCKER_BACKREST_VERSION="v0.21"
-ARG PG_VERSION="13"
+ARG BACKREST_VERSION="2.51"
+ARG DOCKER_BACKREST_VERSION="v0.24"
+ARG PG_VERSION="16"
 
-FROM golang:1.20-bookworm AS builder
+FROM golang:1.21-bookworm AS builder
 ARG REPO_BUILD_TAG
 COPY . /build
 WORKDIR /build
@@ -24,8 +24,9 @@ RUN apt-get update -y \
         ca-certificates \
         gnupg \
         jq \
-    && curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
-    && echo "deb http://apt.postgresql.org/pub/repos/apt/ focal-pgdg main" \
+        lsb-release \
+    && curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg \
+    && echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" \
         > /etc/apt/sources.list.d/pgdg.list
 RUN apt-get update -y \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y \
