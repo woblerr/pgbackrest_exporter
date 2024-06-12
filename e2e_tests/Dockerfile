@@ -44,6 +44,7 @@ COPY --chown=${BACKREST_USER}:${BACKREST_GROUP} \
         /var/lib/postgresql/${PG_VERSION}/main/postgresql.auto.conf
 COPY ./e2e_tests/pgbackrest.conf /etc/pgbackrest/pgbackrest.conf
 COPY --chown=${BACKREST_USER}:${BACKREST_GROUP} --chmod=400 ./e2e_tests/server.* /e2e_tests/
+COPY --chown=${BACKREST_USER}:${BACKREST_GROUP} --chmod=400 ./e2e_tests/user.* /e2e_tests/
 COPY --chown=${BACKREST_USER}:${BACKREST_GROUP} --chmod=644 ./e2e_tests/web_config_*.yml /e2e_tests/
 COPY --chown=${BACKREST_USER}:${BACKREST_GROUP} --chmod=755 ./e2e_tests/prepare_e2e.sh /e2e_tests/prepare_e2e.sh
 COPY --from=builder --chmod=755 /build/pgbackrest_exporter /etc/pgbackrest/pgbackrest_exporter
