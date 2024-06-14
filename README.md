@@ -165,7 +165,8 @@ Flags:
       --web.endpoint="/metrics"  Endpoint used for metrics.
       --web.listen-address=:9854 ...  
                                  Addresses on which to expose metrics and web interface. Repeatable for multiple addresses.
-      --web.config.file=""       [EXPERIMENTAL] Path to configuration file that can enable TLS or authentication.
+      --web.config.file=""       Path to configuration file that can enable TLS or authentication. See:
+                                 https://github.com/prometheus/exporter-toolkit/blob/master/docs/web-configuration.md
       --collect.interval=600     Collecting metrics interval in seconds.
       --backrest.config=""       Full path to pgBackRest configuration file.
       --backrest.config-include-path=""  
@@ -210,7 +211,7 @@ This creates new different time series on each WAL archiving.
 When `--log.level=debug` is specified - information of values and labels for metrics is printing to the log.
 
 The flag `--web.config.file` allows to specify the path to the configuration for TLS and/or basic authentication.<br>
-The description of TLS configuration and basic authentication can be found at [exporter-toolkit/web](https://github.com/prometheus/exporter-toolkit/blob/v0.9.1//docs/web-configuration.md).
+The description of TLS configuration and basic authentication can be found at [exporter-toolkit/web](https://github.com/prometheus/exporter-toolkit/blob/v0.11.0/docs/web-configuration.md).
 
 Custom `backup type` for collecting metrics can be specified via `--backrest.backup-type` flag. Valid values: `full`, `incr` or `diff`.<br>
 For example, `--backrest.backup-type=full`.<br>

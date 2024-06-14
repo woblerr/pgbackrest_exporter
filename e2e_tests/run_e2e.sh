@@ -3,10 +3,15 @@
 PORT="${1:-9854}"
 EXPORTER_TLS="${2:-false}"
 EXPORTER_AUTH="${3:-false}"
+CERT_PATH="${4:-}"
 
 # Users for test basic auth.
 AUTH_USER="test"
 AUTH_PASSWORD="test"
+
+# Cert auth.
+AUTH_CERT="user.pem"
+AUTH_KEY="user.key"
 
 # Use http or https.
 case ${EXPORTER_TLS} in
@@ -24,15 +29,18 @@ case ${EXPORTER_TLS} in
         ;;
 esac
 
-# Use basic auth or not.
+# Use basic auth, cert or not.
 case ${EXPORTER_AUTH} in
     "false")
         ;;
-    "true")
+    "basic")
         CURL_FLAGS+=" -u ${AUTH_USER}:${AUTH_PASSWORD}"
         ;;
+    "cert")
+        CURL_FLAGS+=" --cert ${CERT_PATH}/${AUTH_CERT} --key ${CERT_PATH}/${AUTH_KEY}"
+        ;;
     *)
-        echo "[ERROR] incorect value: get=${EXPORTER_AUTH}, want=true or false"
+        echo "[ERROR] incorect value: get=${EXPORTER_AUTH}, want=false, basic or cert"
         exit 1
         ;;
 esac

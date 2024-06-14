@@ -34,6 +34,9 @@ var (
 		func() time.Time { return time.Now().UTC() },
 		"2006-01-02T15:04:05.000Z07:00",
 	)
+
+	LevelFlagOptions  = []string{"debug", "info", "warn", "error"}
+	FormatFlagOptions = []string{"logfmt", "json"}
 )
 
 // AllowedLevel is a settable identifier for the minimum level a log entry
@@ -111,13 +114,16 @@ type Config struct {
 // New returns a new leveled oklog logger. Each logged line will be annotated
 // with a timestamp. The output always goes to stderr.
 func New(config *Config) log.Logger {
-	var l log.Logger
 	if config.Format != nil && config.Format.s == "json" {
-		l = log.NewJSONLogger(log.NewSyncWriter(os.Stderr))
-	} else {
-		l = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
+		return NewWithLogger(log.NewJSONLogger(log.NewSyncWriter(os.Stderr)), config)
 	}
 
+	return NewWithLogger(log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr)), config)
+}
+
+// NewWithLogger returns a new leveled oklog logger with a custom log.Logger.
+// Each logged line will be annotated with a timestamp.
+func NewWithLogger(l log.Logger, config *Config) log.Logger {
 	if config.Level != nil {
 		l = log.With(l, "ts", timestampFormat, "caller", log.Caller(5))
 		l = level.NewFilter(l, config.Level.o)
@@ -131,13 +137,17 @@ func New(config *Config) log.Logger {
 // with a timestamp. The output always goes to stderr. Some properties can be
 // changed, like the level.
 func NewDynamic(config *Config) *logger {
-	var l log.Logger
 	if config.Format != nil && config.Format.s == "json" {
-		l = log.NewJSONLogger(log.NewSyncWriter(os.Stderr))
-	} else {
-		l = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
+		return NewDynamicWithLogger(log.NewJSONLogger(log.NewSyncWriter(os.Stderr)), config)
 	}
 
+	return NewDynamicWithLogger(log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr)), config)
+}
+
+// NewDynamicWithLogger returns a new leveled logger with a custom io.Writer.
+// Each logged line will be annotated with a timestamp.
+// Some properties can be changed, like the level.
+func NewDynamicWithLogger(l log.Logger, config *Config) *logger {
 	lo := &logger{
 		base:    l,
 		leveled: l,
