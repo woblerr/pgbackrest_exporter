@@ -98,6 +98,18 @@ var (
 			"block_incr",
 			"stanza",
 		})
+	// For json pgBackRest output
+	pgbrStanzaBackupLastReferencesMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_backup_last_references",
+		Help: "Number of references to another backup (backup reference list) in the last full, differential or incremental backup.",
+	},
+		[]string{
+			// Don't change this order.
+			// See function processBackupReferencesCount().
+			"ref_backup",
+			"backup_type",
+			"block_incr",
+			"stanza"})
 	pgbrStanzaBackupLastDatabasesMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_last_databases",
 		Help: "Number of databases in the last full, differential or incremental backup.",
@@ -236,6 +248,18 @@ func getBackupLastMetrics(stanzaName string, lastBackups lastBackupsStruct, curr
 			backup.backupBlockIncr,
 			stanzaName,
 		)
+		// Number of references to another backup (backup reference list).
+		// For no-last backups, the metric is collected only if the flag is set.
+		// For last backups, the metric is always collected.
+		processBackupReferencesCount(
+			backup.backupReference,
+			"pgbackrest_backup_last_references",
+			pgbrStanzaBackupLastReferencesMetric,
+			setUpMetricValueFun,
+			logger,
+			backup.backupType,
+			backup.backupBlockIncr,
+			stanzaName)
 	}
 }
 
@@ -351,4 +375,5 @@ func resetLastBackupMetrics() {
 	pgbrStanzaBackupLastRepoBackupSizeMapMetric.Reset()
 	pgbrStanzaBackupLastErrorMetric.Reset()
 	pgbrStanzaBackupLastAnnotationsMetric.Reset()
+	pgbrStanzaBackupLastReferencesMetric.Reset()
 }
