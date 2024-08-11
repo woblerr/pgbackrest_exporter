@@ -441,7 +441,7 @@ func getBackupReferencesTotal(refList []string) (refListTotal, error) {
 	}
 	for _, ref := range refList {
 		switch {
-		case !strings.Contains(ref, "_"):
+		case strings.HasSuffix(ref, "F"):
 			total[fullLabel]++
 		case strings.HasSuffix(ref, "D"):
 			total[diffLabel]++
