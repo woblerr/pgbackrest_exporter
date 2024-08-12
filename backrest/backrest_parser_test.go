@@ -3,13 +3,11 @@ package backrest
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"maps"
 	"os"
 	"os/exec"
 	"reflect"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -1134,30 +1132,6 @@ func compareBackupStructs(a, b backupStruct) bool {
 		return false
 	}
 	return true
-}
-
-func mapsEqual(a, b map[string]int) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for k, v := range a {
-		if bv, ok := b[k]; !ok || bv != v {
-			return false
-		}
-	}
-	return true
-}
-
-func printSortedMap(name string, m map[string]int) {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	fmt.Printf("%s:\n", name)
-	for _, k := range keys {
-		fmt.Printf("  %s: %d\n", k, m[k])
-	}
 }
 
 func TestGetBackupReferencesTotal(t *testing.T) {

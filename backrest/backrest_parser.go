@@ -38,8 +38,6 @@ type lastBackupsStruct struct {
 	incr backupStruct
 }
 
-type refListTotal map[string]int
-
 var execCommand = exec.Command
 
 const (
@@ -430,7 +428,7 @@ func processBackupReferencesCount(backupReference []string, metricName string, m
 }
 
 // getBackupReferencesTotal counts the number of full, diff and incr backups.
-func getBackupReferencesTotal(refList []string) (refListTotal, error) {
+func getBackupReferencesTotal(refList []string) (map[string]int, error) {
 	total := map[string]int{
 		fullLabel: 0,
 		diffLabel: 0,
