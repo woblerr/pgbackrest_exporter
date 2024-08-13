@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os/exec"
 	"strings"
 	"time"
@@ -29,6 +30,7 @@ type backupStruct struct {
 	backupError        *bool
 	backupAnnotation   *annotation
 	backupBlockIncr    string
+	backupReference    []string
 }
 type lastBackupsStruct struct {
 	full backupStruct
@@ -213,6 +215,7 @@ func compareLastBackups(backups *lastBackupsStruct, currentBackup backup, blockI
 			backups.full.backupError = currentBackup.Error
 			backups.full.backupAnnotation = currentBackup.Annotation
 			backups.full.backupBlockIncr = blockIncr
+			backups.full.backupReference = currentBackup.Reference
 		}
 		if currentBackupTime.After(backups.diff.backupTime) {
 			backups.diff.backupTime = currentBackupTime
@@ -227,6 +230,7 @@ func compareLastBackups(backups *lastBackupsStruct, currentBackup backup, blockI
 			backups.diff.backupError = currentBackup.Error
 			backups.diff.backupAnnotation = currentBackup.Annotation
 			backups.diff.backupBlockIncr = blockIncr
+			backups.diff.backupReference = currentBackup.Reference
 		}
 		if currentBackupTime.After(backups.incr.backupTime) {
 			backups.incr.backupTime = currentBackupTime
@@ -241,6 +245,7 @@ func compareLastBackups(backups *lastBackupsStruct, currentBackup backup, blockI
 			backups.incr.backupError = currentBackup.Error
 			backups.incr.backupAnnotation = currentBackup.Annotation
 			backups.incr.backupBlockIncr = blockIncr
+			backups.incr.backupReference = currentBackup.Reference
 		}
 	case "diff":
 		if currentBackupTime.After(backups.diff.backupTime) {
@@ -256,6 +261,7 @@ func compareLastBackups(backups *lastBackupsStruct, currentBackup backup, blockI
 			backups.diff.backupError = currentBackup.Error
 			backups.diff.backupAnnotation = currentBackup.Annotation
 			backups.diff.backupBlockIncr = blockIncr
+			backups.diff.backupReference = currentBackup.Reference
 		}
 		if currentBackupTime.After(backups.incr.backupTime) {
 			backups.incr.backupTime = currentBackupTime
@@ -270,6 +276,7 @@ func compareLastBackups(backups *lastBackupsStruct, currentBackup backup, blockI
 			backups.incr.backupError = currentBackup.Error
 			backups.incr.backupAnnotation = currentBackup.Annotation
 			backups.incr.backupBlockIncr = blockIncr
+			backups.incr.backupReference = currentBackup.Reference
 		}
 	case "incr":
 		if currentBackupTime.After(backups.incr.backupTime) {
@@ -285,6 +292,7 @@ func compareLastBackups(backups *lastBackupsStruct, currentBackup backup, blockI
 			backups.incr.backupError = currentBackup.Error
 			backups.incr.backupAnnotation = currentBackup.Annotation
 			backups.incr.backupBlockIncr = blockIncr
+			backups.incr.backupReference = currentBackup.Reference
 		}
 	}
 }
@@ -395,4 +403,51 @@ func processSpecificBackupData(config, configIncludePath, stanzaName, backupLabe
 		logger,
 		labels...,
 	)
+}
+
+// processBackupReferencesCount processes the number of references to another backup (backup reference list).
+func processBackupReferencesCount(backupReference []string, metricName string, metric *prometheus.GaugeVec, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger, addLabels ...string) {
+	refListTotal, err := getBackupReferencesTotal(backupReference)
+	if err != nil {
+		level.Error(logger).Log(
+			"msg", "failed to get backup references",
+			"reference", strings.Join(backupReference, ","),
+			"err", err,
+		)
+	}
+	for refType, refCNT := range refListTotal {
+		setUpMetric(
+			metric,
+			metricName,
+			float64(refCNT),
+			setUpMetricValueFun,
+			logger,
+			append([]string{refType}, addLabels...)...,
+		)
+	}
+}
+
+// getBackupReferencesTotal counts the number of full, diff and incr backups.
+func getBackupReferencesTotal(refList []string) (map[string]int, error) {
+	total := map[string]int{
+		fullLabel: 0,
+		diffLabel: 0,
+		incrLabel: 0,
+	}
+	if len(refList) == 0 {
+		return total, nil
+	}
+	for _, ref := range refList {
+		switch {
+		case strings.HasSuffix(ref, "F"):
+			total[fullLabel]++
+		case strings.HasSuffix(ref, "D"):
+			total[diffLabel]++
+		case strings.HasSuffix(ref, "I"):
+			total[incrLabel]++
+		default:
+			return total, fmt.Errorf("invalid backup name %s", ref)
+		}
+	}
+	return total, nil
 }

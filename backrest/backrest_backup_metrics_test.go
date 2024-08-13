@@ -14,6 +14,7 @@ import (
 // All metrics exist and all labels are corrected.
 // pgBackrest version = latest.
 // With '--backrest.database-count' flag.
+// With '--backrest.reference-count' flag.
 // The case when the backup is performed with block incremental feature flags.
 // Metric pgbackrest_backup_repo_size_bytes is set to 0.
 //
@@ -21,6 +22,7 @@ import (
 func TestGetBackupMetrics(t *testing.T) {
 	type args struct {
 		stanzaName          string
+		referenceCountFlag  bool
 		backupData          []backup
 		dbData              []db
 		setUpMetricValueFun setUpMetricValueFunType
@@ -42,6 +44,11 @@ pgbackrest_backup_error_status{backup_name="20210607-092423F",backup_type="full"
 # HELP pgbackrest_backup_info Backup info.
 # TYPE pgbackrest_backup_info gauge
 pgbackrest_backup_info{backrest_ver="2.45",backup_name="20210607-092423F",backup_type="full",block_incr="y",database_id="1",lsn_start="0/2000028",lsn_stop="0/2000100",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
+# HELP pgbackrest_backup_references Number of references to another backup (backup reference list).
+# TYPE pgbackrest_backup_references gauge
+pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="y",database_id="1",ref_backup="diff",repo_key="1",stanza="demo"} 0
+pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="y",database_id="1",ref_backup="full",repo_key="1",stanza="demo"} 0
+pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="y",database_id="1",ref_backup="incr",repo_key="1",stanza="demo"} 0
 # HELP pgbackrest_backup_repo_delta_bytes Compressed files size in backup.
 # TYPE pgbackrest_backup_repo_delta_bytes gauge
 pgbackrest_backup_repo_delta_bytes{backup_name="20210607-092423F",backup_type="full",block_incr="y",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
@@ -76,6 +83,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 					0,
 					0,
 					annotation{"testkey": "testvalue"}).Name,
+				true,
 				templateStanza(
 					"000000010000000000000004",
 					"000000010000000000000001",
@@ -107,7 +115,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resetBackupMetrics()
-			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
+			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.referenceCountFlag, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupInfoMetric,
@@ -120,6 +128,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 				pgbrStanzaBackupRepoBackupSizeMapMetric,
 				pgbrStanzaBackupErrorMetric,
 				pgbrStanzaBackupAnnotationsMetric,
+				pgbrStanzaBackupReferencesMetric,
 			)
 			metricFamily, err := reg.Gather()
 			if err != nil {
@@ -159,6 +168,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 func TestGetRepoMapMetricsAbsent(t *testing.T) {
 	type args struct {
 		stanzaName          string
+		referenceCountFlag  bool
 		backupData          []backup
 		dbData              []db
 		backupDBCount       bool
@@ -181,6 +191,11 @@ pgbackrest_backup_error_status{backup_name="20210607-092423F",backup_type="full"
 # HELP pgbackrest_backup_info Backup info.
 # TYPE pgbackrest_backup_info gauge
 pgbackrest_backup_info{backrest_ver="2.41",backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",lsn_start="0/2000028",lsn_stop="0/2000100",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
+# HELP pgbackrest_backup_references Number of references to another backup (backup reference list).
+# TYPE pgbackrest_backup_references gauge
+pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",ref_backup="diff",repo_key="1",stanza="demo"} 0
+pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",ref_backup="full",repo_key="1",stanza="demo"} 0
+pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",ref_backup="incr",repo_key="1",stanza="demo"} 0
 # HELP pgbackrest_backup_repo_delta_bytes Compressed files size in backup.
 # TYPE pgbackrest_backup_repo_delta_bytes gauge
 pgbackrest_backup_repo_delta_bytes{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
@@ -210,6 +225,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 					[]databaseRef{{"postgres", 13425}},
 					true, 2969514,
 					annotation{"testkey": "testvalue"}).Name,
+				true,
 				templateStanzaRepoMapSizesAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
@@ -232,7 +248,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resetBackupMetrics()
-			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
+			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.referenceCountFlag, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupInfoMetric,
@@ -245,6 +261,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 				pgbrStanzaBackupRepoBackupSizeMapMetric,
 				pgbrStanzaBackupErrorMetric,
 				pgbrStanzaBackupAnnotationsMetric,
+				pgbrStanzaBackupReferencesMetric,
 			)
 			metricFamily, err := reg.Gather()
 			if err != nil {
@@ -286,6 +303,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 func TestGetBackupMetricsDBsAbsent(t *testing.T) {
 	type args struct {
 		stanzaName          string
+		referenceCountFlag  bool
 		backupData          []backup
 		dbData              []db
 		backupDBCount       bool
@@ -308,6 +326,11 @@ pgbackrest_backup_error_status{backup_name="20210607-092423F",backup_type="full"
 # HELP pgbackrest_backup_info Backup info.
 # TYPE pgbackrest_backup_info gauge
 pgbackrest_backup_info{backrest_ver="2.41",backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",lsn_start="0/2000028",lsn_stop="0/2000100",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
+# HELP pgbackrest_backup_references Number of references to another backup (backup reference list).
+# TYPE pgbackrest_backup_references gauge
+pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",ref_backup="diff",repo_key="1",stanza="demo"} 0
+pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",ref_backup="full",repo_key="1",stanza="demo"} 0
+pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",ref_backup="incr",repo_key="1",stanza="demo"} 0
 # HELP pgbackrest_backup_repo_delta_bytes Compressed files size in backup.
 # TYPE pgbackrest_backup_repo_delta_bytes gauge
 pgbackrest_backup_repo_delta_bytes{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
@@ -337,6 +360,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 					[]databaseRef{{"postgres", 13425}},
 					true,
 					2969514).Name,
+				true,
 				templateStanzaDBsAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
@@ -359,7 +383,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resetBackupMetrics()
-			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
+			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.referenceCountFlag, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupInfoMetric,
@@ -372,6 +396,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 				pgbrStanzaBackupRepoBackupSizeMapMetric,
 				pgbrStanzaBackupErrorMetric,
 				pgbrStanzaBackupAnnotationsMetric,
+				pgbrStanzaBackupReferencesMetric,
 			)
 			metricFamily, err := reg.Gather()
 			if err != nil {
@@ -417,6 +442,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 func TestGetBackupMetricsErrorAbsent(t *testing.T) {
 	type args struct {
 		stanzaName          string
+		referenceCountFlag  bool
 		backupData          []backup
 		dbData              []db
 		backupDBCount       bool
@@ -439,6 +465,11 @@ pgbackrest_backup_error_status{backup_name="20210607-092423F",backup_type="full"
 # HELP pgbackrest_backup_info Backup info.
 # TYPE pgbackrest_backup_info gauge
 pgbackrest_backup_info{backrest_ver="2.35",backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",lsn_start="-",lsn_stop="-",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
+# HELP pgbackrest_backup_references Number of references to another backup (backup reference list).
+# TYPE pgbackrest_backup_references gauge
+pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",ref_backup="diff",repo_key="1",stanza="demo"} 0
+pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",ref_backup="full",repo_key="1",stanza="demo"} 0
+pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",ref_backup="incr",repo_key="1",stanza="demo"} 0
 # HELP pgbackrest_backup_repo_delta_bytes Compressed files size in backup.
 # TYPE pgbackrest_backup_repo_delta_bytes gauge
 pgbackrest_backup_repo_delta_bytes{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",repo_key="1",stanza="demo"} 2.969514e+06
@@ -466,6 +497,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 					"000000010000000000000004",
 					"000000010000000000000001",
 					2969514).Name,
+				true,
 				templateStanzaErrorAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
@@ -484,7 +516,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resetBackupMetrics()
-			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
+			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.referenceCountFlag, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupInfoMetric,
@@ -497,6 +529,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 				pgbrStanzaBackupRepoBackupSizeMapMetric,
 				pgbrStanzaBackupErrorMetric,
 				pgbrStanzaBackupAnnotationsMetric,
+				pgbrStanzaBackupReferencesMetric,
 			)
 			metricFamily, err := reg.Gather()
 			if err != nil {
@@ -543,6 +576,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 func TestGetBackupMetricsRepoAbsent(t *testing.T) {
 	type args struct {
 		stanzaName          string
+		referenceCountFlag  bool
 		backupData          []backup
 		dbData              []db
 		backupDBCount       bool
@@ -565,6 +599,11 @@ pgbackrest_backup_error_status{backup_name="20210607-092423F",backup_type="full"
 # HELP pgbackrest_backup_info Backup info.
 # TYPE pgbackrest_backup_info gauge
 pgbackrest_backup_info{backrest_ver="2.31",backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",lsn_start="-",lsn_stop="-",pg_version="13",prior="",repo_key="0",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
+# HELP pgbackrest_backup_references Number of references to another backup (backup reference list).
+# TYPE pgbackrest_backup_references gauge
+pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",ref_backup="diff",repo_key="0",stanza="demo"} 0
+pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",ref_backup="full",repo_key="0",stanza="demo"} 0
+pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",ref_backup="incr",repo_key="0",stanza="demo"} 0
 # HELP pgbackrest_backup_repo_delta_bytes Compressed files size in backup.
 # TYPE pgbackrest_backup_repo_delta_bytes gauge
 pgbackrest_backup_repo_delta_bytes{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",repo_key="0",stanza="demo"} 2.969514e+06
@@ -592,6 +631,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 					"000000010000000000000004",
 					"000000010000000000000001",
 					2969514).Name,
+				true,
 				templateStanzaRepoAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
@@ -611,7 +651,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resetBackupMetrics()
-			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
+			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.referenceCountFlag, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupInfoMetric,
@@ -624,6 +664,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 				pgbrStanzaBackupRepoBackupSizeMapMetric,
 				pgbrStanzaBackupErrorMetric,
 				pgbrStanzaBackupAnnotationsMetric,
+				pgbrStanzaBackupReferencesMetric,
 			)
 			metricFamily, err := reg.Gather()
 			if err != nil {
@@ -656,6 +697,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 	type args struct {
 		stanzaName          string
+		referenceCountFlag  bool
 		backupData          []backup
 		dbData              []db
 		backupDBCount       bool
@@ -683,6 +725,7 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 					0,
 					0,
 					annotation{"testkey": "testvalue"}).Name,
+				true,
 				templateStanza(
 					"000000010000000000000004",
 					"000000010000000000000001",
@@ -707,8 +750,8 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 					annotation{"testkey": "testvalue"}).DB,
 				true,
 				fakeSetUpMetricValue,
-				10,
-				10,
+				14,
+				13,
 			},
 		},
 		// pgBackrest older than v2.45.
@@ -724,6 +767,7 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 					true,
 					2969514,
 					annotation{"testkey": "testvalue"}).Name,
+				true,
 				templateStanzaRepoMapSizesAbsent(
 					"000000010000000000000004",
 					"000000010000000000000001",
@@ -740,8 +784,8 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 					annotation{"testkey": "testvalue"}).DB,
 				true,
 				fakeSetUpMetricValue,
-				10,
-				10,
+				14,
+				13,
 			},
 		},
 	}
@@ -750,7 +794,7 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 			resetBackupMetrics()
 			out := &bytes.Buffer{}
 			lc := log.NewLogfmtLogger(out)
-			getBackupMetrics(tt.args.stanzaName, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, lc)
+			getBackupMetrics(tt.args.stanzaName, tt.args.referenceCountFlag, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, lc)
 			errorsOutputCount := strings.Count(out.String(), "level=error")
 			debugsOutputCount := strings.Count(out.String(), "level=debug")
 			if tt.args.errorsCount != errorsOutputCount || tt.args.debugsCount != debugsOutputCount {

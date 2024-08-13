@@ -3,6 +3,7 @@ package backrest
 import (
 	"bytes"
 	"errors"
+	"maps"
 	"os"
 	"os/exec"
 	"reflect"
@@ -308,9 +309,9 @@ func TestCompareLastBackups(t *testing.T) {
 				"y",
 			},
 			lastBackupsStruct{
-				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation, "y"},
-				backupStruct{"20210721-000101F", "diff", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation, "y"},
-				backupStruct{"20210721-000101F", "incr", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation, "y"},
+				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation, "y", []string{""}},
+				backupStruct{"20210721-000101F", "diff", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation, "y", []string{""}},
+				backupStruct{"20210721-000101F", "incr", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation, "y", []string{""}},
 			},
 		},
 		{"compareLastBackupsDiff",
@@ -337,7 +338,9 @@ func TestCompareLastBackups(t *testing.T) {
 					link,
 					lsn,
 					"20210721-000101F",
-					[]string{""},
+					[]string{
+						"20210721-000101F",
+					},
 					tablespace,
 					struct {
 						Start int64 "json:\"start\""
@@ -348,9 +351,9 @@ func TestCompareLastBackups(t *testing.T) {
 				"y",
 			},
 			lastBackupsStruct{
-				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation, "y"},
-				backupStruct{"20210721-000101F_20210721-000501D", "diff", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, nil, "y"},
-				backupStruct{"20210721-000101F_20210721-000501D", "incr", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, nil, "y"},
+				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation, "y", []string{""}},
+				backupStruct{"20210721-000101F_20210721-000501D", "diff", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, nil, "y", []string{"20210721-000101F"}},
+				backupStruct{"20210721-000101F_20210721-000501D", "incr", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, nil, "y", []string{"20210721-000101F"}},
 			},
 		},
 		{"compareLastBackupsIncr",
@@ -377,7 +380,10 @@ func TestCompareLastBackups(t *testing.T) {
 					link,
 					lsn,
 					"20210721-000101F_20210721-000501D",
-					[]string{""},
+					[]string{
+						"20210721-000101F",
+						"20210721-000101F_20210721-000501D",
+					},
 					tablespace,
 					struct {
 						Start int64 "json:\"start\""
@@ -388,16 +394,16 @@ func TestCompareLastBackups(t *testing.T) {
 				"y",
 			},
 			lastBackupsStruct{
-				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation, "y"},
-				backupStruct{"20210721-000101F_20210721-000501D", "diff", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, nil, "y"},
-				backupStruct{"20210721-000101F_20210721-001001I", "incr", incrDate, 3, 243163, 243163, 29695, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, nil, "y"},
+				backupStruct{"20210721-000101F", "full", fullDate, 3, 24316343, 24316343, 2969514, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, backupTestAnnotation, "y", []string{""}},
+				backupStruct{"20210721-000101F_20210721-000501D", "diff", diffDate, 3, 2431634, 2431634, 296951, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, nil, "y", []string{"20210721-000101F"}},
+				backupStruct{"20210721-000101F_20210721-001001I", "incr", incrDate, 3, 243163, 243163, 29695, backuptTestRepoDeltaMap, nil, backupTestRepoSizeMap, backupTestError, nil, "y", []string{"20210721-000101F", "20210721-000101F_20210721-000501D"}},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			compareLastBackups(tt.args.backups, tt.args.backupTest, tt.args.backupIncr)
-			if *tt.args.backups != tt.want {
+			if !reflect.DeepEqual(*tt.args.backups, tt.want) {
 				t.Errorf("\nVariables do not match:\n%v\nwant:\n%v", *tt.args.backups, tt.want)
 			}
 		})
@@ -1023,42 +1029,42 @@ func checkBackupType(a []string, regex string) bool {
 //nolint:unparam
 func templateLastBackup() lastBackupsStruct {
 	return lastBackupsStruct{
-		backupStruct{"20210607-092423F", "full", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(true), valToPtr(annotation{"testkey": "testvalue"}), "y"},
-		backupStruct{"20210607-092423F", "diff", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(true), valToPtr(annotation{"testkey": "testvalue"}), "y"},
-		backupStruct{"20210607-092423F", "incr", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(true), valToPtr(annotation{"testkey": "testvalue"}), "y"},
+		backupStruct{"20210607-092423F", "full", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(true), valToPtr(annotation{"testkey": "testvalue"}), "y", []string{""}},
+		backupStruct{"20210607-092423F", "diff", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(true), valToPtr(annotation{"testkey": "testvalue"}), "y", []string{""}},
+		backupStruct{"20210607-092423F", "incr", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(true), valToPtr(annotation{"testkey": "testvalue"}), "y", []string{""}},
 	}
 }
 
 func templateLastBackupRepoMapSizesAbsent() lastBackupsStruct {
 	return lastBackupsStruct{
-		backupStruct{"20210607-092423F", "full", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, valToPtr(true), valToPtr(annotation{"testkey": "testvalue"}), "n"},
-		backupStruct{"20210607-092423F", "diff", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, valToPtr(true), valToPtr(annotation{"testkey": "testvalue"}), "n"},
-		backupStruct{"20210607-092423F", "incr", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, valToPtr(true), valToPtr(annotation{"testkey": "testvalue"}), "n"},
+		backupStruct{"20210607-092423F", "full", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, valToPtr(true), valToPtr(annotation{"testkey": "testvalue"}), "n", []string{""}},
+		backupStruct{"20210607-092423F", "diff", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, valToPtr(true), valToPtr(annotation{"testkey": "testvalue"}), "n", []string{""}},
+		backupStruct{"20210607-092423F", "incr", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, valToPtr(true), valToPtr(annotation{"testkey": "testvalue"}), "n", []string{""}},
 	}
 }
 
 func templateLastBackupDBsAbsent() lastBackupsStruct {
 	return lastBackupsStruct{
-		backupStruct{"20210607-092423F", "full", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, valToPtr(true), nil, "n"},
-		backupStruct{"20210607-092423F", "diff", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, valToPtr(true), nil, "n"},
-		backupStruct{"20210607-092423F", "incr", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, valToPtr(true), nil, "n"},
+		backupStruct{"20210607-092423F", "full", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, valToPtr(true), nil, "n", []string{""}},
+		backupStruct{"20210607-092423F", "diff", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, valToPtr(true), nil, "n", []string{""}},
+		backupStruct{"20210607-092423F", "incr", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, valToPtr(true), nil, "n", []string{""}},
 	}
 }
 
 func templateLastBackupErrorAbsent() lastBackupsStruct {
 	return lastBackupsStruct{
-		backupStruct{"20210607-092423F", "full", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, nil, nil, "n"},
-		backupStruct{"20210607-092423F", "diff", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, nil, nil, "n"},
-		backupStruct{"20210607-092423F", "incr", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, nil, nil, "n"},
+		backupStruct{"20210607-092423F", "full", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, nil, nil, "n", []string{""}},
+		backupStruct{"20210607-092423F", "diff", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, nil, nil, "n", []string{""}},
+		backupStruct{"20210607-092423F", "incr", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, nil, valToPtr(int64(2969514)), nil, nil, nil, "n", []string{""}},
 	}
 }
 
 //nolint:unparam
 func templateLastBackupDifferent() lastBackupsStruct {
 	return lastBackupsStruct{
-		backupStruct{"20220926-201857F", "full", time.Unix(1623706322, 0), 3, 24316343, 24316343, 2969514, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), valToPtr(annotation{"testkey": "testvalue"}), "y"},
-		backupStruct{"20220926-201857F_20220926-201901D", "diff", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969514, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), nil, "y"},
-		backupStruct{"20220926-201857F_20220926-202454I", "incr", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969514, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), nil, "y"},
+		backupStruct{"20220926-201857F", "full", time.Unix(1623706322, 0), 3, 24316343, 24316343, 2969514, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), valToPtr(annotation{"testkey": "testvalue"}), "y", []string{""}},
+		backupStruct{"20220926-201857F_20220926-201901D", "diff", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969514, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), nil, "y", []string{"20220926-201857F"}},
+		backupStruct{"20220926-201857F_20220926-202454I", "incr", time.Unix(1623706322, 0), 3, 32230330, 32230330, 2969514, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), nil, "y", []string{"20220926-201857F", "20220926-201857F_20220926-201901D"}},
 	}
 }
 
@@ -1126,4 +1132,51 @@ func compareBackupStructs(a, b backupStruct) bool {
 		return false
 	}
 	return true
+}
+
+func TestGetBackupReferencesTotal(t *testing.T) {
+	tests := []struct {
+		name    string
+		refList []string
+		want    map[string]int
+		wantErr bool
+	}{
+		{
+			name:    "Empty reference list",
+			refList: []string{},
+			want:    map[string]int{fullLabel: 0, diffLabel: 0, incrLabel: 0},
+			wantErr: false,
+		},
+		{
+			name:    "Valid references 1",
+			refList: []string{"20220926-201857F", "20220926-201857F_20220926-201901D"},
+			want:    map[string]int{fullLabel: 1, diffLabel: 1, incrLabel: 0},
+			wantErr: false,
+		},
+		{
+			name:    "Valid references 2",
+			refList: []string{"20220926-201857F", "20220926-201857F_20220926-201901D", "20220926-201857F_20220926-202454I"},
+			want:    map[string]int{fullLabel: 1, diffLabel: 1, incrLabel: 1},
+			wantErr: false,
+		},
+		{
+			name:    "Invalid reference",
+			refList: []string{"20220926-201857F", "invalid_backup"},
+			want:    map[string]int{fullLabel: 1, diffLabel: 0, incrLabel: 0},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getBackupReferencesTotal(tt.refList)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("\nVariables do not match:\n%v\nwantErr:\n%v", err, tt.wantErr)
+				return
+			}
+			if !maps.Equal(got, tt.want) {
+				t.Errorf("\nVariables do not match:\n%v\nwant:\n%v", got, tt.want)
+			}
+		})
+	}
 }

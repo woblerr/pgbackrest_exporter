@@ -11,6 +11,7 @@ PG_BIN="/usr/lib/postgresql/16/bin"
 PG_DATA="/var/lib/postgresql/16/${PG_CLUSTER}"
 BACKREST_STANZA="demo"
 EXPORTER_COMMAND="/etc/pgbackrest/pgbackrest_exporter \
+--backrest.reference-count \
 --backrest.database-count \
 --backrest.database-parallel-processes=2 \
 --backrest.database-count-latest"
