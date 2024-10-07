@@ -3,12 +3,11 @@ Description=pgbackrest_exporter
 
 [Service]
 Type=simple
-Environment="EXPORTER_ENDPOINT=/metrics"
-Environment="EXPORTER_PORT=9854"
-Environment="COLLECT_INTERVAL=600"
-ExecStart=/usr/bin/pgbackrest_exporter --web.endpoint=${EXPORTER_ENDPOINT} --web.listen-address=:${EXPORTER_PORT} --collect.interval=${COLLECT_INTERVAL}
+Environment="ARGS=--web.endpoint=/metrics --web.listen-address=:9854 --collect.interval=600"
+EnvironmentFile=-/etc/default/pgbackrest_exporter
+ExecStart=/usr/bin/pgbackrest_exporter ${ARGS}
 Restart=always
 RestartSec=5s
 
 [Install]
-WantedBy=multi-user.target 
+WantedBy=multi-user.target
