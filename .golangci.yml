@@ -2,16 +2,13 @@ run:
   timeout: 5m
   output:
     format: colored-line-number
-  skip-dirs:
-    - vendor
 
 linters-settings:
   govet:
-    check-shadowing: true
+    enable:
+      - shadow
   revive:
     confidence: 0.1
-  maligned:
-    suggest-new: true
   goconst:
     min-len: 2
     min-occurrences: 2
@@ -34,12 +31,11 @@ linters-settings:
 
 linters:
   enable:
-    - megacheck
+    - staticcheck
     - revive
     - govet
     - unconvert
-    - megacheck
-    - gas
+    - gosec
     - gocyclo
     - dupl
     - misspell
@@ -49,7 +45,7 @@ linters:
     - ineffassign
     - stylecheck
     - gochecknoinits
-    - exportloopref
+    - copyloopvar
     - gocritic
     - nakedret
     - gosimple
@@ -58,6 +54,8 @@ linters:
   disable-all: true
 
 issues:
+  exclude-dirs:
+    - vendor
   exclude-rules:
     - path: _test\.go
       linters:
