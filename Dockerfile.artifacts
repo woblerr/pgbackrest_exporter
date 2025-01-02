@@ -1,9 +1,9 @@
-FROM goreleaser/goreleaser:v1.24.0 as builder
+FROM goreleaser/goreleaser:v2.5.0 as builder
 WORKDIR /build
 COPY . /build
-RUN goreleaser release --snapshot --skip-publish --clean
+RUN goreleaser release --snapshot --skip=publish --clean
 
-FROM alpine
+FROM alpine:3.20
 COPY --from=builder /build/dist/ /dist/
 RUN mkdir -p /artifacts && \
     cp /dist/*.tar.gz /artifacts/ && \
