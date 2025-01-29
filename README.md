@@ -243,7 +243,7 @@ The `pgbackrest_backup_references` metric can be a little annoying. This metric 
 
 ### Building and running docker
 
-By default, pgBackRest version is `2.53`. Another version can be specified via arguments.
+By default, pgBackRest version is `2.54.2`. Another version can be specified via arguments.
 For base image used [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest) image.
 
 Environment variables supported by this image:
