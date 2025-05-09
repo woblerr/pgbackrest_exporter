@@ -5,8 +5,8 @@ BRANCH := $(subst /,-,$(BRANCH_FULL))
 GIT_REV := $(shell git describe --abbrev=7 --always)
 SERVICE_CONF_DIR := /etc/systemd/system
 HTTP_PORT := 9854
-BACKREST_VERSION := 2.54.2
-DOCKER_BACKREST_VERSION := v0.31
+BACKREST_VERSION := 2.55.1
+DOCKER_BACKREST_VERSION := v0.33
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 DOCKER_CONTAINER_E2E := $(shell docker ps -a -q -f name=$(APP_NAME)_e2e)
 HTTP_PORT_E2E := $(shell echo $$((10000 + ($$RANDOM % 10000))))
