@@ -1,7 +1,9 @@
 run:
   timeout: 5m
-  output:
-    format: colored-line-number
+
+output:
+  formats:
+    - format: colored-line-number
 
 linters-settings:
   govet:
