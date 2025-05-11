@@ -1,9 +1,9 @@
 package backrest
 
 import (
+	"log/slog"
 	"strconv"
 
-	"github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -22,7 +22,7 @@ var pgbrWALArchivingMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 
 // Set backup metrics:
 //   - pgbackrest_wal_archive_status
-func getWALMetrics(stanzaName string, archiveData []archive, dbData []db, verboseWAL bool, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
+func getWALMetrics(stanzaName string, archiveData []archive, dbData []db, verboseWAL bool, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) {
 	// WAL archive info.
 	// 0 - any one of WALMin and WALMax have empty value, there is no correct information about WAL archiving.
 	// 1 - both WALMin and WALMax have no empty values, there is correct information about WAL archiving.

@@ -3,14 +3,13 @@ package backrest
 import (
 	"bytes"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/go-kit/log"
-	"github.com/prometheus/common/promlog"
 	"github.com/prometheus/exporter-toolkit/web"
 )
 
@@ -148,7 +147,7 @@ func TestGetPgBackRestInfo(t *testing.T) {
 			execCommand = fakeExecCommand
 			defer func() { execCommand = exec.Command }()
 			out := &bytes.Buffer{}
-			lc := log.NewLogfmtLogger(out)
+			lc := slog.New(slog.NewTextHandler(out, &slog.HandlerOptions{Level: slog.LevelDebug}))
 			GetPgBackRestInfo(
 				tt.args.config,
 				tt.args.configIncludePath,
@@ -195,16 +194,10 @@ func TestExecCommandHelper(t *testing.T) {
 // If it's necessary to capture the logs output in the test,
 // a separate logger is used inside the test.
 // The info logging level is used.
-func getLogger() log.Logger {
-	var err error
-	logLevel := &promlog.AllowedLevel{}
-	err = logLevel.Set("info")
-	if err != nil {
-		panic(err)
-	}
-	promlogConfig := &promlog.Config{}
-	promlogConfig.Level = logLevel
-	return promlog.New(promlogConfig)
+func getLogger() *slog.Logger {
+	return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
 }
 
 // Helper for displaying web.FlagConfig values test messages.

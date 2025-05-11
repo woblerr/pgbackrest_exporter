@@ -1,11 +1,11 @@
 package backrest
 
 import (
+	"log/slog"
 	"strconv"
 	"sync"
 	"time"
 
-	"github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -210,7 +210,7 @@ var (
 //   - pgbackrest_backup_annotations
 //
 // And returns info about last backups.
-func getBackupMetrics(stanzaName string, backupRefCount bool, backupData []backup, dbData []db, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) lastBackupsStruct {
+func getBackupMetrics(stanzaName string, backupRefCount bool, backupData []backup, dbData []db, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) lastBackupsStruct {
 	lastBackups := initLastBackupStruct()
 	// Each backup for current stanza.
 	for _, backup := range backupData {
@@ -407,7 +407,7 @@ func getBackupMetrics(stanzaName string, backupRefCount bool, backupData []backu
 
 // Set backup metrics:
 //   - pgbackrest_backup_databases
-func getBackupDBCountMetrics(maxParallelProcesses int, config, configIncludePath, stanzaName string, backupData []backup, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
+func getBackupDBCountMetrics(maxParallelProcesses int, config, configIncludePath, stanzaName string, backupData []backup, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) {
 	// Create a buffered channel to enforce maximum parallelism.
 	ch := make(chan struct{}, maxParallelProcesses)
 	var wg sync.WaitGroup

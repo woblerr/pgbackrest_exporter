@@ -3,6 +3,7 @@ package backrest
 import (
 	"bytes"
 	"errors"
+	"log/slog"
 	"maps"
 	"os"
 	"os/exec"
@@ -13,7 +14,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -973,9 +973,9 @@ func TestGetParsedSpecificBackupInfoDataErrors(t *testing.T) {
 			execCommand = fakeExecCommand
 			defer func() { execCommand = exec.Command }()
 			out := &bytes.Buffer{}
-			lc := log.NewLogfmtLogger(out)
+			lc := slog.New(slog.NewTextHandler(out, &slog.HandlerOptions{Level: slog.LevelDebug}))
 			getParsedSpecificBackupInfoData(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.backupLabel, lc)
-			errorsOutputCount := strings.Count(out.String(), "level=error")
+			errorsOutputCount := strings.Count(out.String(), "level=ERROR")
 			if tt.args.errorsCount != errorsOutputCount {
 				t.Errorf("\nVariables do not match:\nerrors=%d, want:\nerrors=%d",
 					tt.args.errorsCount, errorsOutputCount)

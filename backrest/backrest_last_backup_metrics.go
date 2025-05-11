@@ -1,11 +1,10 @@
 package backrest
 
 import (
+	"log/slog"
 	"sync"
 	"time"
 
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -134,7 +133,7 @@ var (
 //   - pgbackrest_backup_last_repo_delta_map_bytes
 //   - pgbackrest_backup_last_error_status
 //   - pgbackrest_backup_last_annotations
-func getBackupLastMetrics(stanzaName string, lastBackups lastBackupsStruct, currentUnixTime int64, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
+func getBackupLastMetrics(stanzaName string, lastBackups lastBackupsStruct, currentUnixTime int64, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) {
 	for _, backup := range []backupStruct{lastBackups.full, lastBackups.diff, lastBackups.incr} {
 		// Repo backup map size for last backups.
 		setUpMetric(
@@ -265,7 +264,7 @@ func getBackupLastMetrics(stanzaName string, lastBackups lastBackupsStruct, curr
 
 // Set backup metrics:
 //   - pgbackrest_backup_last_databases
-func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, lastBackups lastBackupsStruct, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
+func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, lastBackups lastBackupsStruct, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) {
 	// For diff and incr run in parallel.
 	var wg sync.WaitGroup
 	// If name for diff backup is equal to full, there is no point in re-receiving data.
@@ -310,8 +309,8 @@ func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, l
 	// Try to get info for full backup.
 	parseStanzaDataSpecific, err := getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, lastBackups.full.backupLabel, logger)
 	if err != nil {
-		level.Error(logger).Log(
-			"msg", "Get data from pgBackRest failed",
+		logger.Error(
+			"Get data from pgBackRest failed",
 			"stanza", stanzaName,
 			"backup", lastBackups.full.backupLabel,
 			"err", err,
@@ -321,7 +320,8 @@ func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, l
 		parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil {
 		metricValue = convertDatabaseRefPointerToFloat(parseStanzaDataSpecific[0].Backup[0].DatabaseRef)
 	} else {
-		level.Warn(logger).Log("msg", "No backup data returned",
+		logger.Warn(
+			"No backup data returned",
 			"stanza", stanzaName,
 			"backup", lastBackups.full.backupLabel,
 		)

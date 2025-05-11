@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log/slog"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -9,10 +10,8 @@ import (
 	"time"
 
 	kingpin "github.com/alecthomas/kingpin/v2"
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
-	"github.com/prometheus/common/promlog"
-	"github.com/prometheus/common/promlog/flag"
+	"github.com/prometheus/common/promslog"
+	"github.com/prometheus/common/promslog/flag"
 	"github.com/prometheus/exporter-toolkit/web/kingpinflag"
 	"github.com/woblerr/pgbackrest_exporter/backrest"
 )
@@ -72,9 +71,9 @@ func main() {
 		).Default("false").Bool()
 	)
 	// Set logger config.
-	promlogConfig := &promlog.Config{}
+	promslogConfig := &promslog.Config{}
 	// Add flags log.level and log.format from promlog package.
-	flag.AddFlags(kingpin.CommandLine, promlogConfig)
+	flag.AddFlags(kingpin.CommandLine, promslogConfig)
 	// Add short help flag.
 	kingpin.HelpFlag.Short('h')
 	// Load command line arguments.
@@ -84,75 +83,75 @@ func main() {
 	// Catch  listed signals.
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	// Set logger.
-	logger := promlog.New(promlogConfig)
+	logger := promslog.New(promslogConfig)
 	// Method invoked upon seeing signal.
-	go func(logger log.Logger) {
+	go func(logger *slog.Logger) {
 		s := <-sigs
-		level.Warn(logger).Log(
-			"msg", "Stopping exporter",
+		logger.Warn(
+			"Stopping exporter",
 			"name", filepath.Base(os.Args[0]),
 			"signal", s)
 		os.Exit(1)
 	}(logger)
-	level.Info(logger).Log(
-		"msg", "Starting exporter",
+	logger.Info(
+		"Starting exporter",
 		"name", filepath.Base(os.Args[0]),
 		"version", version)
 	if *backrestCustomConfig != "" {
-		level.Info(logger).Log(
-			"mgs", "Custom pgBackRest configuration file",
+		logger.Info(
+			"Custom pgBackRest configuration file",
 			"file", *backrestCustomConfig)
 	}
 	if *backrestCustomConfigIncludePath != "" {
-		level.Info(logger).Log(
-			"mgs", "Custom path to additional pgBackRest configuration files",
+		logger.Info(
+			"Custom path to additional pgBackRest configuration files",
 			"path", *backrestCustomConfigIncludePath)
 	}
 	if strings.Join(*backrestIncludeStanza, "") != "" {
 		backrest.MetricResetFlag = false
 		for _, stanza := range *backrestIncludeStanza {
-			level.Info(logger).Log(
-				"mgs", "Collecting metrics for specific stanza",
+			logger.Info(
+				"Collecting metrics for specific stanza",
 				"stanza", stanza)
 		}
 	}
 	if strings.Join(*backrestExcludeStanza, "") != "" {
 		for _, stanza := range *backrestExcludeStanza {
-			level.Info(logger).Log(
-				"mgs", "Exclude collecting metrics for specific stanza",
+			logger.Info(
+				"Exclude collecting metrics for specific stanza",
 				"stanza", stanza)
 		}
 	}
 	if *backrestBackupType != "" {
-		level.Info(logger).Log(
-			"mgs", "Collecting metrics for specific backup type",
+		logger.Info(
+			"Collecting metrics for specific backup type",
 			"type", *backrestBackupType)
 	}
 	if *backrestBackupReferenceCount {
-		level.Info(logger).Log(
-			"msg", "Exposing the number of references to another backups (backup reference list).",
+		logger.Info(
+			"Exposing the number of references to another backups (backup reference list).",
 			"reference-count", *backrestBackupReferenceCount)
 	}
 	if *backrestBackupDBCount {
-		level.Info(logger).Log(
-			"msg", "Exposing the number of databases in backups",
+		logger.Info(
+			"Exposing the number of databases in backups",
 			"database-count", *backrestBackupDBCount,
 			"database-parallel-processes", *backrestBackupDBCountParallelProcesses)
 	}
 	if *backrestBackupDBCountLatest {
-		level.Info(logger).Log(
-			"msg", "Exposing the number of databases in the latest backups",
+		logger.Info(
+			"Exposing the number of databases in the latest backups",
 			"database-count-latest", *backrestBackupDBCountLatest)
 	}
 	if *backrestVerboseWAL {
-		level.Info(logger).Log(
-			"mgs", "Enabling additional labels for WAL metrics",
+		logger.Info(
+			"Enabling additional labels for WAL metrics",
 			"verbose-wal", *backrestVerboseWAL)
 	}
 	// Setup parameters for exporter.
 	backrest.SetPromPortAndPath(*webAdditionalToolkitFlags, *webPath)
-	level.Info(logger).Log(
-		"mgs", "Use exporter parameters",
+	logger.Info(
+		"Use exporter parameters",
 		"endpoint", *webPath,
 		"config.file", *webAdditionalToolkitFlags.WebConfigFile,
 	)
