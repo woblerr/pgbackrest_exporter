@@ -1,9 +1,9 @@
 package backrest
 
 import (
+	"log/slog"
 	"strconv"
 
-	"github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -20,7 +20,7 @@ var pgbrRepoStatusMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 
 // Set repo metrics:
 //   - pgbackrest_repo_status
-func getRepoMetrics(stanzaName string, repoData *[]repo, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
+func getRepoMetrics(stanzaName string, repoData *[]repo, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) {
 	// Repo status.
 	// The same statuses as for stanza.
 	// For pgBackRest < v2.32 repo info is not available.

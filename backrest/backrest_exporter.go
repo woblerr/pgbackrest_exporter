@@ -1,12 +1,11 @@
 package backrest
 
 import (
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/exporter-toolkit/web"
 )
@@ -31,8 +30,8 @@ func SetPromPortAndPath(flagsConfig web.FlagConfig, endpoint string) {
 }
 
 // StartPromEndpoint run HTTP endpoint
-func StartPromEndpoint(logger log.Logger) {
-	go func(logger log.Logger) {
+func StartPromEndpoint(logger *slog.Logger) {
+	go func(logger *slog.Logger) {
 		http.Handle(webEndpoint, promhttp.Handler())
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<html>
@@ -47,14 +46,14 @@ func StartPromEndpoint(logger log.Logger) {
 			ReadHeaderTimeout: 5 * time.Second,
 		}
 		if err := web.ListenAndServe(server, &webFlagsConfig, logger); err != nil {
-			level.Error(logger).Log("msg", "Run web endpoint failed", "err", err)
+			logger.Error("Run web endpoint failed", "err", err)
 			os.Exit(1)
 		}
 	}(logger)
 }
 
 // GetPgBackRestInfo get and parse pgBackRest info and set metrics
-func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas, stanzasExclude []string, backupReferenceCount, backupDBCount, backupDBCountLatest, verboseWAL bool, backupDBCountParallelProcesses int, logger log.Logger) {
+func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas, stanzasExclude []string, backupReferenceCount, backupDBCount, backupDBCountLatest, verboseWAL bool, backupDBCountParallelProcesses int, logger *slog.Logger) {
 	// To calculate the time elapsed since the last completed full, differential or incremental backup.
 	// For all stanzas values are calculated relative to one value.
 	currentUnixTime := time.Now().Unix()
@@ -78,15 +77,15 @@ func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas, st
 			stanzaData, err := getAllInfoData(config, configIncludePath, stanza, backupType, logger)
 			if err != nil {
 				getDataSuccessStatus = false
-				level.Error(logger).Log("msg", "Get data from pgBackRest failed", "err", err)
+				logger.Error("Get data from pgBackRest failed", "err", err)
 			}
 			parseStanzaData, err := parseResult(stanzaData)
 			if err != nil {
 				getDataSuccessStatus = false
-				level.Error(logger).Log("msg", "Parse JSON failed", "err", err)
+				logger.Error("Parse JSON failed", "err", err)
 			}
 			if len(parseStanzaData) == 0 {
-				level.Warn(logger).Log("msg", "No backup data returned")
+				logger.Warn("No backup data returned")
 			}
 			// When no specific stanzas set for collecting we can reset the metrics as late as possible.
 			if MetricResetFlag {
@@ -127,12 +126,12 @@ func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas, st
 			// It is necessary to set zero metric value for this stanza.
 			getDataSuccessStatus = false
 			getExporterStatusMetrics(stanza, getDataSuccessStatus, setUpMetricValue, logger)
-			level.Warn(logger).Log("msg", "Stanza is specified in include and exclude lists", "stanza", stanza)
+			logger.Warn("Stanza is specified in include and exclude lists", "stanza", stanza)
 		}
 	}
 }
 
 // GetExporterInfo set exporter info metric
-func GetExporterInfo(exporterVersion string, logger log.Logger) {
+func GetExporterInfo(exporterVersion string, logger *slog.Logger) {
 	getExporterMetrics(exporterVersion, setUpMetricValue, logger)
 }

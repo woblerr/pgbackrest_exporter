@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os/exec"
 	"strings"
 	"time"
 
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -122,17 +121,17 @@ func concatExecArgs(slices [][]string) []string {
 	return tmp
 }
 
-func getAllInfoData(config, configIncludePath, stanza, backupType string, logger log.Logger) ([]byte, error) {
+func getAllInfoData(config, configIncludePath, stanza, backupType string, logger *slog.Logger) ([]byte, error) {
 	var backupLabel string
 	return getInfoData(config, configIncludePath, stanza, backupType, backupLabel, logger)
 }
 
-func getSpecificBackupInfoData(config, configIncludePath, stanza, backupLabel string, logger log.Logger) ([]byte, error) {
+func getSpecificBackupInfoData(config, configIncludePath, stanza, backupLabel string, logger *slog.Logger) ([]byte, error) {
 	var backupType string
 	return getInfoData(config, configIncludePath, stanza, backupType, backupLabel, logger)
 }
 
-func getInfoData(config, configIncludePath, stanza, backupType, backupLabel string, logger log.Logger) ([]byte, error) {
+func getInfoData(config, configIncludePath, stanza, backupType, backupLabel string, logger *slog.Logger) ([]byte, error) {
 	app := "pgbackrest"
 	args := [][]string{
 		returnDefaultExecArgs(),
@@ -153,8 +152,8 @@ func getInfoData(config, configIncludePath, stanza, backupType, backupLabel stri
 	// If stderr from pgBackRest is not empty,
 	// write message from pgBackRest to log.
 	if stderr.Len() > 0 {
-		level.Error(logger).Log(
-			"msg", "pgBackRest message",
+		logger.Error(
+			"pgBackRest message",
 			"err", stderr.String(),
 		)
 	}
@@ -310,19 +309,19 @@ func stanzaNotInExclude(stanza string, listExclude []string) bool {
 	return true
 }
 
-func getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, backupLabel string, logger log.Logger) ([]stanza, error) {
+func getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, backupLabel string, logger *slog.Logger) ([]stanza, error) {
 	stanzaDataSpecific, err := getSpecificBackupInfoData(config, configIncludePath, stanzaName, backupLabel, logger)
 	if err != nil {
-		level.Error(logger).Log(
-			"msg", "Get data from pgBackRest failed",
+		logger.Error(
+			"Get data from pgBackRest failed",
 			"stanza", stanzaName,
 			"backup", backupLabel,
 			"err", err)
 	}
 	parseDataSpecific, err := parseResult(stanzaDataSpecific)
 	if err != nil {
-		level.Error(logger).Log(
-			"msg", "Parse JSON failed",
+		logger.Error(
+			"Parse JSON failed",
 			"stanza", stanzaName,
 			"backup", backupLabel,
 			"err", err)
@@ -330,17 +329,17 @@ func getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, back
 	return parseDataSpecific, err
 }
 
-func setUpMetric(metric *prometheus.GaugeVec, metricName string, value float64, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger, labels ...string) {
-	level.Debug(logger).Log(
-		"msg", "Set up metric",
+func setUpMetric(metric *prometheus.GaugeVec, metricName string, value float64, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger, labels ...string) {
+	logger.Debug(
+		"Set up metric",
 		"metric", metricName,
 		"value", value,
 		"labels", strings.Join(labels, ","),
 	)
 	err := setUpMetricValueFun(metric, value, labels...)
 	if err != nil {
-		level.Error(logger).Log(
-			"msg", "Metric set up failed",
+		logger.Error(
+			"Metric set up failed",
 			"metric", metricName,
 			"err", err,
 		)
@@ -370,12 +369,12 @@ func (backup backup) checkBackupIncremental() string {
 	return "n"
 }
 
-func processSpecificBackupData(config, configIncludePath, stanzaName, backupLabel, backupType, metricName string, metric *prometheus.GaugeVec, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger, addLabels ...string) {
+func processSpecificBackupData(config, configIncludePath, stanzaName, backupLabel, backupType, metricName string, metric *prometheus.GaugeVec, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger, addLabels ...string) {
 	var metricValue float64 = 0
 	parseStanzaDataSpecific, err := getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, backupLabel, logger)
 	if err != nil {
-		level.Error(logger).Log(
-			"msg", "Get data from pgBackRest failed",
+		logger.Error(
+			"Get data from pgBackRest failed",
 			"stanza", stanzaName,
 			"backup", backupLabel,
 			"err", err,
@@ -389,7 +388,8 @@ func processSpecificBackupData(config, configIncludePath, stanzaName, backupLabe
 		parseStanzaDataSpecific[0].Backup[0].DatabaseRef != nil {
 		metricValue = convertDatabaseRefPointerToFloat(parseStanzaDataSpecific[0].Backup[0].DatabaseRef)
 	} else {
-		level.Warn(logger).Log("msg", "No backup data returned",
+		logger.Warn(
+			"No backup data returned",
 			"stanza", stanzaName,
 			"backup", backupLabel,
 		)
@@ -406,11 +406,11 @@ func processSpecificBackupData(config, configIncludePath, stanzaName, backupLabe
 }
 
 // processBackupReferencesCount processes the number of references to another backup (backup reference list).
-func processBackupReferencesCount(backupReference []string, metricName string, metric *prometheus.GaugeVec, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger, addLabels ...string) {
+func processBackupReferencesCount(backupReference []string, metricName string, metric *prometheus.GaugeVec, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger, addLabels ...string) {
 	refListTotal, err := getBackupReferencesTotal(backupReference)
 	if err != nil {
-		level.Error(logger).Log(
-			"msg", "failed to get backup references",
+		logger.Error(
+			"Failed to get backup references",
 			"reference", strings.Join(backupReference, ","),
 			"err", err,
 		)

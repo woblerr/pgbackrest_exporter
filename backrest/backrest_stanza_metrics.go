@@ -1,7 +1,8 @@
 package backrest
 
 import (
-	"github.com/go-kit/log"
+	"log/slog"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -31,7 +32,7 @@ var (
 
 // Set stanza metrics:
 //   - pgbackrest_stanza_status
-func getStanzaMetrics(stanzaName string, stanzaStatus status, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
+func getStanzaMetrics(stanzaName string, stanzaStatus status, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) {
 	//https://github.com/pgbackrest/pgbackrest/blob/03021c6a17f1374e84ef42614fa1dd2a6be4b64d/src/command/info/info.c#L78-L94
 	// Stanza statuses:
 	//  0: "ok",

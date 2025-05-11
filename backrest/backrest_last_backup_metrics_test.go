@@ -3,10 +3,11 @@ package backrest
 import (
 	"bytes"
 	"fmt"
+	"log/slog"
+	"os"
 	"os/exec"
 	"testing"
 
-	"github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
 )
@@ -284,7 +285,7 @@ pgbackrest_backup_last_databases{backup_type="incr",block_incr="n",stanza="demo"
 			mockDataBackupLast = tt.mockTestDataBackupLast
 			execCommand = fakeExecCommandSpecificDatabase
 			defer func() { execCommand = exec.Command }()
-			lc := log.NewNopLogger()
+			lc := slog.New(slog.NewTextHandler(os.Stdout, nil))
 			getBackupLastDBCountMetrics(tt.args.config, tt.args.configIncludePath, tt.args.stanzaName, tt.args.lastBackups, tt.args.setUpMetricValueFun, lc)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(

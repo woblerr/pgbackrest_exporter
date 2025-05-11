@@ -1,7 +1,8 @@
 package backrest
 
 import (
-	"github.com/go-kit/log"
+	"log/slog"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -21,7 +22,7 @@ var (
 
 // Set exporter info metrics:
 //   - pgbackrest_exporter_info
-func getExporterMetrics(exporterVer string, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
+func getExporterMetrics(exporterVer string, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) {
 	setUpMetric(
 		pgbrExporterInfoMetric,
 		"pgbackrest_exporter_info",
@@ -34,7 +35,7 @@ func getExporterMetrics(exporterVer string, setUpMetricValueFun setUpMetricValue
 
 // Set exporter metrics:
 //   - pgbackrest_exporter_status
-func getExporterStatusMetrics(stanzaName string, getDataStatus bool, setUpMetricValueFun setUpMetricValueFunType, logger log.Logger) {
+func getExporterStatusMetrics(stanzaName string, getDataStatus bool, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) {
 	// If the information is collected for all available stanzas,
 	// the value of the label 'stanza' will be 'all-stanzas',
 	// otherwise the stanza name will be set.
