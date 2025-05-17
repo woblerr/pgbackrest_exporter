@@ -10,13 +10,16 @@ import (
 	"time"
 
 	kingpin "github.com/alecthomas/kingpin/v2"
+	"github.com/prometheus/client_golang/prometheus"
+	version_collector "github.com/prometheus/client_golang/prometheus/collectors/version"
 	"github.com/prometheus/common/promslog"
 	"github.com/prometheus/common/promslog/flag"
+	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web/kingpinflag"
 	"github.com/woblerr/pgbackrest_exporter/backrest"
 )
 
-var version = "unknown"
+const exporterName = "pgbackrest_exporter"
 
 func main() {
 	var (
@@ -74,6 +77,7 @@ func main() {
 	promslogConfig := &promslog.Config{}
 	// Add flags log.level and log.format from promlog package.
 	flag.AddFlags(kingpin.CommandLine, promslogConfig)
+	kingpin.Version(version.Print(exporterName))
 	// Add short help flag.
 	kingpin.HelpFlag.Short('h')
 	// Load command line arguments.
@@ -96,7 +100,8 @@ func main() {
 	logger.Info(
 		"Starting exporter",
 		"name", filepath.Base(os.Args[0]),
-		"version", version)
+		"version", version.Info())
+	logger.Info("Build context", "build_context", version.BuildContext())
 	if *backrestCustomConfig != "" {
 		logger.Info(
 			"Custom pgBackRest configuration file",
@@ -155,12 +160,10 @@ func main() {
 		"endpoint", *webPath,
 		"config.file", *webAdditionalToolkitFlags.WebConfigFile,
 	)
-	// Start exporter.
-	backrest.StartPromEndpoint(logger)
-	// Set up exporter info metric.
-	// There is no need to reset metric every time,
-	// it is set up once at startup.
-	backrest.GetExporterInfo(version, logger)
+	// Exporter build info metric
+	prometheus.MustRegister(version_collector.NewCollector(exporterName))
+	// Start web server.
+	backrest.StartPromEndpoint(version.Info(), logger)
 	for {
 		// Get information form pgBackRest and set metrics.
 		backrest.GetPgBackRestInfo(

@@ -3,6 +3,8 @@ APP_NAME := pgbackrest_exporter
 BRANCH_FULL := $(shell git rev-parse --abbrev-ref HEAD)
 BRANCH := $(subst /,-,$(BRANCH_FULL))
 GIT_REV := $(shell git describe --abbrev=7 --always)
+BUILD_DATE := $(shell date +%Y-%m-%dT%H:%M:%S%z)
+BUILD_USER ?= pgbackrest_exporter
 SERVICE_CONF_DIR := /etc/systemd/system
 HTTP_PORT := 9854
 BACKREST_VERSION := 2.55.1
@@ -10,6 +12,11 @@ DOCKER_BACKREST_VERSION := v0.33
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 DOCKER_CONTAINER_E2E := $(shell docker ps -a -q -f name=$(APP_NAME)_e2e)
 HTTP_PORT_E2E := $(shell echo $$((10000 + ($$RANDOM % 10000))))
+LDFLAGS = -X github.com/prometheus/common/version.Version=$(BRANCH)-$(GIT_REV) \
+		  -X github.com/prometheus/common/version.Branch=$(BRANCH) \
+		  -X github.com/prometheus/common/version.Revision=$(GIT_REV) \
+		  -X github.com/prometheus/common/version.BuildDate=$(BUILD_DATE) \
+		  -X github.com/prometheus/common/version.BuildUser=$(BUILD_USER)
 
 .PHONY: test
 test:
@@ -27,27 +34,36 @@ test-e2e:
 	$(call e2e_tls_auth,/e2e_tests/web_config_TLSInLine_noAuth.yml,true,false)
 	$(call e2e_tls_auth,/e2e_tests/web_config_TLS_Auth.yml,true,basic)
 	$(call e2e_tls_auth,/e2e_tests/web_config_noTLS_Auth.yml,false,basic)
-	$(call e2e_tls_auth,/e2e_tests/web_config_TLS_RequireAnyClientCert.yml,true,cert,"$(ROOT_DIR)/e2e_tests")
-	$(call e2e_tls_auth,/e2e_tests/web_config_TLS_RequireAndVerifyClientCert.yml,true,cert, "$(ROOT_DIR)/e2e_tests")
+	$(call e2e_tls_auth,/e2e_tests/web_config_TLS_RequireAnyClientCert.yml,true,cert,$(ROOT_DIR)/e2e_tests)
+	$(call e2e_tls_auth,/e2e_tests/web_config_TLS_RequireAndVerifyClientCert.yml,true,cert,$(ROOT_DIR)/e2e_tests)
 
 
 .PHONY: build
 build:
 	@echo "Build $(APP_NAME)"
 	@make test
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -trimpath -ldflags "-X main.version=$(BRANCH)-$(GIT_REV)" -o $(APP_NAME) $(APP_NAME).go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+		-mod=vendor -trimpath \
+		-ldflags "$(LDFLAGS)" \
+		-o $(APP_NAME) $(APP_NAME).go
 
 .PHONY: build-arm
 build-arm:
 	@echo "Build $(APP_NAME)"
 	@make test
-	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -mod=vendor -trimpath -ldflags "-X main.version=$(BRANCH)-$(GIT_REV)" -o $(APP_NAME) $(APP_NAME).go
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build \
+		-mod=vendor -trimpath \
+		-ldflags "$(LDFLAGS)" \
+		-o $(APP_NAME) $(APP_NAME).go
 
 .PHONY: build-darwin
 build-darwin:
 	@echo "Build $(APP_NAME)"
 	@make test
-	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -mod=vendor -trimpath -ldflags "-X main.version=$(BRANCH)-$(GIT_REV)" -o $(APP_NAME) $(APP_NAME).go
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build \
+		-mod=vendor -trimpath \
+		-ldflags "$(LDFLAGS)" \
+		-o $(APP_NAME) $(APP_NAME).go
 
 .PHONY: dist
 dist:
@@ -114,5 +130,5 @@ define e2e_tls_auth
 	docker run -d -p $(HTTP_PORT_E2E):$(HTTP_PORT) --env EXPORTER_CONFIG="${1}" --name=$(APP_NAME)_e2e $(APP_NAME)_e2e
 	@sleep 30
 	$(ROOT_DIR)/e2e_tests/run_e2e.sh $(HTTP_PORT_E2E) ${2} ${3} "${4}"
-    docker rm -f $(APP_NAME)_e2e
+	docker rm -f $(APP_NAME)_e2e
 endef

@@ -15,7 +15,13 @@ builds:
     flags: 
       - -trimpath
       - -mod=vendor
-    ldflags: "-s -w -X main.version={{ .Version }}"
+    ldflags:
+      - -s -w 
+      - -X github.com/prometheus/common/version.Version={{.Version}}
+      - -X github.com/prometheus/common/version.BuildDate={{.Date}}
+      - -X github.com/prometheus/common/version.Branch={{.Branch}}
+      - -X github.com/prometheus/common/version.Revision={{.ShortCommit}}
+      - -X github.com/prometheus/common/version.BuildUser=pgbackrest_exporter
     main: .
 
 archives:

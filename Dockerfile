@@ -8,7 +8,12 @@ COPY . /build
 WORKDIR /build
 RUN CGO_ENABLED=0 go build \
         -mod=vendor -trimpath \
-        -ldflags "-X main.version=${REPO_BUILD_TAG}" \
+        -ldflags "-s -w \
+            -X github.com/prometheus/common/version.Version=${REPO_BUILD_TAG} \
+            -X github.com/prometheus/common/version.BuildDate=$(date +%Y-%m-%dT%H:%M:%S%z) \
+            -X github.com/prometheus/common/version.Branch=$(git rev-parse --abbrev-ref HEAD) \
+            -X github.com/prometheus/common/version.Revision=$(git rev-parse --short HEAD) \
+            -X github.com/prometheus/common/version.BuildUser=pgbackrest_exporter" \
         -o pgbackrest_exporter pgbackrest_exporter.go
 
 FROM ghcr.io/woblerr/pgbackrest:${BACKREST_VERSION}-${DOCKER_BACKREST_VERSION}
