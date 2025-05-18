@@ -8,6 +8,7 @@
 *.zip
 *.tar
 *.tar.gz
+.DS_Store
 
 # Binary file
 /pgbackrest_exporter
