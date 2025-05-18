@@ -71,7 +71,7 @@ To get a dashboard for visualizing the collected metrics, you can use a ready-ma
 
 | Metric | Description |  Labels | Additional Info |
 | ----------- | ------------------ | ------------- | --------------- |
-| `pgbackrest_exporter_info` | information about pgBackRest exporter | version | |
+| `pgbackrest_exporter_build_info` | information about pgBackRest exporter | branch, goarch, goos, goversion, revision, tags, version | |
 | `pgbackrest_exporter_status` | pgBackRest exporter get data status | stanza | Values description:<br> `0` - errors occurred when fetching information from pgBackRest,<br> `1` - information successfully fetched from pgBackRest. |
 
 ### Additional description of metrics
@@ -164,9 +164,10 @@ usage: pgbackrest_exporter [<flags>]
 
 Flags:
   -h, --[no-]help                Show context-sensitive help (also try --help-long and --help-man).
-      --web.endpoint="/metrics"  Endpoint used for metrics.
+      --web.telemetry-path="/metrics"  
+                                 Path under which to expose metrics.
       --web.listen-address=:9854 ...  
-                                 Addresses on which to expose metrics and web interface. Repeatable for multiple addresses.
+                                 Addresses on which to expose metrics and web interface. Repeatable for multiple addresses. Examples: `:9100` or `[::1]:9100` for http, `vsock://:9100` for vsock
       --web.config.file=""       Path to configuration file that can enable TLS or authentication. See:
                                  https://github.com/prometheus/exporter-toolkit/blob/master/docs/web-configuration.md
       --collect.interval=600     Collecting metrics interval in seconds.
@@ -190,6 +191,7 @@ Flags:
                                  Exposing additional labels for WAL metrics.
       --log.level=info           Only log messages with the given severity or above. One of: [debug, info, warn, error]
       --log.format=logfmt        Output format of log messages. One of: [logfmt, json]
+      --[no-]version             Show application version.
 ```
 
 #### Additional description of flags
