@@ -32,8 +32,11 @@ func SetPromPortAndPath(flagsConfig web.FlagConfig, endpoint string) {
 // StartPromEndpoint run HTTP endpoint
 func StartPromEndpoint(version string, logger *slog.Logger) {
 	go func(logger *slog.Logger) {
+		if webEndpoint == "" {
+			logger.Error("Metric endpoint is empty", "endpoint", webEndpoint)
+		}
 		http.Handle(webEndpoint, promhttp.Handler())
-		if webEndpoint != "/" && webEndpoint != "" {
+		if webEndpoint != "/" {
 			landingConfig := web.LandingConfig{
 				Name:        "pgBackRest exporter",
 				Description: "Prometheus exporter for pgBackRest",
@@ -53,7 +56,6 @@ func StartPromEndpoint(version string, logger *slog.Logger) {
 			}
 			http.Handle("/", landingPage)
 		}
-
 		server := &http.Server{
 			ReadHeaderTimeout: 5 * time.Second,
 		}
