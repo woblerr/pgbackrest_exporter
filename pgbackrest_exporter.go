@@ -24,8 +24,8 @@ const exporterName = "pgbackrest_exporter"
 func main() {
 	var (
 		webPath = kingpin.Flag(
-			"web.endpoint",
-			"Endpoint used for metrics.",
+			"web.telemetry-path",
+			"Path under which to expose metrics.",
 		).Default("/metrics").String()
 		webAdditionalToolkitFlags = kingpinflag.AddFlags(kingpin.CommandLine, ":9854")
 		collectionInterval        = kingpin.Flag(
