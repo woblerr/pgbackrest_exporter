@@ -250,7 +250,7 @@ For base image used [docker-pgbackrest](https://github.com/woblerr/docker-pgback
 
 Environment variables supported by this image:
 * all environment variables from [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest#docker-pgbackrest)  image;
-* `EXPORTER_ENDPOINT` - metrics endpoint, default `/metrics`;
+* `EXPORTER_TELEMETRY_PATH` - path under which to expose metrics, default `/metrics`;
 * `EXPORTER_PORT` - port for prometheus metrics to listen on, default `9854`;
 * `EXPORTER_CONFIG` - path to the configuration file for TLS and/or basic authentication, default `""`;
 * `STANZA_INCLUDE` - specific stanza for collecting metrics, default `""`;
