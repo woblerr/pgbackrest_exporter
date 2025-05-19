@@ -3,7 +3,7 @@ Description=pgbackrest_exporter
 
 [Service]
 Type=simple
-Environment="ARGS=--web.endpoint=/metrics --web.listen-address=:9854 --collect.interval=600"
+Environment="ARGS=--web.telemetry-path=/metrics --web.listen-address=:9854 --collect.interval=600"
 EnvironmentFile=-/etc/default/pgbackrest_exporter
 ExecStart=/usr/bin/pgbackrest_exporter $ARGS
 Restart=always
