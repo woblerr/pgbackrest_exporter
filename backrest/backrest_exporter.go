@@ -30,18 +30,32 @@ func SetPromPortAndPath(flagsConfig web.FlagConfig, endpoint string) {
 }
 
 // StartPromEndpoint run HTTP endpoint
-func StartPromEndpoint(logger *slog.Logger) {
+func StartPromEndpoint(version string, logger *slog.Logger) {
 	go func(logger *slog.Logger) {
+		if webEndpoint == "" {
+			logger.Error("Metric endpoint is empty", "endpoint", webEndpoint)
+		}
 		http.Handle(webEndpoint, promhttp.Handler())
-		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(`<html>
-			<head><title>pgBackRest exporter</title></head>
-			<body>
-			<h1>pgBackRest exporter</h1>
-			<p><a href='` + webEndpoint + `'>Metrics</a></p>
-			</body>
-			</html>`))
-		})
+		if webEndpoint != "/" {
+			landingConfig := web.LandingConfig{
+				Name:        "pgBackRest exporter",
+				Description: "Prometheus exporter for pgBackRest",
+				HeaderColor: "#476b6b",
+				Version:     version,
+				Links: []web.LandingLinks{
+					{
+						Address: webEndpoint,
+						Text:    "Metrics",
+					},
+				},
+			}
+			landingPage, err := web.NewLandingPage(landingConfig)
+			if err != nil {
+				logger.Error("Error creating landing page", "err", err)
+				os.Exit(1)
+			}
+			http.Handle("/", landingPage)
+		}
 		server := &http.Server{
 			ReadHeaderTimeout: 5 * time.Second,
 		}
@@ -129,9 +143,4 @@ func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas, st
 			logger.Warn("Stanza is specified in include and exclude lists", "stanza", stanza)
 		}
 	}
-}
-
-// GetExporterInfo set exporter info metric
-func GetExporterInfo(exporterVersion string, logger *slog.Logger) {
-	getExporterMetrics(exporterVersion, setUpMetricValue, logger)
 }

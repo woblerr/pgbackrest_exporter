@@ -8,30 +8,12 @@ import (
 )
 
 var (
-	pgbrExporterInfoMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_exporter_info",
-		Help: "Information about pgBackRest exporter.",
-	},
-		[]string{"version"})
 	pgbrExporterStatusMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_exporter_status",
 		Help: "pgBackRest exporter get data status.",
 	},
 		[]string{"stanza"})
 )
-
-// Set exporter info metrics:
-//   - pgbackrest_exporter_info
-func getExporterMetrics(exporterVer string, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) {
-	setUpMetric(
-		pgbrExporterInfoMetric,
-		"pgbackrest_exporter_info",
-		1,
-		setUpMetricValueFun,
-		logger,
-		exporterVer,
-	)
-}
 
 // Set exporter metrics:
 //   - pgbackrest_exporter_status
