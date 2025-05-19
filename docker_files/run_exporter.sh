@@ -4,7 +4,7 @@ set -e
 
 # Basic command for execute pgbackrest_exporter.
 EXPORTER_COMMAND="/etc/pgbackrest/pgbackrest_exporter \
---web.endpoint=${EXPORTER_ENDPOINT} \
+--web.telemetry-path=${EXPORTER_TELEMETRY_PATH} \
 --web.listen-address=:${EXPORTER_PORT} \
 --web.config.file=${EXPORTER_CONFIG} \
 --collect.interval=${COLLECT_INTERVAL} \

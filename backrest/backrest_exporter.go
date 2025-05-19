@@ -20,7 +20,7 @@ var (
 
 // SetPromPortAndPath sets HTTP endpoint parameters
 // from command line arguments:
-// 'web.endpoint',
+// 'web.telemetry-path',
 // 'web.listen-address',
 // 'web.config.file',
 // 'web.systemd-socket' (Linux only)
