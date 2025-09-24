@@ -14,10 +14,10 @@ jobs:
       docker_backrest_version: "v0.33"
       build_platforms: "linux/amd64,linux/arm64"
     steps:
-      - name: Set up go 1.23
+      - name: Set up go 1.24
         uses: actions/setup-go@v5
         with:
-          go-version: "1.23"
+          go-version: "1.24"
         id: go
 
       - name: Checkout
@@ -174,10 +174,10 @@ jobs:
     env: 
       goreleaser_version: "v2.5.0"
     steps:
-      - name: Set up go 1.23
+      - name: Set up go 1.24
         uses: actions/setup-go@v5
         with:
-          go-version: "1.23"
+          go-version: "1.24"
         id: go
 
       - name: Checkout
