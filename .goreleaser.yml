@@ -4,7 +4,8 @@ version: 2
 project_name: pgbackrest_exporter
 
 builds:
-  - env: 
+  - id: pgbackrest_exporter
+    env: 
       - CGO_ENABLED=0
     goos: 
       - linux
@@ -28,14 +29,14 @@ archives:
   - id: pgbackrest_exporter
     files:
       - LICENSE
-    format: tar.gz
+    formats: [tar.gz]
     name_template: '{{ .Binary }}-{{ .Version }}-{{ if eq .Os "darwin" }}macos{{ else }}{{ .Os }}{{ end }}-{{ if eq .Arch "amd64" }}x86_64{{ else }}{{ .Arch }}{{ end }}'
     wrap_in_directory: true
 
 nfpms:
   - id: pgbackrest_exporter
     package_name: pgbackrest_exporter
-    builds:
+    ids:
       - pgbackrest_exporter
     homepage: https://github.com/woblerr/pgbackrest_exporter
     maintainer: Anton Kurochkin
