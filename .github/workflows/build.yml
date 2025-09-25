@@ -31,9 +31,9 @@ jobs:
           TZ: "Etc/UTC"
 
       - name: Run linters
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
-          version: v1.62.2
+          version: v2.3.1
         env:
           TZ: "Etc/UTC"
 

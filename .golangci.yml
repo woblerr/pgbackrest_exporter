@@ -1,72 +1,57 @@
-run:
-  timeout: 5m
-
-output:
-  formats:
-    - format: colored-line-number
-
-linters-settings:
-  govet:
-    enable:
-      - shadow
-  revive:
-    confidence: 0.1
-  goconst:
-    min-len: 2
-    min-occurrences: 2
-  misspell:
-    locale: US
-  lll:
-    line-length: 140
-  gocyclo:
-    min-complexity: 20
-  gocritic:
-    enabled-tags:
-      - performance
-      - style
-      - experimental
-    disabled-checks:
-      - hugeParam
-      - rangeValCopy
-      - octalLiteral
-      - nestingReduce
+version: "2"
 
 linters:
+  default: none
   enable:
-    - staticcheck
-    - revive
-    - govet
-    - unconvert
-    - gosec
-    - gocyclo
     - dupl
+    - gochecknoinits
+    - gocritic
+    - gocyclo
+    - gosec
+    - govet
+    - ineffassign
     - misspell
+    - nakedret
+    - prealloc
+    - revive
+    - staticcheck
+    - unconvert
     - unparam
     - unused
-    - typecheck
-    - ineffassign
-    - stylecheck
-    - gochecknoinits
-    - copyloopvar
-    - gocritic
-    - nakedret
-    - gosimple
-    - prealloc
-  fast: false
-  disable-all: true
+  settings:
+    goconst:
+      min-len: 2
+      min-occurrences: 2
+    gocritic:
+      enabled-tags:
+        - performance
+        - style
+        - experimental
+      disabled-checks:
+        - hugeParam
+        - rangeValCopy
+        - unnamedResult
+        - filepathJoin
+    govet:
+      enable:
+        - shadow
+    revive:
+      confidence: 0.1
+    misspell:
+      locale: US
+    lll:
+      line-length: 140
+  exclusions:
+    generated: lax
+    rules:
+      - linters:
+          - gosec
+          - dupl
+        path: _test\.go
+    paths:
+      - vendor
 
-issues:
-  exclude-dirs:
-    - vendor
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gocritic
-        - gosec
-    - text: "at least one file in a package should have a package comment"
-      linters:
-        - stylecheck
-    - text: "G104: Errors unhandled"
-      linters:
-        - gosec
-  exclude-use-default: false
+run:
+  timeout: 5m
+  modules-download-mode: vendor
+  relative-path-mode: gomod
