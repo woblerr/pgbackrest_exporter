@@ -74,8 +74,8 @@ func returnConfigExecArgs(config, configIncludePath string) []string {
 
 func returnStanzaExecArgs(stanza string) []string {
 	var stanzaArgs []string
-	switch {
-	case stanza == "":
+	switch stanza {
+	case "":
 		// Stanza not set. No return parameters.
 		stanzaArgs = []string{}
 	default:
@@ -89,8 +89,8 @@ func returnStanzaExecArgs(stanza string) []string {
 // It's pgBackRest restriction.
 func returnBackupTypeExecArgs(backupType string) []string {
 	var backupTypeArgs []string
-	switch {
-	case backupType == "":
+	switch backupType {
+	case "":
 		// Backup type not set. No return parameters.
 		backupTypeArgs = []string{}
 	default:
@@ -102,8 +102,8 @@ func returnBackupTypeExecArgs(backupType string) []string {
 
 func returnBackupSetExecArgs(backupSetLabel string) []string {
 	var backupSetLabelArgs []string
-	switch {
-	case backupSetLabel == "":
+	switch backupSetLabel {
+	case "":
 		// Backup label not set. No return parameters.
 		backupSetLabelArgs = []string{}
 	default:
