@@ -3,7 +3,7 @@ WORKDIR /build
 COPY . /build
 RUN goreleaser release --snapshot --skip=publish --clean
 
-FROM alpine:3.20
+FROM alpine:3.21
 COPY --from=builder /build/dist/ /dist/
 RUN mkdir -p /artifacts && \
     cp /dist/*.tar.gz /artifacts/ && \
