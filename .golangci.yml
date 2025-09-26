@@ -48,6 +48,9 @@ linters:
           - gosec
           - dupl
         path: _test\.go
+      - text: "always receives"
+        linters:
+          - unparam
     paths:
       - vendor
 
