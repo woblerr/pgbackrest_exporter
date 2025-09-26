@@ -87,7 +87,7 @@ func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas, st
 		getDataSuccessStatus := true
 		// Check that stanza from the include list is not in the exclude list.
 		// If stanza not set - checking for entry into the exclude list will be performed later.
-		if stanzaNotInExclude(stanza, stanzasExclude) {
+		if !stanzaInExclude(stanza, stanzasExclude) {
 			stanzaData, err := getAllInfoData(config, configIncludePath, stanza, backupType, logger)
 			if err != nil {
 				getDataSuccessStatus = false
@@ -108,30 +108,31 @@ func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas, st
 			getExporterStatusMetrics(stanza, getDataSuccessStatus, setUpMetricValue, logger)
 			for _, singleStanza := range parseStanzaData {
 				// If stanza is in the exclude list, skip it.
-				if stanzaNotInExclude(singleStanza.Name, stanzasExclude) {
-					getStanzaMetrics(singleStanza.Name, singleStanza.Status, setUpMetricValue, logger)
-					getRepoMetrics(singleStanza.Name, singleStanza.Repo, setUpMetricValue, logger)
-					getWALMetrics(singleStanza.Name, singleStanza.Archive, singleStanza.DB, verboseWAL, setUpMetricValue, logger)
-					// Last backups for current stanza
-					lastBackups := getBackupMetrics(singleStanza.Name, backupReferenceCount, singleStanza.Backup, singleStanza.DB, setUpMetricValue, logger)
-					// If full backup exists, the values of metrics for differential and
-					// incremental backups also will be set.
-					// If not - metrics won't be set.
-					if !lastBackups.full.backupTime.IsZero() {
-						getBackupLastMetrics(singleStanza.Name, lastBackups, currentUnixTime, setUpMetricValue, logger)
-					}
-					// If the calculation of the number of databases in backups is enabled.
-					// Information about number of databases in specific backup has appeared since pgBackRest v2.41.
-					// In versions < v2.41 this is missing and the metric will be set to 0.
-					if backupDBCount {
-						getBackupDBCountMetrics(backupDBCountParallelProcesses, config, configIncludePath, singleStanza.Name, singleStanza.Backup, setUpMetricValue, logger)
-					}
-					// If the calculation of the number of databases in latest backups is enabled.
-					// Information about number of databases in specific backup has appeared since pgBackRest v2.41.
-					// In versions < v2.41 this is missing and the metric will be set to 0.
-					if backupDBCountLatest && !lastBackups.full.backupTime.IsZero() {
-						getBackupLastDBCountMetrics(config, configIncludePath, singleStanza.Name, lastBackups, setUpMetricValue, logger)
-					}
+				if stanzaInExclude(singleStanza.Name, stanzasExclude) {
+					continue
+				}
+				getStanzaMetrics(singleStanza.Name, singleStanza.Status, setUpMetricValue, logger)
+				getRepoMetrics(singleStanza.Name, singleStanza.Repo, setUpMetricValue, logger)
+				getWALMetrics(singleStanza.Name, singleStanza.Archive, singleStanza.DB, verboseWAL, setUpMetricValue, logger)
+				// Last backups for current stanza
+				lastBackups := getBackupMetrics(singleStanza.Name, backupReferenceCount, singleStanza.Backup, singleStanza.DB, setUpMetricValue, logger)
+				// If full backup exists, the values of metrics for differential and
+				// incremental backups also will be set.
+				// If not - metrics won't be set.
+				if !lastBackups.full.backupTime.IsZero() {
+					getBackupLastMetrics(singleStanza.Name, lastBackups, currentUnixTime, setUpMetricValue, logger)
+				}
+				// If the calculation of the number of databases in backups is enabled.
+				// Information about number of databases in specific backup has appeared since pgBackRest v2.41.
+				// In versions < v2.41 this is missing and the metric will be set to 0.
+				if backupDBCount {
+					getBackupDBCountMetrics(backupDBCountParallelProcesses, config, configIncludePath, singleStanza.Name, singleStanza.Backup, setUpMetricValue, logger)
+				}
+				// If the calculation of the number of databases in latest backups is enabled.
+				// Information about number of databases in specific backup has appeared since pgBackRest v2.41.
+				// In versions < v2.41 this is missing and the metric will be set to 0.
+				if backupDBCountLatest && !lastBackups.full.backupTime.IsZero() {
+					getBackupLastDBCountMetrics(config, configIncludePath, singleStanza.Name, lastBackups, setUpMetricValue, logger)
 				}
 			}
 		} else {
