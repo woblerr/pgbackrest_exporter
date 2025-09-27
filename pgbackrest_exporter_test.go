@@ -30,20 +30,22 @@ func TestMain(t *testing.T) {
 		fmt.Sprintf("http://localhost:%d/", port),
 	}
 	for _, url := range urlList {
-		resp, err := http.Get(url)
-		if err != nil {
-			t.Errorf("\nGet error during GET:\n%v", err)
-		}
-		if resp.StatusCode != 200 {
-			t.Errorf("\nGet bad response code for %s:\n%v\nwant:\n%v", url, resp.StatusCode, 200)
-		}
-		defer resp.Body.Close()
-		b, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Errorf("\nGet error during read resp body for %s:\n%v", url, err)
-		}
-		if string(b) == "" {
-			t.Errorf("\nGet zero body for %s:\n%s", url, string(b))
-		}
+		t.Run(url, func(t *testing.T) {
+			resp, err := http.Get(url)
+			if err != nil {
+				t.Fatalf("\nGet error during GET:\n%v", err)
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode != 200 {
+				t.Fatalf("\nGet bad response code for %s:\n%v\nwant:\n%v", url, resp.StatusCode, 200)
+			}
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatalf("\nGet error during read resp body for %s:\n%v", url, err)
+			}
+			if len(b) == 0 {
+				t.Fatalf("\nGet zero body for %s:\n%s", url, string(b))
+			}
+		})
 	}
 }

@@ -410,7 +410,7 @@ func TestCompareLastBackups(t *testing.T) {
 	}
 }
 
-func TestStanzaNotInExclude(t *testing.T) {
+func TestStanzaInExclude(t *testing.T) {
 	type args struct {
 		stanza      string
 		listExclude []string
@@ -420,22 +420,22 @@ func TestStanzaNotInExclude(t *testing.T) {
 		args args
 		want bool
 	}{
-		{"stanzaNotInExcludeEmptyListExclude",
+		{"stanzaInExcludeEmptyListExclude",
 			args{"", []string{""}},
-			true},
-		{"stanzaNotInExcludeEmptyListExcludeNotEmptyStanza",
-			args{"demo", []string{""}},
-			true},
-		{"stanzaNotInExcludeStanzaNotInExcludeList",
-			args{"demo", []string{"demo-test", "test"}},
-			true},
-		{"stanzaNotInExcludeStanzaInExcludeList",
-			args{"demo", []string{"demo", "test"}},
 			false},
+		{"stanzaInExcludeEmptyListExcludeNotEmptyStanza",
+			args{"demo", []string{""}},
+			false},
+		{"stanzaInExcludeStanzaNotInExcludeList",
+			args{"demo", []string{"demo-test", "test"}},
+			false},
+		{"stanzaInExcludeStanzaInExcludeList",
+			args{"demo", []string{"demo", "test"}},
+			true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := stanzaNotInExclude(tt.args.stanza, tt.args.listExclude); got != tt.want {
+			if got := stanzaInExclude(tt.args.stanza, tt.args.listExclude); got != tt.want {
 				t.Errorf("\nVariables do not match:\n%v\nwant:\n%v", got, tt.want)
 			}
 		})
@@ -446,7 +446,6 @@ func fakeSetUpMetricValue(metric *prometheus.GaugeVec, value float64, labels ...
 	return errors.New("сustorm error for test")
 }
 
-//nolint:unparam
 func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus, stanzaLock bool, deltaMap, sizeMap, stanzaSizeTotal, stanzaSizeComplete int64, backupAnnotation annotation) stanza {
 	var (
 		size *int64
@@ -538,7 +537,6 @@ func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus, sta
 	}
 }
 
-//nolint:unparam
 func templateStanzaRepoMapSizesAbsent(walMax, walMin string, dbRef []databaseRef, errorStatus bool, size int64, backupAnnotation annotation) stanza {
 	var (
 		deltaMap, sizeMap, stanzaSizeTotal, stanzaSizeComplete *int64
@@ -630,7 +628,6 @@ func templateStanzaRepoMapSizesAbsent(walMax, walMin string, dbRef []databaseRef
 	}
 }
 
-//nolint:unparam
 func templateStanzaDBsAbsent(walMax, walMin string, dbRef []databaseRef, errorStatus bool, size int64) stanza {
 	var (
 		deltaMap, sizeMap, stanzaSizeTotal, stanzaSizeComplete *int64
@@ -723,7 +720,6 @@ func templateStanzaDBsAbsent(walMax, walMin string, dbRef []databaseRef, errorSt
 	}
 }
 
-//nolint:unparam
 func templateStanzaErrorAbsent(walMax, walMin string, size int64) stanza {
 	var (
 		errorStatus                                            *bool
@@ -817,7 +813,6 @@ func templateStanzaErrorAbsent(walMax, walMin string, size int64) stanza {
 	}
 }
 
-//nolint:unparam
 func templateStanzaRepoAbsent(walMax, walMin string, size int64) stanza {
 	var (
 		errorStatus                                            *bool
@@ -1026,7 +1021,6 @@ func checkBackupType(a []string, regex string) bool {
 	return false
 }
 
-//nolint:unparam
 func templateLastBackup() lastBackupsStruct {
 	return lastBackupsStruct{
 		backupStruct{"20210607-092423F", "full", time.Unix(1623057866, 0), 3, 24316343, 24316343, 2969514, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(true), valToPtr(annotation{"testkey": "testvalue"}), "y", []string{""}},
@@ -1059,7 +1053,6 @@ func templateLastBackupErrorAbsent() lastBackupsStruct {
 	}
 }
 
-//nolint:unparam
 func templateLastBackupDifferent() lastBackupsStruct {
 	return lastBackupsStruct{
 		backupStruct{"20220926-201857F", "full", time.Unix(1623706322, 0), 3, 24316343, 24316343, 2969514, valToPtr(int64(12)), nil, valToPtr(int64(100)), valToPtr(false), valToPtr(annotation{"testkey": "testvalue"}), "y", []string{""}},
@@ -1069,8 +1062,6 @@ func templateLastBackupDifferent() lastBackupsStruct {
 }
 
 // Implement custom comparators for testing.
-//
-//nolint:gocyclo
 func compareBackupStructs(a, b backupStruct) bool {
 	if a.backupLabel != b.backupLabel {
 		return false

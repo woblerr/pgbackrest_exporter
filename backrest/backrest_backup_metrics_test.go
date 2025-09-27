@@ -17,8 +17,6 @@ import (
 // With '--backrest.reference-count' flag.
 // The case when the backup is performed with block incremental feature flags.
 // Metric pgbackrest_backup_repo_size_bytes is set to 0.
-//
-//nolint:dupl
 func TestGetBackupMetrics(t *testing.T) {
 	type args struct {
 		stanzaName          string
@@ -163,8 +161,6 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 //   - pgbackrest_backup_repo_delta_map_bytes
 //
 // pgBackrest version < 2.44.
-//
-//nolint:dupl
 func TestGetRepoMapMetricsAbsent(t *testing.T) {
 	type args struct {
 		stanzaName          string
@@ -298,8 +294,6 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 //   - pgbackrest_backup_annotations
 //
 // pgBackrest version < 2.41.
-//
-//nolint:dupl
 func TestGetBackupMetricsDBsAbsent(t *testing.T) {
 	type args struct {
 		stanzaName          string
@@ -437,8 +431,6 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 //   - lsn_stop="-"
 //
 // pgBackrest version < 2.36.
-//
-//nolint:dupl
 func TestGetBackupMetricsErrorAbsent(t *testing.T) {
 	type args struct {
 		stanzaName          string
@@ -571,8 +563,6 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 //   - lsn_stop="-"
 //
 // pgBackrest version < v2.32
-//
-//nolint:dupl
 func TestGetBackupMetricsRepoAbsent(t *testing.T) {
 	type args struct {
 		stanzaName          string

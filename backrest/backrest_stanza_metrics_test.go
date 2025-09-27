@@ -137,8 +137,6 @@ pgbackrest_stanza_lock_status{stanza="demo"} 0
 // Metrics always have 0 value:
 //   - pgbackrest_stanza_backup_total_bytes
 //   - pgbackrest_stanza_backup_complete_bytes
-//
-//nolint:dupl
 func TestGetStanzaMetricsBackupProgressAbsent(t *testing.T) {
 	type args struct {
 		stanzaName          string
