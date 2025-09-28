@@ -17,12 +17,18 @@ var (
 
 // Set exporter metrics:
 //   - pgbackrest_exporter_status
-func getExporterStatusMetrics(stanzaName string, getDataStatus bool, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) {
+func getExporterStatusMetrics(stanzaName string, getDataStatus bool, excludeStanzaSpecified bool, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) {
 	// If the information is collected for all available stanzas,
 	// the value of the label 'stanza' will be 'all-stanzas',
+	// if the information is collected for all available stanzas except excluded,
+	// the value of the label 'stanza' will be 'all-stanzas-except-excluded',
 	// otherwise the stanza name will be set.
 	if stanzaName == "" {
-		stanzaName = "all-stanzas"
+		if excludeStanzaSpecified {
+			stanzaName = "all-stanzas-except-excluded"
+		} else {
+			stanzaName = "all-stanzas"
+		}
 	}
 	setUpMetric(
 		pgbrExporterStatusMetric,
