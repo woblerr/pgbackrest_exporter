@@ -100,7 +100,7 @@ var (
 	// For json pgBackRest output
 	pgbrStanzaBackupLastReferencesMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_last_references",
-		Help: "Number of references to another backup (backup reference list) in the last full, differential or incremental backup.",
+		Help: "Number of references to other backups (backup reference list) in the last full, differential or incremental backup.",
 	},
 		[]string{
 			// Don't change this order.
@@ -247,7 +247,7 @@ func getBackupLastMetrics(stanzaName string, lastBackups lastBackupsStruct, curr
 			backup.backupBlockIncr,
 			stanzaName,
 		)
-		// Number of references to another backup (backup reference list).
+		// Number of references to other backups (backup reference list).
 		// For no-last backups, the metric is collected only if the flag is set.
 		// For last backups, the metric is always collected.
 		processBackupReferencesCount(

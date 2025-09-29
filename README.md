@@ -34,7 +34,7 @@ To get a dashboard for visualizing the collected metrics, you can use a ready-ma
 | ----------- | ------------------ | ------------- | --------------- |
 | `pgbackrest_backup_annotations` | number of annotations in backup | backup_name, backup_type, database_id, block_incr, repo_key, stanza | |
 | `pgbackrest_backup_databases` | number of databases in backup | backup_name, backup_type, block_incr, database_id, repo_key, stanza | |
-| `pgbackrest_backup_references` | number of references to another backup (backup reference list) | backup_name, backup_type, block_incr, database_id, ref_backup, repo_key, stanza | |
+| `pgbackrest_backup_references` | number of references to other backups (backup reference list) | backup_name, backup_type, block_incr, database_id, ref_backup, repo_key, stanza | |
 | `pgbackrest_backup_duration_seconds` | backup duration in seconds | backup_name, backup_type, block_incr, database_id, repo_key, stanza, start_time, stop_time | |
 | `pgbackrest_backup_error_status` | backup error status | backup_name, backup_type, block_incr, database_id, repo_key, stanza | Values description:<br> `0` - backup doesn't contain page checksum errors,<br> `1` - backup contains one or more page checksum errors. To display the list of errors, you need manually run the command like `pgbackrest info --stanza stanza --set backup_name --repo repo_key`. |
 | `pgbackrest_backup_info` | backup info | backrest_ver, backup_name, backup_type, block_incr, database_id, lsn_start, lsn_stop, pg_version, prior, repo_key, stanza, wal_start, wal_stop | Values description:<br> `1` - info about backup is exist. |
@@ -52,7 +52,7 @@ To get a dashboard for visualizing the collected metrics, you can use a ready-ma
 | `pgbackrest_backup_since_last_completion_seconds` | seconds since the last completed full, differential or incremental backup | backup_type, block_incr, stanza | |
 | `pgbackrest_backup_last_annotations` | number of annotations in the last full, differential or incremental backup | backup_type, block_incr, stanza | |
 | `pgbackrest_backup_last_databases` | number of databases in the last full, differential or incremental backup | backup_type, block_incr, stanza | |
-| `pgbackrest_backup_last_references` | number of references to another backup (backup reference list) in the last full, differential or incremental backup | backup_type, block_incr, ref_backup, stanza | |
+| `pgbackrest_backup_last_references` | number of references to other backups (backup reference list) in the last full, differential or incremental backup | backup_type, block_incr, ref_backup, stanza | |
 | `pgbackrest_backup_last_duration_seconds` | backup duration for the last full, differential or incremental backup | backup_type, block_incr, stanza | |
 | `pgbackrest_backup_last_error_status` | error status in the last full, differential or incremental backup | backup_type, block_incr, stanza | |
 | `pgbackrest_backup_last_delta_bytes` | amount of data in the database to actually backup in the last full, differential or incremental backup | backup_type, block_incr, stanza | |
@@ -187,7 +187,7 @@ Flags:
       --[no-]backrest.database-count-latest  
                                  Exposing the number of databases in the latest backups.
       --[no-]backrest.reference-count  
-                                 Exposing the number of references to another backups (backup reference list).
+                                 Exposing the number of references to other backups (backup reference list).
       --[no-]backrest.verbose-wal  
                                  Exposing additional labels for WAL metrics.
       --log.level=info           Only log messages with the given severity or above. One of: [debug, info, warn, error]

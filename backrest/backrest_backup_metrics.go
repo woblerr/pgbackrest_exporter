@@ -166,10 +166,10 @@ var (
 			"stanza"})
 	// For json pgBackRest output
 	// "backup":"reference"
-	// Number of references to another backups (backup reference list).
+	// Number of references to other backups (backup reference list).
 	pgbrStanzaBackupReferencesMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_references",
-		Help: "Number of references to another backup (backup reference list).",
+		Help: "Number of references to other backups (backup reference list).",
 	},
 		[]string{
 			// Don't change this order.
@@ -382,7 +382,7 @@ func getBackupMetrics(stanzaName string, backupRefCount bool, backupData []backu
 			strconv.Itoa(backup.Database.RepoKey),
 			stanzaName,
 		)
-		// Number of references to another backup (backup reference list).
+		// Number of references to other backups (backup reference list).
 		// This metric could be a little bit annoying because it will be set for each backup.
 		// For no-last backups, the metric is collected only if the flag is set.
 		// For last backups, the metric is always collected.
