@@ -12,6 +12,8 @@ DOCKER_BACKREST_VERSION := v0.34
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 DOCKER_CONTAINER_E2E := $(shell docker ps -a -q -f name=$(APP_NAME)_e2e)
 HTTP_PORT_E2E := $(shell echo $$((10000 + ($$RANDOM % 10000))))
+BACKREST_STANZA_EXCLUDE ?= demo
+BACKREST_STANZA_INCLUDE ?= demo
 LDFLAGS = -X github.com/prometheus/common/version.Version=$(BRANCH)-$(GIT_REV) \
 		  -X github.com/prometheus/common/version.Branch=$(BRANCH) \
 		  -X github.com/prometheus/common/version.Revision=$(GIT_REV) \
@@ -29,6 +31,8 @@ test-e2e:
 	@if [ -n "$(DOCKER_CONTAINER_E2E)" ]; then docker rm -f "$(DOCKER_CONTAINER_E2E)"; fi;
 	DOCKER_BUILDKIT=1 docker build --pull -f e2e_tests/Dockerfile --build-arg REPO_BUILD_TAG=$(BRANCH)-$(GIT_REV) --build-arg BACKREST_VERSION=$(BACKREST_VERSION) --build-arg DOCKER_BACKREST_VERSION=$(DOCKER_BACKREST_VERSION) -t $(APP_NAME)_e2e .
 	$(call e2e_basic)
+	$(call e2e_exclude)
+	$(call e2e_include)
 	$(call e2e_tls_auth,/e2e_tests/web_config_empty.yml,false,false)
 	$(call e2e_tls_auth,/e2e_tests/web_config_TLS_noAuth.yml,true,false)
 	$(call e2e_tls_auth,/e2e_tests/web_config_TLSInLine_noAuth.yml,true,false)
@@ -123,6 +127,20 @@ define e2e_basic
 	docker run -d -p $(HTTP_PORT_E2E):$(HTTP_PORT) --name=$(APP_NAME)_e2e $(APP_NAME)_e2e
 	@sleep 30
 	$(ROOT_DIR)/e2e_tests/run_e2e.sh $(HTTP_PORT_E2E)
+	docker rm -f $(APP_NAME)_e2e
+endef
+
+define e2e_exclude
+	docker run -d -p $(HTTP_PORT_E2E):$(HTTP_PORT) --env STANZA_EXCLUDE="$(BACKREST_STANZA_EXCLUDE)" --name=$(APP_NAME)_e2e $(APP_NAME)_e2e
+	@sleep 30
+	$(ROOT_DIR)/e2e_tests/run_e2e.sh $(HTTP_PORT_E2E) false false "" exclude
+	docker rm -f $(APP_NAME)_e2e
+endef
+
+define e2e_include
+	docker run -d -p $(HTTP_PORT_E2E):$(HTTP_PORT) --env STANZA_INCLUDE="$(BACKREST_STANZA_INCLUDE)" --name=$(APP_NAME)_e2e $(APP_NAME)_e2e
+	@sleep 30
+	$(ROOT_DIR)/e2e_tests/run_e2e.sh $(HTTP_PORT_E2E) false false "" include
 	docker rm -f $(APP_NAME)_e2e
 endef
 

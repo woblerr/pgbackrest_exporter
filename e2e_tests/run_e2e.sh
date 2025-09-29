@@ -4,6 +4,7 @@ PORT="${1:-9854}"
 EXPORTER_TLS="${2:-false}"
 EXPORTER_AUTH="${3:-false}"
 CERT_PATH="${4:-}"
+MODE="${5:-}"
 
 # Users for test basic auth.
 AUTH_USER="test"
@@ -50,8 +51,23 @@ esac
 #
 # Additional comments:
 #  - for '^pgbackrest_backup_last_annotations{.*} 0$|3' zero is correct,
-#    because we creare full and diff backups in repo 2 without any annotations.
-declare -a REGEX_LIST=(
+#    because we create full and diff backups in repo 2 without any annotations.
+case "${MODE}" in
+    "exclude")
+        declare -a REGEX_LIST=(
+    '^pgbackrest_exporter_build_info{.*} 1$|1'
+    '^pgbackrest_exporter_status{stanza="all-stanzas-except-excluded"} 1$|1'
+        )
+        ;;
+    "include")
+        declare -a REGEX_LIST=(
+    '^pgbackrest_exporter_status{stanza="demo"} 1$|1'
+    '^pgbackrest_stanza_status{stanza="demo"} 0$|1'
+    '^pgbackrest_backup_last_size_bytes{backup_type="full",.*,stanza="demo"}|1'
+        )
+        ;;
+    *)
+        declare -a REGEX_LIST=(
     '^pgbackrest_backup_annotations{.*,backup_type="full",.*} 1$|1'
     '^pgbackrest_backup_databases{.*,backup_type="full",.*} 2$|2'
     '^pgbackrest_backup_databases{.*,backup_type="diff",.*,repo_key="2".*} 2$|1'
@@ -104,7 +120,9 @@ declare -a REGEX_LIST=(
     '^pgbackrest_stanza_status{.*} 0$|1'
     '^pgbackrest_wal_archive_status{.*,repo_key="1",.*}|1'
     '^pgbackrest_wal_archive_status{.*,repo_key="2",.*}|1'
-)
+        )
+        ;;
+esac
 
 # Check results.
 for i in "${REGEX_LIST[@]}"
