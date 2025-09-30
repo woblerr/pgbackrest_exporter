@@ -43,6 +43,7 @@ func StartPromEndpoint(version string, logger *slog.Logger) {
 				Description: "Prometheus exporter for pgBackRest",
 				HeaderColor: "#476b6b",
 				Version:     version,
+				Profiling:   "false",
 				Links: []web.LandingLinks{
 					{
 						Address: webEndpoint,
