@@ -86,6 +86,7 @@ For `pgbackrest_*_last_*` metrics for incremental backups (`backup_type="incr"`)
 
 For `pgbackrest_exporter_status` metric the following logic is applied:
 * if the information is collected for all available stanzas, the `stanza` label value will be `all-stanzas`;
+* if the information is collected for all available stanzas except excluded, the `stanza` label value will be `all-stanzas-except-excluded`;
 * otherwise, the stanza name will be set.
 
 If `pgbackrest_stanza_lock_status` metric is `1`, than one of the commands is running for stanza: `backup`, `expire` or `stanza-*`.
@@ -209,7 +210,8 @@ For this case, metrics **will not be collected** for `demo1` and `demo2` stanzas
 If the same stanza is specified for include and exclude flags, then metrics for this stanza will not be collected. 
 The flag `--backrest.stanza-exclude` has a higher priority.<br>
 For example, `--backrest.stanza-include=demo1 --backrest.stanza-exclude=demo1`.<br>
-For this case, metrics **will not be collected** for `demo1` stanza.
+For this case, metrics **will not be collected** for `demo1` stanza.<br>
+When flag `--backrest.stanza-exclude` is specified, the `pgbackrest_exporter_status` metric will have label `stanza=all-stanzas-except-excluded`.
 
 When flag `--backrest.verbose-wal` is specified - WALMin and WALMax are added as metric labels.<br>
 This creates new different time series on each WAL archiving.

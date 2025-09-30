@@ -3,8 +3,6 @@
 # Exit on errors and on command pipe failures.
 set -e
 
-EXPORTER_CONFIG="${1}"
-
 PG_CLUSTER="main"
 PG_DATABASE="test_db"
 PG_BIN="/usr/lib/postgresql/16/bin"
@@ -39,6 +37,16 @@ echo "currupt" >> ${db_file}
 # Create diff backup with corrupted databse file in repo2 with block incremental.
 pgbackrest backup --stanza ${BACKREST_STANZA} --type diff --repo 2 --repo2-bundle --repo2-block --log-level-console warn
 # Update exporter params.
-[[ ! -z ${EXPORTER_CONFIG} ]] && EXPORTER_COMMAND="${EXPORTER_COMMAND} --web.config.file=${EXPORTER_CONFIG}"
+if [[ -n "${EXPORTER_CONFIG}" ]]; then
+	EXPORTER_COMMAND="${EXPORTER_COMMAND} --web.config.file=${EXPORTER_CONFIG}"
+fi
+# Apply stanza exclude if provided via env var STANZA_EXCLUDE
+if [[ -n "${STANZA_EXCLUDE}" ]]; then
+	EXPORTER_COMMAND="${EXPORTER_COMMAND} --backrest.stanza-exclude=${STANZA_EXCLUDE}"
+fi
+# Apply stanza include if provided via env var STANZA_INCLUDE
+if [[ -n "${STANZA_INCLUDE}" ]]; then
+	EXPORTER_COMMAND="${EXPORTER_COMMAND} --backrest.stanza-include=${STANZA_INCLUDE}"
+fi
 # Run pgbackrest_exporter.
 exec ${EXPORTER_COMMAND}

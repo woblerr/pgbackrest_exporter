@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -78,6 +79,8 @@ func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas, st
 	if !MetricResetFlag {
 		resetMetrics()
 	}
+	// Determine if exclude flag is specified (non-empty list).
+	excludeSpecified := strings.Join(stanzasExclude, "") != ""
 	// Loop over each stanza.
 	// If stanza not set - perform a single loop step to get metrics for all stanzas.
 	for _, stanza := range stanzas {
@@ -105,7 +108,7 @@ func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas, st
 			if MetricResetFlag {
 				resetMetrics()
 			}
-			getExporterStatusMetrics(stanza, getDataSuccessStatus, setUpMetricValue, logger)
+			getExporterStatusMetrics(stanza, getDataSuccessStatus, excludeSpecified, setUpMetricValue, logger)
 			for _, singleStanza := range parseStanzaData {
 				// If stanza is in the exclude list, skip it.
 				if stanzaInExclude(singleStanza.Name, stanzasExclude) {
@@ -140,7 +143,7 @@ func GetPgBackRestInfo(config, configIncludePath, backupType string, stanzas, st
 			// and data for this stanza is not collected.
 			// It is necessary to set zero metric value for this stanza.
 			getDataSuccessStatus = false
-			getExporterStatusMetrics(stanza, getDataSuccessStatus, setUpMetricValue, logger)
+			getExporterStatusMetrics(stanza, getDataSuccessStatus, excludeSpecified, setUpMetricValue, logger)
 			logger.Warn("Stanza is specified in include and exclude lists", "stanza", stanza)
 		}
 	}
