@@ -66,7 +66,7 @@ func main() {
 		).Default("false").Bool()
 		backrestBackupReferenceCount = kingpin.Flag(
 			"backrest.reference-count",
-			"Exposing the number of references to another backups (backup reference list).",
+			"Exposing the number of references to other backups (backup reference list).",
 		).Default("false").Bool()
 		backrestVerboseWAL = kingpin.Flag(
 			"backrest.verbose-wal",
@@ -134,7 +134,7 @@ func main() {
 	}
 	if *backrestBackupReferenceCount {
 		logger.Info(
-			"Exposing the number of references to another backups (backup reference list)",
+			"Exposing the number of references to other backups (backup reference list)",
 			"reference-count", *backrestBackupReferenceCount)
 	}
 	if *backrestBackupDBCount {

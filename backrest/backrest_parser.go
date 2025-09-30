@@ -405,7 +405,7 @@ func processSpecificBackupData(config, configIncludePath, stanzaName, backupLabe
 	)
 }
 
-// processBackupReferencesCount processes the number of references to another backup (backup reference list).
+// processBackupReferencesCount processes the number of references to other backups (backup reference list).
 func processBackupReferencesCount(backupReference []string, metricName string, metric *prometheus.GaugeVec, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger, addLabels ...string) {
 	refListTotal, err := getBackupReferencesTotal(backupReference)
 	if err != nil {

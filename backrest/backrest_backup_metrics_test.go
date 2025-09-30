@@ -42,7 +42,7 @@ pgbackrest_backup_error_status{backup_name="20210607-092423F",backup_type="full"
 # HELP pgbackrest_backup_info Backup info.
 # TYPE pgbackrest_backup_info gauge
 pgbackrest_backup_info{backrest_ver="2.45",backup_name="20210607-092423F",backup_type="full",block_incr="y",database_id="1",lsn_start="0/2000028",lsn_stop="0/2000100",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
-# HELP pgbackrest_backup_references Number of references to another backup (backup reference list).
+# HELP pgbackrest_backup_references Number of references to other backups (backup reference list).
 # TYPE pgbackrest_backup_references gauge
 pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="y",database_id="1",ref_backup="diff",repo_key="1",stanza="demo"} 0
 pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="y",database_id="1",ref_backup="full",repo_key="1",stanza="demo"} 0
@@ -187,7 +187,7 @@ pgbackrest_backup_error_status{backup_name="20210607-092423F",backup_type="full"
 # HELP pgbackrest_backup_info Backup info.
 # TYPE pgbackrest_backup_info gauge
 pgbackrest_backup_info{backrest_ver="2.41",backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",lsn_start="0/2000028",lsn_stop="0/2000100",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
-# HELP pgbackrest_backup_references Number of references to another backup (backup reference list).
+# HELP pgbackrest_backup_references Number of references to other backups (backup reference list).
 # TYPE pgbackrest_backup_references gauge
 pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",ref_backup="diff",repo_key="1",stanza="demo"} 0
 pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",ref_backup="full",repo_key="1",stanza="demo"} 0
@@ -320,7 +320,7 @@ pgbackrest_backup_error_status{backup_name="20210607-092423F",backup_type="full"
 # HELP pgbackrest_backup_info Backup info.
 # TYPE pgbackrest_backup_info gauge
 pgbackrest_backup_info{backrest_ver="2.41",backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",lsn_start="0/2000028",lsn_stop="0/2000100",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
-# HELP pgbackrest_backup_references Number of references to another backup (backup reference list).
+# HELP pgbackrest_backup_references Number of references to other backups (backup reference list).
 # TYPE pgbackrest_backup_references gauge
 pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",ref_backup="diff",repo_key="1",stanza="demo"} 0
 pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",ref_backup="full",repo_key="1",stanza="demo"} 0
@@ -457,7 +457,7 @@ pgbackrest_backup_error_status{backup_name="20210607-092423F",backup_type="full"
 # HELP pgbackrest_backup_info Backup info.
 # TYPE pgbackrest_backup_info gauge
 pgbackrest_backup_info{backrest_ver="2.35",backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",lsn_start="-",lsn_stop="-",pg_version="13",prior="",repo_key="1",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
-# HELP pgbackrest_backup_references Number of references to another backup (backup reference list).
+# HELP pgbackrest_backup_references Number of references to other backups (backup reference list).
 # TYPE pgbackrest_backup_references gauge
 pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",ref_backup="diff",repo_key="1",stanza="demo"} 0
 pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",ref_backup="full",repo_key="1",stanza="demo"} 0
@@ -589,7 +589,7 @@ pgbackrest_backup_error_status{backup_name="20210607-092423F",backup_type="full"
 # HELP pgbackrest_backup_info Backup info.
 # TYPE pgbackrest_backup_info gauge
 pgbackrest_backup_info{backrest_ver="2.31",backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",lsn_start="-",lsn_stop="-",pg_version="13",prior="",repo_key="0",stanza="demo",wal_start="000000010000000000000002",wal_stop="000000010000000000000002"} 1
-# HELP pgbackrest_backup_references Number of references to another backup (backup reference list).
+# HELP pgbackrest_backup_references Number of references to other backups (backup reference list).
 # TYPE pgbackrest_backup_references gauge
 pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",ref_backup="diff",repo_key="0",stanza="demo"} 0
 pgbackrest_backup_references{backup_name="20210607-092423F",backup_type="full",block_incr="n",database_id="1",ref_backup="full",repo_key="0",stanza="demo"} 0
