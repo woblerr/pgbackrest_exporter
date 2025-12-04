@@ -102,57 +102,23 @@ func main() {
 		"name", filepath.Base(os.Args[0]),
 		"version", version.Info())
 	logger.Info("Build context", "build_context", version.BuildContext())
-	if *backrestCustomConfig != "" {
-		logger.Info(
-			"Custom pgBackRest configuration file",
-			"file", *backrestCustomConfig)
+	resetMetricsAfterFetch := strings.Join(*backrestIncludeStanza, "") == ""
+	// Create BackrestExporterConfig from flags.
+	backrestExporterConfig := backrest.BackrestExporterConfig{
+		Config:                         *backrestCustomConfig,
+		ConfigIncludePath:              *backrestCustomConfigIncludePath,
+		BackupType:                     *backrestBackupType,
+		IncludeStanza:                  *backrestIncludeStanza,
+		ExcludeStanza:                  *backrestExcludeStanza,
+		BackupReferenceCount:           *backrestBackupReferenceCount,
+		BackupDBCount:                  *backrestBackupDBCount,
+		BackupDBCountLatest:            *backrestBackupDBCountLatest,
+		VerboseWAL:                     *backrestVerboseWAL,
+		ResetMetricsAfter:              resetMetricsAfterFetch,
+		BackupDBCountParallelProcesses: *backrestBackupDBCountParallelProcesses,
 	}
-	if *backrestCustomConfigIncludePath != "" {
-		logger.Info(
-			"Custom path to additional pgBackRest configuration files",
-			"path", *backrestCustomConfigIncludePath)
-	}
-	if strings.Join(*backrestIncludeStanza, "") != "" {
-		backrest.MetricResetFlag = false
-		for _, stanza := range *backrestIncludeStanza {
-			logger.Info(
-				"Collecting metrics for specific stanza",
-				"stanza", stanza)
-		}
-	}
-	if strings.Join(*backrestExcludeStanza, "") != "" {
-		for _, stanza := range *backrestExcludeStanza {
-			logger.Info(
-				"Exclude collecting metrics for specific stanza",
-				"stanza", stanza)
-		}
-	}
-	if *backrestBackupType != "" {
-		logger.Info(
-			"Collecting metrics for specific backup type",
-			"type", *backrestBackupType)
-	}
-	if *backrestBackupReferenceCount {
-		logger.Info(
-			"Exposing the number of references to other backups (backup reference list)",
-			"reference-count", *backrestBackupReferenceCount)
-	}
-	if *backrestBackupDBCount {
-		logger.Info(
-			"Exposing the number of databases in backups",
-			"database-count", *backrestBackupDBCount,
-			"database-parallel-processes", *backrestBackupDBCountParallelProcesses)
-	}
-	if *backrestBackupDBCountLatest {
-		logger.Info(
-			"Exposing the number of databases in the latest backups",
-			"database-count-latest", *backrestBackupDBCountLatest)
-	}
-	if *backrestVerboseWAL {
-		logger.Info(
-			"Enabling additional labels for WAL metrics",
-			"verbose-wal", *backrestVerboseWAL)
-	}
+	// Log BackrestExporterConfig parameters.
+	backrest.LogBackrestExporterConfig(backrestExporterConfig, logger)
 	// Setup parameters for exporter.
 	backrest.SetPromPortAndPath(*webAdditionalToolkitFlags, *webPath)
 	logger.Info(
@@ -166,19 +132,7 @@ func main() {
 	backrest.StartPromEndpoint(version.Info(), logger)
 	for {
 		// Get information form pgBackRest and set metrics.
-		backrest.GetPgBackRestInfo(
-			*backrestCustomConfig,
-			*backrestCustomConfigIncludePath,
-			*backrestBackupType,
-			*backrestIncludeStanza,
-			*backrestExcludeStanza,
-			*backrestBackupReferenceCount,
-			*backrestBackupDBCount,
-			*backrestBackupDBCountLatest,
-			*backrestVerboseWAL,
-			*backrestBackupDBCountParallelProcesses,
-			logger,
-		)
+		backrest.GetPgBackRestInfo(backrestExporterConfig, logger)
 		// Sleep for 'collection.interval' seconds.
 		time.Sleep(time.Duration(*collectionInterval) * time.Second)
 	}
