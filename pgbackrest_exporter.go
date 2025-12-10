@@ -131,6 +131,8 @@ func main() {
 	// Start web server.
 	backrest.StartPromEndpoint(version.Info(), logger)
 	for {
+		// Get pgBackRest version info and set metric.
+		backrest.GetPgBackrestVersionInfo(logger)
 		// Get information form pgBackRest and set metrics.
 		backrest.GetPgBackRestInfo(backrestExporterConfig, logger)
 		// Sleep for 'collection.interval' seconds.

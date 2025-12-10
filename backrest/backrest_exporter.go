@@ -230,3 +230,9 @@ func GetPgBackRestInfo(cfg BackrestExporterConfig, logger *slog.Logger) {
 		}
 	}
 }
+
+// GetPgBackrestVersionInfo get and parse pgBackRest version info and set metrics
+func GetPgBackrestVersionInfo(logger *slog.Logger) {
+	resetVersionMetrics()
+	getBackrestVersionMetrics(setUpMetricValue, logger)
+}

@@ -67,6 +67,11 @@ To get a dashboard for visualizing the collected metrics, you can use a ready-ma
 | ----------- | ------------------ | ------------- | --------------- |
 | `pgbackrest_wal_archive_status` | current WAL archive status | database_id, pg_version, repo_key, stanza, wal_max, wal_min | Values description:<br> `0` - any one of WALMin and WALMax have empty value, there is no correct information about WAL archiving,<br> `1` - both WALMin and WALMax have no empty values, there is correct information about WAL archiving. |
 
+### pgBackRest metrics
+| Metric | Description |  Labels | Additional Info |
+| ----------- | ------------------ | ------------- | --------------- |
+| `pgbackrest_version_info` | information about pgBackRest version | | Values description:<br> `0` - pgBackRest version information unavailable. |
+
 ### Exporter metrics
 
 | Metric | Description |  Labels | Additional Info |
@@ -98,11 +103,18 @@ s are different from `0` and `pgbackrest_stanza_lock_status` metric is equal to 
 * if `pgbackrest_stanza_backup_compete_bytes` and `pgbackrest_stanza_backup_total_bytes` metric
 s are equal to `0` and `pgbackrest_stanza_lock_status` metric is equal to `1`, then one of the commands is running for stanza: `expire` or `stanza-*`. With a very high probability it is `expire`.
 
+For `pgbackrest_version_info` metric the value is pgBackRest version in numeric format (e.g., `2057000` for version `2.57.0`).
+
 ## Compatibility with pgBackRest versions
 
 The number of collected metrics may vary depending on pgBackRest version. 
 
 For different versions, some metrics may not be collected or have insignificant label values:
+
+* `pgbackrest < v2.55.0`
+    
+    The following metrics will always be `0`:
+    * `pgbackrest_version_info`.
 
 * `pgBackRest < v2.48`
     

@@ -196,6 +196,24 @@ func TestReturnBackupSetExecArgs(t *testing.T) {
 	}
 }
 
+func TestReturnVersionExecArgs(t *testing.T) {
+	tests := []struct {
+		name string
+		want []string
+	}{
+		{"returnVersionExecArgs",
+			[]string{"version", "--output", "num"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := returnVersionExecArgs(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("\nVariables do not match:\n%s\nwant:\n%s", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestConcatExecArgs(t *testing.T) {
 	type args struct {
 		slices [][]string
@@ -974,6 +992,103 @@ func TestGetParsedSpecificBackupInfoDataErrors(t *testing.T) {
 			if tt.args.errorsCount != errorsOutputCount {
 				t.Errorf("\nVariables do not match:\nerrors=%d, want:\nerrors=%d",
 					tt.args.errorsCount, errorsOutputCount)
+			}
+		})
+	}
+}
+
+func TestGetVersionData(t *testing.T) {
+	type args struct {
+		mockStdout string
+		mockStderr string
+		mockExit   int
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []byte
+		wantErr bool
+	}{
+		{
+			"getVersionDataSuccess",
+			args{
+				"2057000",
+				"",
+				0,
+			},
+			[]byte("2057000"),
+			false,
+		},
+		{
+			"getVersionDataError",
+			args{
+				"",
+				"pgbackrest: command not found",
+				127,
+			},
+			nil,
+			true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockData = mockStruct{tt.args.mockStdout, tt.args.mockStderr, tt.args.mockExit}
+			execCommand = fakeExecCommand
+			defer func() { execCommand = exec.Command }()
+			out := &bytes.Buffer{}
+			lc := slog.New(slog.NewTextHandler(out, &slog.HandlerOptions{Level: slog.LevelDebug}))
+			got, err := getVersionData(lc)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("\ngetVersionData() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("\nVariables do not match:\n%v\nwant:\n%v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseVersionOutput(t *testing.T) {
+	type args struct {
+		output []byte
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    float64
+		wantErr bool
+	}{
+		{
+			"parseVersionOutputSuccess",
+			args{[]byte("2057000")},
+			2057000,
+			false,
+		},
+		{
+			"parseVersionOutputInvalidFormat",
+			args{[]byte("pgBackRest 2.40")},
+			0,
+			true,
+		},
+		{
+			"parseVersionOutputEmptyString",
+			args{[]byte("")},
+			0,
+			true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out := &bytes.Buffer{}
+			lc := slog.New(slog.NewTextHandler(out, &slog.HandlerOptions{Level: slog.LevelDebug}))
+			got, err := parseVersionOutput(tt.args.output, lc)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("\nparseVersionOutput() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("\nVariables do not match:\n%v\nwant:\n%v", got, tt.want)
 			}
 		})
 	}
