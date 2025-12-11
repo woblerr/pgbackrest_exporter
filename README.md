@@ -202,6 +202,8 @@ Flags:
                                  Exposing the number of references to other backups (backup reference list).
       --[no-]backrest.verbose-wal  
                                  Exposing additional labels for WAL metrics.
+      --[no-]collector.pgbackrest  
+                                 Enable pgBackRest collector. When disabled, only pgBackRest version and exporter build info are collected.
       --log.level=info           Only log messages with the given severity or above. One of: [debug, info, warn, error]
       --log.format=logfmt        Output format of log messages. One of: [logfmt, json]
       --[no-]version             Show application version.
@@ -257,6 +259,9 @@ For a significant number of stanzas, this may require additional time to collect
 When the `--backrest.reference-count` flag is specified, information about the number of references to other backups (backup reference list) is collected.<br>
 The `pgbackrest_backup_references` metric can be a little annoying. This metric is hidden behind the flag. However, the `pgbackrest_backup_last_references` metric is always collected for the latest backups.
 
+When the `--no-collector.pgbackrest` flag is specified, only `pgbackrest_version_info` and `pgbackrest_exporter_build_info` metrics will be collected.<br>
+This is useful for lightweight monitoring for comparing pgBackRest versions in a large environment.<br>
+
 ### Building and running docker
 
 By default, pgBackRest version is `2.56.0`. Another version can be specified via arguments.
@@ -274,7 +279,8 @@ Environment variables supported by this image:
 * `VERBOSE_WAL` - enabling additional labels for WAL metrics, default `false`;
 * `DATABASE_COUNT` - exposing the number of databases in backups, default `false`;
 * `DATABASE_PARALLEL_PROCESSES` - number of parallel processes for collecting information about databases in backups, default `1`;
-* `DATABASE_COUNT_LATEST` - exposing the number of databases in the latest backups, default `false`.
+* `DATABASE_COUNT_LATEST` - exposing the number of databases in the latest backups, default `false`;
+* `COLLECTOR_PGBACKREST` - enable pgBackRest collector; when disabled, only pgBackRest version and exporter build info are collected, default `true`;
 
 #### Pull
 

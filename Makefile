@@ -33,6 +33,7 @@ test-e2e:
 	$(call e2e_basic)
 	$(call e2e_exclude)
 	$(call e2e_include)
+	$(call e2e_disable_collector)
 	$(call e2e_tls_auth,/e2e_tests/web_config_empty.yml,false,false)
 	$(call e2e_tls_auth,/e2e_tests/web_config_TLS_noAuth.yml,true,false)
 	$(call e2e_tls_auth,/e2e_tests/web_config_TLSInLine_noAuth.yml,true,false)
@@ -134,6 +135,13 @@ define e2e_exclude
 	docker run -d -p $(HTTP_PORT_E2E):$(HTTP_PORT) --env STANZA_EXCLUDE="$(BACKREST_STANZA_EXCLUDE)" --name=$(APP_NAME)_e2e $(APP_NAME)_e2e
 	@sleep 30
 	$(ROOT_DIR)/e2e_tests/run_e2e.sh $(HTTP_PORT_E2E) false false "" exclude
+	docker rm -f $(APP_NAME)_e2e
+endef
+
+define e2e_disable_collector
+	docker run -d -p $(HTTP_PORT_E2E):$(HTTP_PORT) --env COLLECTOR_PGBACKREST="false" --name=$(APP_NAME)_e2e $(APP_NAME)_e2e
+	@sleep 30
+	$(ROOT_DIR)/e2e_tests/run_e2e.sh $(HTTP_PORT_E2E) false false "" disable-collector
 	docker rm -f $(APP_NAME)_e2e
 endef
 

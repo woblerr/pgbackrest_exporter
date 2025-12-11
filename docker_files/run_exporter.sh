@@ -21,5 +21,8 @@ EXPORTER_COMMAND="/etc/pgbackrest/pgbackrest_exporter \
 # Check variable for exposing the number of databases in the latest backups.
 [ "${DATABASE_COUNT_LATEST}" == "true" ] &&  EXPORTER_COMMAND="${EXPORTER_COMMAND} --backrest.database-count-latest"
 
+# Check variable for disabling pgBackRest info collector.
+[ "${COLLECTOR_PGBACKREST}" == "false" ] &&  EXPORTER_COMMAND="${EXPORTER_COMMAND} --no-collector.pgbackrest"
+
 # Execute the final command.
 exec ${EXPORTER_COMMAND}
