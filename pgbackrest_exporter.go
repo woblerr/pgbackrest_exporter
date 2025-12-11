@@ -143,7 +143,7 @@ func main() {
 	for {
 		// Get pgBackRest version info and set metric.
 		backrest.GetPgBackrestVersionInfo(logger)
-		// Get information form pgBackRest and set metrics.
+		// Get information from pgBackRest and set metrics.
 		if *collectorBackrest {
 			backrest.GetPgBackRestInfo(backrestExporterConfig, logger)
 		}
