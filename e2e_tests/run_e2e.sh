@@ -118,6 +118,7 @@ case "${MODE}" in
     '^pgbackrest_stanza_backup_total_bytes{.*} 0$|1'
     '^pgbackrest_stanza_lock_status{.*} 0$|1'
     '^pgbackrest_stanza_status{.*} 0$|1'
+    '^pgbackrest_version_info|1'
     '^pgbackrest_wal_archive_status{.*,repo_key="1",.*}|1'
     '^pgbackrest_wal_archive_status{.*,repo_key="2",.*}|1'
         )
