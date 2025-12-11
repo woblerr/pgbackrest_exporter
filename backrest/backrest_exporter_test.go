@@ -163,6 +163,8 @@ func TestExecCommandHelper(t *testing.T) {
 	fmt.Fprintf(os.Stdout, "%s", os.Getenv("STDOUT"))
 	fmt.Fprintf(os.Stderr, "%s", os.Getenv("STDERR"))
 	i, _ := strconv.Atoi(os.Getenv("EXIT_STATUS"))
+	// Suppress coverage warning by redirecting stderr before exit.
+	os.Stderr = nil
 	os.Exit(i)
 }
 
