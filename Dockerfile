@@ -28,7 +28,8 @@ ENV EXPORTER_TELEMETRY_PATH="/metrics" \
     VERBOSE_WAL="false" \
     DATABASE_COUNT="false" \
     DATABASE_PARALLEL_PROCESSES="1" \
-    DATABASE_COUNT_LATEST="false"
+    DATABASE_COUNT_LATEST="false" \
+    COLLECTOR_PGBACKREST="true"
 COPY --chmod=755 docker_files/run_exporter.sh /run_exporter.sh
 COPY --from=builder --chmod=755 /build/pgbackrest_exporter /etc/pgbackrest/pgbackrest_exporter
 LABEL \

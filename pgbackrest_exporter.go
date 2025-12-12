@@ -72,6 +72,10 @@ func main() {
 			"backrest.verbose-wal",
 			"Exposing additional labels for WAL metrics.",
 		).Default("false").Bool()
+		collectorBackrest = kingpin.Flag(
+			"collector.pgbackrest",
+			"Enable pgBackRest collector. When disabled, only pgBackRest version and exporter build info are collected.",
+		).Default("true").Bool()
 	)
 	// Set logger config.
 	promslogConfig := &promslog.Config{}
@@ -117,8 +121,6 @@ func main() {
 		ResetMetricsAfter:              resetMetricsAfterFetch,
 		BackupDBCountParallelProcesses: *backrestBackupDBCountParallelProcesses,
 	}
-	// Log BackrestExporterConfig parameters.
-	backrest.LogBackrestExporterConfig(backrestExporterConfig, logger)
 	// Setup parameters for exporter.
 	backrest.SetPromPortAndPath(*webAdditionalToolkitFlags, *webPath)
 	logger.Info(
@@ -126,13 +128,25 @@ func main() {
 		"endpoint", *webPath,
 		"config.file", *webAdditionalToolkitFlags.WebConfigFile,
 	)
+	logger.Info(
+		"Use collector parameters",
+		"collector.pgbackrest", *collectorBackrest,
+	)
+	// Log BackrestExporterConfig parameters only if collector is enabled.
+	if *collectorBackrest {
+		backrest.LogBackrestExporterConfig(backrestExporterConfig, logger)
+	}
 	// Exporter build info metric
 	prometheus.MustRegister(version_collector.NewCollector(exporterName))
 	// Start web server.
 	backrest.StartPromEndpoint(version.Info(), logger)
 	for {
-		// Get information form pgBackRest and set metrics.
-		backrest.GetPgBackRestInfo(backrestExporterConfig, logger)
+		// Get pgBackRest version info and set metric.
+		backrest.GetPgBackrestVersionInfo(logger)
+		// Get information from pgBackRest and set metrics.
+		if *collectorBackrest {
+			backrest.GetPgBackRestInfo(backrestExporterConfig, logger)
+		}
 		// Sleep for 'collection.interval' seconds.
 		time.Sleep(time.Duration(*collectionInterval) * time.Second)
 	}

@@ -48,5 +48,10 @@ fi
 if [[ -n "${STANZA_INCLUDE}" ]]; then
 	EXPORTER_COMMAND="${EXPORTER_COMMAND} --backrest.stanza-include=${STANZA_INCLUDE}"
 fi
+# Disable pgBackRest info collector if provided via env var COLLECTOR_PGBACKREST
+if [[ "${COLLECTOR_PGBACKREST}" == "false" ]]; then
+	EXPORTER_COMMAND="${EXPORTER_COMMAND} --no-collector.pgbackrest"
+fi
+
 # Run pgbackrest_exporter.
 exec ${EXPORTER_COMMAND}

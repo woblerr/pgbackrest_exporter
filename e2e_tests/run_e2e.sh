@@ -53,6 +53,13 @@ esac
 #  - for '^pgbackrest_backup_last_annotations{.*} 0$|3' zero is correct,
 #    because we create full and diff backups in repo 2 without any annotations.
 case "${MODE}" in
+    "disable-collector")
+        declare -a REGEX_LIST=(
+    '^pgbackrest_exporter_build_info{.*} 1$|1'
+    '^pgbackrest_version_info|1'
+    '^pgbackrest_exporter_status{stanza="all-stanzas"} 1$|0'
+        )
+        ;;
     "exclude")
         declare -a REGEX_LIST=(
     '^pgbackrest_exporter_build_info{.*} 1$|1'
@@ -118,6 +125,7 @@ case "${MODE}" in
     '^pgbackrest_stanza_backup_total_bytes{.*} 0$|1'
     '^pgbackrest_stanza_lock_status{.*} 0$|1'
     '^pgbackrest_stanza_status{.*} 0$|1'
+    '^pgbackrest_version_info|1'
     '^pgbackrest_wal_archive_status{.*,repo_key="1",.*}|1'
     '^pgbackrest_wal_archive_status{.*,repo_key="2",.*}|1'
         )

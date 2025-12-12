@@ -67,6 +67,11 @@ To get a dashboard for visualizing the collected metrics, you can use a ready-ma
 | ----------- | ------------------ | ------------- | --------------- |
 | `pgbackrest_wal_archive_status` | current WAL archive status | database_id, pg_version, repo_key, stanza, wal_max, wal_min | Values description:<br> `0` - any one of WALMin and WALMax have empty value, there is no correct information about WAL archiving,<br> `1` - both WALMin and WALMax have no empty values, there is correct information about WAL archiving. |
 
+### pgBackRest metrics
+| Metric | Description |  Labels | Additional Info |
+| ----------- | ------------------ | ------------- | --------------- |
+| `pgbackrest_version_info` | information about pgBackRest version | | Values description:<br> `0` - pgBackRest version information unavailable. |
+
 ### Exporter metrics
 
 | Metric | Description |  Labels | Additional Info |
@@ -98,11 +103,18 @@ s are different from `0` and `pgbackrest_stanza_lock_status` metric is equal to 
 * if `pgbackrest_stanza_backup_compete_bytes` and `pgbackrest_stanza_backup_total_bytes` metric
 s are equal to `0` and `pgbackrest_stanza_lock_status` metric is equal to `1`, then one of the commands is running for stanza: `expire` or `stanza-*`. With a very high probability it is `expire`.
 
+For `pgbackrest_version_info` metric the value is pgBackRest version in numeric format (e.g., `2057000` for version `2.57.0`).
+
 ## Compatibility with pgBackRest versions
 
 The number of collected metrics may vary depending on pgBackRest version. 
 
 For different versions, some metrics may not be collected or have insignificant label values:
+
+* `pgbackrest < v2.55.0`
+    
+    The following metrics will always be `0`:
+    * `pgbackrest_version_info`.
 
 * `pgBackRest < v2.48`
     
@@ -190,6 +202,8 @@ Flags:
                                  Exposing the number of references to other backups (backup reference list).
       --[no-]backrest.verbose-wal  
                                  Exposing additional labels for WAL metrics.
+      --[no-]collector.pgbackrest  
+                                 Enable pgBackRest collector. When disabled, only pgBackRest version and exporter build info are collected.
       --log.level=info           Only log messages with the given severity or above. One of: [debug, info, warn, error]
       --log.format=logfmt        Output format of log messages. One of: [logfmt, json]
       --[no-]version             Show application version.
@@ -245,6 +259,9 @@ For a significant number of stanzas, this may require additional time to collect
 When the `--backrest.reference-count` flag is specified, information about the number of references to other backups (backup reference list) is collected.<br>
 The `pgbackrest_backup_references` metric can be a little annoying. This metric is hidden behind the flag. However, the `pgbackrest_backup_last_references` metric is always collected for the latest backups.
 
+When the `--no-collector.pgbackrest` flag is specified, only `pgbackrest_version_info` and `pgbackrest_exporter_build_info` metrics will be collected.<br>
+This is useful for lightweight monitoring for comparing pgBackRest versions in a large environment.<br>
+
 ### Building and running docker
 
 By default, pgBackRest version is `2.56.0`. Another version can be specified via arguments.
@@ -262,7 +279,8 @@ Environment variables supported by this image:
 * `VERBOSE_WAL` - enabling additional labels for WAL metrics, default `false`;
 * `DATABASE_COUNT` - exposing the number of databases in backups, default `false`;
 * `DATABASE_PARALLEL_PROCESSES` - number of parallel processes for collecting information about databases in backups, default `1`;
-* `DATABASE_COUNT_LATEST` - exposing the number of databases in the latest backups, default `false`.
+* `DATABASE_COUNT_LATEST` - exposing the number of databases in the latest backups, default `false`;
+* `COLLECTOR_PGBACKREST` - enable pgBackRest collector; when disabled, only pgBackRest version and exporter build info are collected, default `true`;
 
 #### Pull
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -45,6 +46,7 @@ const (
 	fullLabel = "full"
 	diffLabel = "diff"
 	incrLabel = "incr"
+	appName   = "pgbackrest"
 )
 
 func returnDefaultExecArgs() []string {
@@ -121,30 +123,8 @@ func concatExecArgs(slices [][]string) []string {
 	return tmp
 }
 
-func getAllInfoData(config, configIncludePath, stanza, backupType string, logger *slog.Logger) ([]byte, error) {
-	var backupLabel string
-	return getInfoData(config, configIncludePath, stanza, backupType, backupLabel, logger)
-}
-
-func getSpecificBackupInfoData(config, configIncludePath, stanza, backupLabel string, logger *slog.Logger) ([]byte, error) {
-	var backupType string
-	return getInfoData(config, configIncludePath, stanza, backupType, backupLabel, logger)
-}
-
-func getInfoData(config, configIncludePath, stanza, backupType, backupLabel string, logger *slog.Logger) ([]byte, error) {
-	app := "pgbackrest"
-	args := [][]string{
-		returnDefaultExecArgs(),
-		returnConfigExecArgs(config, configIncludePath),
-		returnStanzaExecArgs(stanza),
-		returnBackupTypeExecArgs(backupType),
-	}
-	if backupLabel != "" {
-		args = append(args, returnBackupSetExecArgs(backupLabel))
-	}
-	// Finally arguments for exec command.
-	concatArgs := concatExecArgs(args)
-	cmd := execCommand(app, concatArgs...)
+func execBackRestCommand(app string, args []string, logger *slog.Logger) ([]byte, error) {
+	cmd := execCommand(app, args...)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -158,11 +138,36 @@ func getInfoData(config, configIncludePath, stanza, backupType, backupLabel stri
 		)
 	}
 	// If error occurs,
-	// return nil for stanza data.
+	// return nil for data.
 	if err != nil {
 		return nil, err
 	}
 	return stdout.Bytes(), err
+}
+
+func getAllInfoData(config, configIncludePath, stanza, backupType string, logger *slog.Logger) ([]byte, error) {
+	var backupLabel string
+	return getInfoData(config, configIncludePath, stanza, backupType, backupLabel, logger)
+}
+
+func getSpecificBackupInfoData(config, configIncludePath, stanza, backupLabel string, logger *slog.Logger) ([]byte, error) {
+	var backupType string
+	return getInfoData(config, configIncludePath, stanza, backupType, backupLabel, logger)
+}
+
+func getInfoData(config, configIncludePath, stanza, backupType, backupLabel string, logger *slog.Logger) ([]byte, error) {
+	args := [][]string{
+		returnDefaultExecArgs(),
+		returnConfigExecArgs(config, configIncludePath),
+		returnStanzaExecArgs(stanza),
+		returnBackupTypeExecArgs(backupType),
+	}
+	if backupLabel != "" {
+		args = append(args, returnBackupSetExecArgs(backupLabel))
+	}
+	// Finally arguments for exec command.
+	concatArgs := concatExecArgs(args)
+	return execBackRestCommand(appName, concatArgs, logger)
 }
 
 func parseResult(output []byte) ([]stanza, error) {
@@ -450,4 +455,30 @@ func getBackupReferencesTotal(refList []string) (map[string]int, error) {
 		}
 	}
 	return total, nil
+}
+
+func returnVersionExecArgs() []string {
+	versionArgs := []string{"version", "--output", "num"}
+	return versionArgs
+}
+
+func getVersionData(logger *slog.Logger) ([]byte, error) {
+	args := [][]string{returnVersionExecArgs()}
+	concatArgs := concatExecArgs(args)
+	return execBackRestCommand(appName, concatArgs, logger)
+}
+
+func parseVersionOutput(output []byte, logger *slog.Logger) (float64, error) {
+	// Parse version string to float64.
+	versionStr := strings.TrimSpace(string(output))
+	version, err := strconv.ParseFloat(versionStr, 64)
+	if err != nil {
+		logger.Error(
+			"Incorrect version format",
+			"err", err,
+			"output", versionStr,
+		)
+		return 0, err
+	}
+	return version, nil
 }
