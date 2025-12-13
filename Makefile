@@ -7,8 +7,8 @@ BUILD_DATE := $(shell date +%Y-%m-%dT%H:%M:%S%z)
 BUILD_USER ?= pgbackrest_exporter
 SERVICE_CONF_DIR := /etc/systemd/system
 HTTP_PORT := 9854
-BACKREST_VERSION := 2.56.0
-DOCKER_BACKREST_VERSION := v0.34
+BACKREST_VERSION := 2.57.0
+DOCKER_BACKREST_VERSION := v0.35
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 DOCKER_CONTAINER_E2E := $(shell docker ps -a -q -f name=$(APP_NAME)_e2e)
 HTTP_PORT_E2E := $(shell echo $$((10000 + ($$RANDOM % 10000))))

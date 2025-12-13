@@ -264,7 +264,7 @@ This is useful for lightweight monitoring for comparing pgBackRest versions in a
 
 ### Building and running docker
 
-By default, pgBackRest version is `2.56.0`. Another version can be specified via arguments.
+By default, pgBackRest version is `2.57.0`. Another version can be specified via arguments.
 For base image used [docker-pgbackrest](https://github.com/woblerr/docker-pgbackrest) image.
 
 Environment variables supported by this image:
