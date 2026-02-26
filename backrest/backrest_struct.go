@@ -175,6 +175,13 @@ type repo struct {
 //	  "lock": {
 //	      "backup": {
 //	          "held": bool
+//	          "size": number,
+//	          "size-cplt": number
+//	      },
+//	     "restore": {
+//	          "held": bool
+//	          "size": number,
+//	          "size-cplt": number
 //	      }
 //	  },
 //	  "message": "string"
@@ -187,6 +194,11 @@ type status struct {
 			SizeTotal    *int64 `json:"size"`
 			SizeComplete *int64 `json:"size-cplt"`
 		} `json:"backup"`
+		Restore struct {
+			Held         bool   `json:"held"`
+			SizeTotal    *int64 `json:"size"`
+			SizeComplete *int64 `json:"size-cplt"`
+		} `json:"restore"`
 	} `json:"lock"`
 	Message string `json:"message"`
 }
