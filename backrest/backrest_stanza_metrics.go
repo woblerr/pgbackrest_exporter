@@ -108,6 +108,7 @@ func getStanzaMetrics(stanzaName string, stanzaStatus status, setUpMetricValueFu
 	)
 	// For pgBackRest >= v2.56.0 these metrics can have relevant values.
 	// For pgBackRest < v2.56.0 - they will always have the value 0.
+	// See https://github.com/pgbackrest/pgbackrest/commit/8cdd9ce1c4ab6cca508932a41a3013374d7547ef
 	// When restore in progress information is displayed in them.
 	// It is convenient in monitoring to display the percentage of completion of the restore process.
 	// Stanza lock restore statuses:
