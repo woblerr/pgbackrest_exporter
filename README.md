@@ -17,9 +17,12 @@ To get a dashboard for visualizing the collected metrics, you can use a ready-ma
 
 | Metric | Description |  Labels | Additional Info |
 | ----------- | ------------------ | ------------- | --------------- |
-| `pgbackrest_stanza_backup_compete_bytes` | completed size for backup in progress | stanza | |
+| `pgbackrest_stanza_backup_complete_bytes` | completed size for backup in progress | stanza | |
 | `pgbackrest_stanza_backup_total_bytes` | total size for backup in progress | stanza | |
-| `pgbackrest_stanza_lock_status` | current stanza lock status | stanza | Values description:<br> `0` - no active operation with stanza,<br> `1` - one of the commands is running for stanza: backup, expire or stanza-*. |
+| `pgbackrest_stanza_backup_lock_status` | current stanza backup lock status | stanza | Values description:<br> `0` - no active operation with stanza,<br> `1` - one of the commands is running for stanza: backup, expire or stanza-*. |
+| `pgbackrest_stanza_restore_complete_bytes` | completed size for restore in progress | stanza | |
+| `pgbackrest_stanza_restore_total_bytes` | total size for restore in progress | stanza | |
+| `pgbackrest_stanza_restore_lock_status` | current stanza restore lock status | stanza | Values description:<br> `0` - no active restore,<br> `1` - restore is in progress. |
 | `pgbackrest_stanza_status` | current stanza status | stanza | Values description:<br> `0` - ok,<br> `1` - missing stanza path,<br> `2` - no valid backups,<br> `3` - missing stanza data,<br> `4` - different across repos,<br> `5` - database mismatch across repos,<br> `6` - requested backup not found,<br> `99` - other. |
 
 ### Repository metrics
@@ -94,14 +97,16 @@ For `pgbackrest_exporter_status` metric the following logic is applied:
 * if the information is collected for all available stanzas except excluded, the `stanza` label value will be `all-stanzas-except-excluded`;
 * otherwise, the stanza name will be set.
 
-If `pgbackrest_stanza_lock_status` metric is `1`, than one of the commands is running for stanza: `backup`, `expire` or `stanza-*`.
+If `pgbackrest_stanza_backup_lock_status` metric is `1`, then one of the commands is running for stanza: `backup`, `expire` or `stanza-*`.
 With a very high probability it is `backup/expire`.
 
 For `pgBackRest >= v2.48` it is possible to determine whether the backup is running:
-* if `pgbackrest_stanza_backup_compete_bytes` and `pgbackrest_stanza_backup_total_bytes` metric
-s are different from `0` and `pgbackrest_stanza_lock_status` metric is equal to `1`, then a backup is running;
-* if `pgbackrest_stanza_backup_compete_bytes` and `pgbackrest_stanza_backup_total_bytes` metric
-s are equal to `0` and `pgbackrest_stanza_lock_status` metric is equal to `1`, then one of the commands is running for stanza: `expire` or `stanza-*`. With a very high probability it is `expire`.
+* if `pgbackrest_stanza_backup_complete_bytes` and `pgbackrest_stanza_backup_total_bytes` metrics are different from `0` and `pgbackrest_stanza_backup_lock_status` metric is equal to `1`, then a backup is running;
+* if `pgbackrest_stanza_backup_complete_bytes` and `pgbackrest_stanza_backup_total_bytes` metrics are equal to `0` and `pgbackrest_stanza_backup_lock_status` metric is equal to `1`, then one of the commands is running for stanza: `expire` or `stanza-*`. With a very high probability it is `expire`.
+
+For `pgBackRest >= v2.56.0` it is possible to determine whether a restore is running:
+* if `pgbackrest_stanza_restore_lock_status` metric is `1`, a restore is in progress;
+* `pgbackrest_stanza_restore_complete_bytes` and `pgbackrest_stanza_restore_total_bytes` metrics show the progress of the restore.
 
 For `pgbackrest_version_info` metric the value is pgBackRest version in numeric format (e.g., `2057000` for version `2.57.0`).
 
@@ -111,6 +116,13 @@ The number of collected metrics may vary depending on pgBackRest version.
 
 For different versions, some metrics may not be collected or have insignificant label values:
 
+* `pgBackRest < v2.56.0`
+    
+    The following metrics will always be `0`:
+    * `pgbackrest_stanza_restore_lock_status`,
+    * `pgbackrest_stanza_restore_complete_bytes`,
+    * `pgbackrest_stanza_restore_total_bytes`.
+
 * `pgbackrest < v2.55.0`
     
     The following metrics will always be `0`:
@@ -119,7 +131,7 @@ For different versions, some metrics may not be collected or have insignificant 
 * `pgBackRest < v2.48`
     
     The following metrics will always be `0`:
-    * `pgbackrest_stanza_backup_compete_bytes`,
+    * `pgbackrest_stanza_backup_complete_bytes`,
     * `pgbackrest_stanza_backup_total_bytes`.
 
 * `pgBackRest >= v2.45`
