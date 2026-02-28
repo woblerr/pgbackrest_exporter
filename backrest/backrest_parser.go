@@ -115,8 +115,15 @@ func returnBackupSetExecArgs(backupSetLabel string) []string {
 	return backupSetLabelArgs
 }
 
+// concatExecArgs concatenates multiple string slices into one.
+// slices.Concat is not used here because it returns nil for empty input,
+// while a non-nil empty slice is required for exec arguments.
 func concatExecArgs(slices [][]string) []string {
-	tmp := []string{}
+	size := 0
+	for _, s := range slices {
+		size += len(s)
+	}
+	tmp := make([]string, 0, size)
 	for _, s := range slices {
 		tmp = append(tmp, s...)
 	}
