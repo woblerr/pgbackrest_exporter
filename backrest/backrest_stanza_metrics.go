@@ -13,19 +13,34 @@ var (
 		Help: "Current stanza status.",
 	},
 		[]string{"stanza"})
-	pgbrStanzaLockStatusMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_stanza_lock_status",
-		Help: "Current stanza lock status.",
+	pgbrStanzaBackupLockStatusMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_stanza_backup_lock_status",
+		Help: "Current stanza backup lock status.",
 	},
 		[]string{"stanza"})
 	pgbrStanzaBackupInProgressCompleteMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "pgbackrest_stanza_backup_compete_bytes",
+		Name: "pgbackrest_stanza_backup_complete_bytes",
 		Help: "Completed size for backup in progress.",
 	},
 		[]string{"stanza"})
 	pgbrStanzaBackupInProgressTotalMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_stanza_backup_total_bytes",
 		Help: "Total size for backup in progress.",
+	},
+		[]string{"stanza"})
+	pgbrStanzaRestoreLockStatusMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_stanza_restore_lock_status",
+		Help: "Current stanza restore lock status.",
+	},
+		[]string{"stanza"})
+	pgbrStanzaRestoreInProgressCompleteMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_stanza_restore_complete_bytes",
+		Help: "Completed size for restore in progress.",
+	},
+		[]string{"stanza"})
+	pgbrStanzaRestoreInProgressTotalMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_stanza_restore_total_bytes",
+		Help: "Total size for restore in progress.",
 	},
 		[]string{"stanza"})
 )
@@ -51,7 +66,7 @@ func getStanzaMetrics(stanzaName string, stanzaStatus status, setUpMetricValueFu
 		logger,
 		stanzaName,
 	)
-	// Stanza lock statuses.
+	// Stanza lock backup statuses.
 	// It's  not currently possible to know which command is running: backup, expire, or stanza-*.
 	// The stanza commands are very unlikely to be running so it's pretty safe to guess backup/expire.
 	// If there is information about lock, then with a very high probability it is backup/expire.
@@ -60,12 +75,12 @@ func getStanzaMetrics(stanzaName string, stanzaStatus status, setUpMetricValueFu
 	// then it's exactly backup. However, pgBackRest currently don't return any statuses in this place.
 	// May be this functionality will be added in the future.
 	// When creating dashboards, this should be remembered.
-	// Stanza lock statuses:
+	// Stanza lock backup statuses:
 	//  0: "no active operation with stanza",
 	//  1: one of the commands is running for stanza: backup, expire or stanza-*".
 	setUpMetric(
-		pgbrStanzaLockStatusMetric,
-		"pgbackrest_stanza_lock_status",
+		pgbrStanzaBackupLockStatusMetric,
+		"pgbackrest_stanza_backup_lock_status",
 		convertBoolToFloat64(stanzaStatus.Lock.Backup.Held),
 		setUpMetricValueFun,
 		logger,
@@ -85,8 +100,40 @@ func getStanzaMetrics(stanzaName string, stanzaStatus status, setUpMetricValueFu
 	)
 	setUpMetric(
 		pgbrStanzaBackupInProgressCompleteMetric,
-		"pgbackrest_stanza_backup_compete_bytes",
+		"pgbackrest_stanza_backup_complete_bytes",
 		convertInt64PointerToFloat64(stanzaStatus.Lock.Backup.SizeComplete),
+		setUpMetricValueFun,
+		logger,
+		stanzaName,
+	)
+	// For pgBackRest >= v2.56.0 these metrics can have relevant values.
+	// For pgBackRest < v2.56.0 - they will always have the value 0.
+	// See https://github.com/pgbackrest/pgbackrest/commit/8cdd9ce1c4ab6cca508932a41a3013374d7547ef
+	// When restore in progress information is displayed in them.
+	// It is convenient in monitoring to display the percentage of completion of the restore process.
+	// Stanza lock restore statuses:
+	//  0: "no active restore",
+	//  1: restore in progress".
+	setUpMetric(
+		pgbrStanzaRestoreLockStatusMetric,
+		"pgbackrest_stanza_restore_lock_status",
+		convertBoolToFloat64(stanzaStatus.Lock.Restore.Held),
+		setUpMetricValueFun,
+		logger,
+		stanzaName,
+	)
+	setUpMetric(
+		pgbrStanzaRestoreInProgressTotalMetric,
+		"pgbackrest_stanza_restore_total_bytes",
+		convertInt64PointerToFloat64(stanzaStatus.Lock.Restore.SizeTotal),
+		setUpMetricValueFun,
+		logger,
+		stanzaName,
+	)
+	setUpMetric(
+		pgbrStanzaRestoreInProgressCompleteMetric,
+		"pgbackrest_stanza_restore_complete_bytes",
+		convertInt64PointerToFloat64(stanzaStatus.Lock.Restore.SizeComplete),
 		setUpMetricValueFun,
 		logger,
 		stanzaName,
@@ -95,7 +142,10 @@ func getStanzaMetrics(stanzaName string, stanzaStatus status, setUpMetricValueFu
 
 func resetStanzaMetrics() {
 	pgbrStanzaStatusMetric.Reset()
-	pgbrStanzaLockStatusMetric.Reset()
+	pgbrStanzaBackupLockStatusMetric.Reset()
 	pgbrStanzaBackupInProgressTotalMetric.Reset()
 	pgbrStanzaBackupInProgressCompleteMetric.Reset()
+	pgbrStanzaRestoreLockStatusMetric.Reset()
+	pgbrStanzaRestoreInProgressTotalMetric.Reset()
+	pgbrStanzaRestoreInProgressCompleteMetric.Reset()
 }
