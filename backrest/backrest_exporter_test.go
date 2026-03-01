@@ -145,7 +145,8 @@ func TestGetPgBackRestInfo(t *testing.T) {
 }
 
 func fakeExecCommand(command string, args ...string) *exec.Cmd {
-	cs := []string{"-test.run=TestExecCommandHelper", "--", command}
+	cs := make([]string, 0, 3+len(args))
+	cs = append(cs, "-test.run=TestExecCommandHelper", "--", command)
 	cs = append(cs, args...)
 	cmd := exec.Command(os.Args[0], cs...)
 	es := strconv.Itoa(mockData.mockExit)

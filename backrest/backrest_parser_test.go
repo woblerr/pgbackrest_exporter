@@ -1253,7 +1253,8 @@ func fakeExecCommandSpecificDatabase(command string, args ...string) *exec.Cmd {
 		stdOut, stdErr string
 		ecode          int
 	)
-	cs := []string{"-test.run=TestExecCommandHelper", "--", command}
+	cs := make([]string, 0, 3+len(args))
+	cs = append(cs, "-test.run=TestExecCommandHelper", "--", command)
 	cs = append(cs, args...)
 	cmd := exec.Command(os.Args[0], cs...)
 	switch {
