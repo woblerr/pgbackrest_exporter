@@ -40,6 +40,15 @@ func convertDatabaseRefPointerToFloat(value *[]databaseRef) float64 {
 	return 0
 }
 
+// Convert pointer ([]backupLockRepo) to slice.
+// If nil, return default slice with zero values.
+func convertBackupLockRepoPointerToSlice(value *[]backupLockRepo) []backupLockRepo {
+	if value != nil {
+		return *value
+	}
+	return []backupLockRepo{{}}
+}
+
 // Convert empty LSN value label.
 func convertEmptyLSNValueLabel(value string) string {
 	if value == "" {

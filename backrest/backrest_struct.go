@@ -175,6 +175,7 @@ type repo struct {
 //	  "lock": {
 //	      "backup": {
 //	          "held": bool
+//	          "repo": [{"key": number, "size": number, "size-cplt": number}],
 //	          "size": number,
 //	          "size-cplt": number
 //	      },
@@ -190,9 +191,10 @@ type status struct {
 	Code int `json:"code"`
 	Lock struct {
 		Backup struct {
-			Held         bool   `json:"held"`
-			SizeTotal    *int64 `json:"size"`
-			SizeComplete *int64 `json:"size-cplt"`
+			Held         bool              `json:"held"`
+			Repo         *[]backupLockRepo `json:"repo"`
+			SizeTotal    *int64            `json:"size"`
+			SizeComplete *int64            `json:"size-cplt"`
 		} `json:"backup"`
 		Restore struct {
 			Held         bool   `json:"held"`
@@ -201,4 +203,19 @@ type status struct {
 		} `json:"restore"`
 	} `json:"lock"`
 	Message string `json:"message"`
+}
+
+// "backup-lock-repo": [
+//
+//	{
+//	  "key": number,
+//	  "size": number,
+//	  "size-cplt": number
+//	}
+//
+// ]
+type backupLockRepo struct {
+	Key          int   `json:"key"`
+	SizeTotal    int64 `json:"size"`
+	SizeComplete int64 `json:"size-cplt"`
 }

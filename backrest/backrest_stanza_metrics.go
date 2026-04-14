@@ -2,6 +2,7 @@ package backrest
 
 import (
 	"log/slog"
+	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -43,6 +44,16 @@ var (
 		Help: "Total size for restore in progress.",
 	},
 		[]string{"stanza"})
+	pgbrStanzaBackupInProgressRepoCompleteMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_stanza_backup_repo_complete_bytes",
+		Help: "Completed size for backup in progress per repository.",
+	},
+		[]string{"repo_key", "stanza"})
+	pgbrStanzaBackupInProgressRepoTotalMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_stanza_backup_repo_total_bytes",
+		Help: "Total size for backup in progress per repository.",
+	},
+		[]string{"repo_key", "stanza"})
 )
 
 // Set stanza metrics:
@@ -138,6 +149,29 @@ func getStanzaMetrics(stanzaName string, stanzaStatus status, setUpMetricValueFu
 		logger,
 		stanzaName,
 	)
+	// For pgBackRest >= v2.59 these metrics can have relevant values per repo.
+	// For pgBackRest < v2.59 - they will always have the value 0 with repo_key="0".
+	for _, repoLock := range convertBackupLockRepoPointerToSlice(stanzaStatus.Lock.Backup.Repo) {
+		repoKey := strconv.Itoa(repoLock.Key)
+		setUpMetric(
+			pgbrStanzaBackupInProgressRepoTotalMetric,
+			"pgbackrest_stanza_backup_repo_total_bytes",
+			float64(repoLock.SizeTotal),
+			setUpMetricValueFun,
+			logger,
+			repoKey,
+			stanzaName,
+		)
+		setUpMetric(
+			pgbrStanzaBackupInProgressRepoCompleteMetric,
+			"pgbackrest_stanza_backup_repo_complete_bytes",
+			float64(repoLock.SizeComplete),
+			setUpMetricValueFun,
+			logger,
+			repoKey,
+			stanzaName,
+		)
+	}
 }
 
 func resetStanzaMetrics() {
@@ -145,6 +179,8 @@ func resetStanzaMetrics() {
 	pgbrStanzaBackupLockStatusMetric.Reset()
 	pgbrStanzaBackupInProgressTotalMetric.Reset()
 	pgbrStanzaBackupInProgressCompleteMetric.Reset()
+	pgbrStanzaBackupInProgressRepoTotalMetric.Reset()
+	pgbrStanzaBackupInProgressRepoCompleteMetric.Reset()
 	pgbrStanzaRestoreLockStatusMetric.Reset()
 	pgbrStanzaRestoreInProgressTotalMetric.Reset()
 	pgbrStanzaRestoreInProgressCompleteMetric.Reset()

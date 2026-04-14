@@ -502,8 +502,8 @@ func TestGetStanzaMetricsErrorsAndDebugs(t *testing.T) {
 					1234,
 					annotation{"testkey": "testvalue"}).Status,
 				fakeSetUpMetricValue,
-				7,
-				7,
+				9,
+				9,
 			},
 		},
 	}
