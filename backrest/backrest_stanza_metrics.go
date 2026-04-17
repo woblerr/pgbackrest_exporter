@@ -149,8 +149,6 @@ func getStanzaMetrics(stanzaName string, stanzaStatus status, stanzaRepo *[]repo
 		logger,
 		stanzaName,
 	)
-	// For pgBackRest >= v2.59 these metrics can have relevant values per repo.
-	// For pgBackRest < v2.59 - they will always have the value 0 with repo_key="0".
 	for _, repoLock := range convertBackupLockRepoPointerToSlice(stanzaStatus.Lock.Backup.Repo, stanzaRepo) {
 		repoKey := strconv.Itoa(repoLock.Key)
 		setUpMetric(
