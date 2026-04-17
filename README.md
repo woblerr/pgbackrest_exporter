@@ -19,6 +19,8 @@ To get a dashboard for visualizing the collected metrics, you can use a ready-ma
 | ----------- | ------------------ | ------------- | --------------- |
 | `pgbackrest_stanza_backup_complete_bytes` | completed size for backup in progress | stanza | |
 | `pgbackrest_stanza_backup_total_bytes` | total size for backup in progress | stanza | |
+| `pgbackrest_stanza_backup_repo_complete_bytes` | completed size for backup in progress per repository | repo_key, stanza | |
+| `pgbackrest_stanza_backup_repo_total_bytes` | total size for backup in progress per repository | repo_key, stanza | |
 | `pgbackrest_stanza_backup_lock_status` | current stanza backup lock status | stanza | Values description:<br> `0` - no active operation with stanza,<br> `1` - one of the commands is running for stanza: backup, expire or stanza-*. |
 | `pgbackrest_stanza_restore_complete_bytes` | completed size for restore in progress | stanza | |
 | `pgbackrest_stanza_restore_total_bytes` | total size for restore in progress | stanza | |
@@ -108,6 +110,11 @@ For `pgBackRest >= v2.56.0` it is possible to determine whether a restore is run
 * if `pgbackrest_stanza_restore_lock_status` metric is `1`, a restore is in progress;
 * `pgbackrest_stanza_restore_complete_bytes` and `pgbackrest_stanza_restore_total_bytes` metrics show the progress of the restore.
 
+For `pgbackrest_stanza_backup_repo_complete_bytes` and `pgbackrest_stanza_backup_repo_total_bytes` metrics the following logic is applied:
+* for `pgBackRest >= v2.59.0`, metrics contain actual per-repo backup progress;
+* for `pgBackRest >= v2.32` but `pgBackRest < v2.59.0`, metrics always return `0`, the `repo_key` label values are taken from the stanza repository configuration;
+* for `pgBackRest < v2.32`, metrics use `repo_key="0"` with value `0`.
+
 For `pgbackrest_version_info` metric the value is pgBackRest version in numeric format (e.g., `2057000` for version `2.57.0`).
 
 ## Compatibility with pgBackRest versions
@@ -115,6 +122,14 @@ For `pgbackrest_version_info` metric the value is pgBackRest version in numeric 
 The number of collected metrics may vary depending on pgBackRest version. 
 
 For different versions, some metrics may not be collected or have insignificant label values:
+
+* `pgBackRest < v2.59.0`
+    
+    The following metrics will always be `0`:
+    * `pgbackrest_stanza_backup_repo_complete_bytes`,
+    * `pgbackrest_stanza_backup_repo_total_bytes`.
+
+    The `repo_key` label uses values from the stanza repository list (for `pgBackRest >= v2.32`) or `repo_key="0"` (for `pgBackRest < v2.32`).
 
 * `pgBackRest < v2.56.0`
     
