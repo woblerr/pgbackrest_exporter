@@ -191,7 +191,7 @@ pgbackrest_stanza_restore_total_bytes{stanza="demo"} 12345
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resetMetrics()
-			getStanzaMetrics(tt.args.stanzaName, tt.args.stanzaStatus, tt.args.setUpMetricValueFun, logger)
+			getStanzaMetrics(tt.args.stanzaName, tt.args.stanzaStatus, nil, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaStatusMetric,
@@ -337,7 +337,7 @@ pgbackrest_stanza_restore_total_bytes{stanza="demo"} 0
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resetMetrics()
-			getStanzaMetrics(tt.args.stanzaName, tt.args.stanzaStatus, tt.args.setUpMetricValueFun, logger)
+			getStanzaMetrics(tt.args.stanzaName, tt.args.stanzaStatus, nil, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaStatusMetric,
@@ -430,7 +430,7 @@ pgbackrest_stanza_status{stanza="demo"} 0
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resetMetrics()
-			getStanzaMetrics(tt.args.stanzaName, tt.args.stanzaStatus, tt.args.setUpMetricValueFun, logger)
+			getStanzaMetrics(tt.args.stanzaName, tt.args.stanzaStatus, nil, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaStatusMetric,
@@ -511,7 +511,7 @@ func TestGetStanzaMetricsErrorsAndDebugs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			out := &bytes.Buffer{}
 			lc := slog.New(slog.NewTextHandler(out, &slog.HandlerOptions{Level: slog.LevelDebug}))
-			getStanzaMetrics(tt.args.stanzaName, tt.args.stanzaStatus, tt.args.setUpMetricValueFun, lc)
+			getStanzaMetrics(tt.args.stanzaName, tt.args.stanzaStatus, nil, tt.args.setUpMetricValueFun, lc)
 			errorsOutputCount := strings.Count(out.String(), "level=ERROR")
 			debugsOutputCount := strings.Count(out.String(), "level=DEBUG")
 			if tt.args.errorsCount != errorsOutputCount || tt.args.debugsCount != debugsOutputCount {

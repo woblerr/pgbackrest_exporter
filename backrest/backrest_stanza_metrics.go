@@ -58,7 +58,7 @@ var (
 
 // Set stanza metrics:
 //   - pgbackrest_stanza_status
-func getStanzaMetrics(stanzaName string, stanzaStatus status, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) {
+func getStanzaMetrics(stanzaName string, stanzaStatus status, stanzaRepo *[]repo, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) {
 	//https://github.com/pgbackrest/pgbackrest/blob/03021c6a17f1374e84ef42614fa1dd2a6be4b64d/src/command/info/info.c#L78-L94
 	// Stanza statuses:
 	//  0: "ok",
@@ -151,7 +151,7 @@ func getStanzaMetrics(stanzaName string, stanzaStatus status, setUpMetricValueFu
 	)
 	// For pgBackRest >= v2.59 these metrics can have relevant values per repo.
 	// For pgBackRest < v2.59 - they will always have the value 0 with repo_key="0".
-	for _, repoLock := range convertBackupLockRepoPointerToSlice(stanzaStatus.Lock.Backup.Repo) {
+	for _, repoLock := range convertBackupLockRepoPointerToSlice(stanzaStatus.Lock.Backup.Repo, stanzaRepo) {
 		repoKey := strconv.Itoa(repoLock.Key)
 		setUpMetric(
 			pgbrStanzaBackupInProgressRepoTotalMetric,
