@@ -171,38 +171,38 @@ func TestConvertEmptyLSNValueLabel(t *testing.T) {
 	}
 }
 
-func TestConvertBackupLockRepoPointerToSlice(t *testing.T) {
+func TestConvertLockBackupRepoPointerToSlice(t *testing.T) {
 	type args struct {
-		lockRepo   *[]backupLockRepo
+		lockRepo   *[]lockBackupRepo
 		stanzaRepo *[]repo
 	}
 	tests := []struct {
 		name string
 		args args
-		want []backupLockRepo
+		want []lockBackupRepo
 	}{
-		{"ConvertBackupLockRepoPointerToSliceLockRepoNotNil",
+		{"ConvertLockBackupRepoPointerToSliceLockRepoNotNil",
 			args{
-				valToPtr([]backupLockRepo{{Key: 1, SizeTotal: 100, SizeComplete: 50}}),
+				valToPtr([]lockBackupRepo{{Key: 1, SizeTotal: 100, SizeComplete: 50}}),
 				valToPtr([]repo{{Key: 1}}),
 			},
-			[]backupLockRepo{{Key: 1, SizeTotal: 100, SizeComplete: 50}},
+			[]lockBackupRepo{{Key: 1, SizeTotal: 100, SizeComplete: 50}},
 		},
-		{"ConvertBackupLockRepoPointerToSliceStanzaRepoNotNil",
+		{"ConvertLockBackupRepoPointerToSliceStanzaRepoNotNil",
 			args{
 				nil,
 				valToPtr([]repo{{Key: 1}}),
 			},
-			[]backupLockRepo{{Key: 1}},
+			[]lockBackupRepo{{Key: 1}},
 		},
-		{"ConvertBackupLockRepoPointerToSliceNil",
+		{"ConvertLockBackupRepoPointerToSliceNil",
 			args{nil, nil},
-			[]backupLockRepo{{}},
+			[]lockBackupRepo{{}},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := convertBackupLockRepoPointerToSlice(tt.args.lockRepo, tt.args.stanzaRepo); !reflect.DeepEqual(got, tt.want) {
+			if got := convertLockBackupRepoPointerToSlice(tt.args.lockRepo, tt.args.stanzaRepo); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("\nVariables do not match:\n%v\nwant:\n%v", got, tt.want)
 			}
 		})

@@ -149,7 +149,7 @@ func getStanzaMetrics(stanzaName string, stanzaStatus status, stanzaRepo *[]repo
 		logger,
 		stanzaName,
 	)
-	for _, repoLock := range convertBackupLockRepoPointerToSlice(stanzaStatus.Lock.Backup.Repo, stanzaRepo) {
+	for _, repoLock := range convertLockBackupRepoPointerToSlice(stanzaStatus.Lock.Backup.Repo, stanzaRepo) {
 		repoKey := strconv.Itoa(repoLock.Key)
 		setUpMetric(
 			pgbrStanzaBackupInProgressRepoTotalMetric,
