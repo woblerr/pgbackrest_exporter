@@ -542,7 +542,7 @@ func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus, sta
 			struct {
 				Backup struct {
 					Held         bool              "json:\"held\""
-					Repo         *[]backupLockRepo "json:\"repo\""
+					Repo         *[]lockBackupRepo "json:\"repo\""
 					SizeTotal    *int64            "json:\"size\""
 					SizeComplete *int64            "json:\"size-cplt\""
 				} "json:\"backup\""
@@ -554,7 +554,7 @@ func templateStanza(walMax, walMin string, dbRef []databaseRef, errorStatus, sta
 			}{
 				struct {
 					Held         bool              "json:\"held\""
-					Repo         *[]backupLockRepo "json:\"repo\""
+					Repo         *[]lockBackupRepo "json:\"repo\""
 					SizeTotal    *int64            "json:\"size\""
 					SizeComplete *int64            "json:\"size-cplt\""
 				}{stanzaBackupLock, nil, &stanzaSizeTotal, &stanzaSizeComplete},
@@ -645,7 +645,7 @@ func templateStanzaRestoreLockAbsent(walMax, walMin string, dbRef []databaseRef,
 			Lock: struct {
 				Backup struct {
 					Held         bool              "json:\"held\""
-					Repo         *[]backupLockRepo "json:\"repo\""
+					Repo         *[]lockBackupRepo "json:\"repo\""
 					SizeTotal    *int64            "json:\"size\""
 					SizeComplete *int64            "json:\"size-cplt\""
 				} "json:\"backup\""
@@ -657,7 +657,7 @@ func templateStanzaRestoreLockAbsent(walMax, walMin string, dbRef []databaseRef,
 			}{
 				Backup: struct {
 					Held         bool              "json:\"held\""
-					Repo         *[]backupLockRepo "json:\"repo\""
+					Repo         *[]lockBackupRepo "json:\"repo\""
 					SizeTotal    *int64            "json:\"size\""
 					SizeComplete *int64            "json:\"size-cplt\""
 				}{stanzaBackupLock, nil, &stanzaSizeTotal, &stanzaSizeComplete},
@@ -743,7 +743,7 @@ func templateStanzaRepoMapSizesAbsent(walMax, walMin string, dbRef []databaseRef
 			struct {
 				Backup struct {
 					Held         bool              "json:\"held\""
-					Repo         *[]backupLockRepo "json:\"repo\""
+					Repo         *[]lockBackupRepo "json:\"repo\""
 					SizeTotal    *int64            "json:\"size\""
 					SizeComplete *int64            "json:\"size-cplt\""
 				} "json:\"backup\""
@@ -755,7 +755,7 @@ func templateStanzaRepoMapSizesAbsent(walMax, walMin string, dbRef []databaseRef
 			}{
 				struct {
 					Held         bool              "json:\"held\""
-					Repo         *[]backupLockRepo "json:\"repo\""
+					Repo         *[]lockBackupRepo "json:\"repo\""
 					SizeTotal    *int64            "json:\"size\""
 					SizeComplete *int64            "json:\"size-cplt\""
 				}{false, nil, stanzaSizeTotal, stanzaSizeComplete},
@@ -847,7 +847,7 @@ func templateStanzaDBsAbsent(walMax, walMin string, dbRef []databaseRef, errorSt
 			struct {
 				Backup struct {
 					Held         bool              "json:\"held\""
-					Repo         *[]backupLockRepo "json:\"repo\""
+					Repo         *[]lockBackupRepo "json:\"repo\""
 					SizeTotal    *int64            "json:\"size\""
 					SizeComplete *int64            "json:\"size-cplt\""
 				} "json:\"backup\""
@@ -859,7 +859,7 @@ func templateStanzaDBsAbsent(walMax, walMin string, dbRef []databaseRef, errorSt
 			}{
 				struct {
 					Held         bool              "json:\"held\""
-					Repo         *[]backupLockRepo "json:\"repo\""
+					Repo         *[]lockBackupRepo "json:\"repo\""
 					SizeTotal    *int64            "json:\"size\""
 					SizeComplete *int64            "json:\"size-cplt\""
 				}{false, nil, stanzaSizeTotal, stanzaSizeComplete},
@@ -952,7 +952,7 @@ func templateStanzaErrorAbsent(walMax, walMin string, size int64) stanza {
 			struct {
 				Backup struct {
 					Held         bool              "json:\"held\""
-					Repo         *[]backupLockRepo "json:\"repo\""
+					Repo         *[]lockBackupRepo "json:\"repo\""
 					SizeTotal    *int64            "json:\"size\""
 					SizeComplete *int64            "json:\"size-cplt\""
 				} "json:\"backup\""
@@ -964,7 +964,7 @@ func templateStanzaErrorAbsent(walMax, walMin string, size int64) stanza {
 			}{
 				struct {
 					Held         bool              "json:\"held\""
-					Repo         *[]backupLockRepo "json:\"repo\""
+					Repo         *[]lockBackupRepo "json:\"repo\""
 					SizeTotal    *int64            "json:\"size\""
 					SizeComplete *int64            "json:\"size-cplt\""
 				}{false, nil, stanzaSizeTotal, stanzaSizeComplete},
@@ -1051,7 +1051,7 @@ func templateStanzaRepoAbsent(walMax, walMin string, size int64) stanza {
 			struct {
 				Backup struct {
 					Held         bool              "json:\"held\""
-					Repo         *[]backupLockRepo "json:\"repo\""
+					Repo         *[]lockBackupRepo "json:\"repo\""
 					SizeTotal    *int64            "json:\"size\""
 					SizeComplete *int64            "json:\"size-cplt\""
 				} "json:\"backup\""
@@ -1063,7 +1063,7 @@ func templateStanzaRepoAbsent(walMax, walMin string, size int64) stanza {
 			}{
 				struct {
 					Held         bool              "json:\"held\""
-					Repo         *[]backupLockRepo "json:\"repo\""
+					Repo         *[]lockBackupRepo "json:\"repo\""
 					SizeTotal    *int64            "json:\"size\""
 					SizeComplete *int64            "json:\"size-cplt\""
 				}{false, nil, stanzaSizeTotal, stanzaSizeComplete},
