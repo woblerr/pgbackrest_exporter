@@ -282,6 +282,196 @@ pgbackrest_stanza_restore_total_bytes{stanza="demo"} 12345
 	}
 }
 
+// pgBackrest version >= 2.59.
+// Per-repo backup progress metrics have real values from Lock.Backup.Repo:
+//   - pgbackrest_stanza_backup_repo_total_bytes
+//   - pgbackrest_stanza_backup_repo_complete_bytes
+func TestGetStanzaMetricsBackupRepoProgress(t *testing.T) {
+	type args struct {
+		stanzaName          string
+		stanzaStatus        status
+		stanzaRepo          *[]repo
+		setUpMetricValueFun setUpMetricValueFunType
+		testText            string
+	}
+	lockBackupRepos := []lockBackupRepo{
+		{Key: 1, SizeTotal: 3159000, SizeComplete: 1754830},
+		{Key: 2, SizeTotal: 3159000, SizeComplete: 2369250},
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			"getStanzaMetricsBackupRepoProgressSingleRepo",
+			args{
+				templateStanzaBackupRepoProgress(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true,
+					12,
+					100,
+					6318000,
+					4124080,
+					annotation{"testkey": "testvalue"},
+					lockBackupRepos[:1]).Name,
+				templateStanzaBackupRepoProgress(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true,
+					12,
+					100,
+					6318000,
+					4124080,
+					annotation{"testkey": "testvalue"},
+					lockBackupRepos[:1]).Status,
+				templateStanzaBackupRepoProgress(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true,
+					12,
+					100,
+					6318000,
+					4124080,
+					annotation{"testkey": "testvalue"},
+					lockBackupRepos[:1]).Repo,
+				setUpMetricValue,
+				`# HELP pgbackrest_stanza_backup_complete_bytes Completed size for backup in progress.
+# TYPE pgbackrest_stanza_backup_complete_bytes gauge
+pgbackrest_stanza_backup_complete_bytes{stanza="demo"} 4.12408e+06
+# HELP pgbackrest_stanza_backup_lock_status Current stanza backup lock status.
+# TYPE pgbackrest_stanza_backup_lock_status gauge
+pgbackrest_stanza_backup_lock_status{stanza="demo"} 1
+# HELP pgbackrest_stanza_backup_repo_complete_bytes Completed size for backup in progress per repository.
+# TYPE pgbackrest_stanza_backup_repo_complete_bytes gauge
+pgbackrest_stanza_backup_repo_complete_bytes{repo_key="1",stanza="demo"} 1.75483e+06
+# HELP pgbackrest_stanza_backup_repo_total_bytes Total size for backup in progress per repository.
+# TYPE pgbackrest_stanza_backup_repo_total_bytes gauge
+pgbackrest_stanza_backup_repo_total_bytes{repo_key="1",stanza="demo"} 3.159e+06
+# HELP pgbackrest_stanza_backup_total_bytes Total size for backup in progress.
+# TYPE pgbackrest_stanza_backup_total_bytes gauge
+pgbackrest_stanza_backup_total_bytes{stanza="demo"} 6.318e+06
+# HELP pgbackrest_stanza_restore_complete_bytes Completed size for restore in progress.
+# TYPE pgbackrest_stanza_restore_complete_bytes gauge
+pgbackrest_stanza_restore_complete_bytes{stanza="demo"} 0
+# HELP pgbackrest_stanza_restore_lock_status Current stanza restore lock status.
+# TYPE pgbackrest_stanza_restore_lock_status gauge
+pgbackrest_stanza_restore_lock_status{stanza="demo"} 0
+# HELP pgbackrest_stanza_restore_total_bytes Total size for restore in progress.
+# TYPE pgbackrest_stanza_restore_total_bytes gauge
+pgbackrest_stanza_restore_total_bytes{stanza="demo"} 0
+# HELP pgbackrest_stanza_status Current stanza status.
+# TYPE pgbackrest_stanza_status gauge
+pgbackrest_stanza_status{stanza="demo"} 0
+`,
+			},
+		},
+		{
+			"getStanzaMetricsBackupRepoProgressMultiRepo",
+			args{
+				templateStanzaBackupRepoProgress(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true,
+					12,
+					100,
+					6318000,
+					4124080,
+					annotation{"testkey": "testvalue"},
+					lockBackupRepos).Name,
+				templateStanzaBackupRepoProgress(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true,
+					12,
+					100,
+					6318000,
+					4124080,
+					annotation{"testkey": "testvalue"},
+					lockBackupRepos).Status,
+				templateStanzaBackupRepoProgress(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					[]databaseRef{{"postgres", 13425}},
+					true,
+					12,
+					100,
+					6318000,
+					4124080,
+					annotation{"testkey": "testvalue"},
+					lockBackupRepos).Repo,
+				setUpMetricValue,
+				`# HELP pgbackrest_stanza_backup_complete_bytes Completed size for backup in progress.
+# TYPE pgbackrest_stanza_backup_complete_bytes gauge
+pgbackrest_stanza_backup_complete_bytes{stanza="demo"} 4.12408e+06
+# HELP pgbackrest_stanza_backup_lock_status Current stanza backup lock status.
+# TYPE pgbackrest_stanza_backup_lock_status gauge
+pgbackrest_stanza_backup_lock_status{stanza="demo"} 1
+# HELP pgbackrest_stanza_backup_repo_complete_bytes Completed size for backup in progress per repository.
+# TYPE pgbackrest_stanza_backup_repo_complete_bytes gauge
+pgbackrest_stanza_backup_repo_complete_bytes{repo_key="1",stanza="demo"} 1.75483e+06
+pgbackrest_stanza_backup_repo_complete_bytes{repo_key="2",stanza="demo"} 2.36925e+06
+# HELP pgbackrest_stanza_backup_repo_total_bytes Total size for backup in progress per repository.
+# TYPE pgbackrest_stanza_backup_repo_total_bytes gauge
+pgbackrest_stanza_backup_repo_total_bytes{repo_key="1",stanza="demo"} 3.159e+06
+pgbackrest_stanza_backup_repo_total_bytes{repo_key="2",stanza="demo"} 3.159e+06
+# HELP pgbackrest_stanza_backup_total_bytes Total size for backup in progress.
+# TYPE pgbackrest_stanza_backup_total_bytes gauge
+pgbackrest_stanza_backup_total_bytes{stanza="demo"} 6.318e+06
+# HELP pgbackrest_stanza_restore_complete_bytes Completed size for restore in progress.
+# TYPE pgbackrest_stanza_restore_complete_bytes gauge
+pgbackrest_stanza_restore_complete_bytes{stanza="demo"} 0
+# HELP pgbackrest_stanza_restore_lock_status Current stanza restore lock status.
+# TYPE pgbackrest_stanza_restore_lock_status gauge
+pgbackrest_stanza_restore_lock_status{stanza="demo"} 0
+# HELP pgbackrest_stanza_restore_total_bytes Total size for restore in progress.
+# TYPE pgbackrest_stanza_restore_total_bytes gauge
+pgbackrest_stanza_restore_total_bytes{stanza="demo"} 0
+# HELP pgbackrest_stanza_status Current stanza status.
+# TYPE pgbackrest_stanza_status gauge
+pgbackrest_stanza_status{stanza="demo"} 0
+`,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resetMetrics()
+			getStanzaMetrics(tt.args.stanzaName, tt.args.stanzaStatus, tt.args.stanzaRepo, tt.args.setUpMetricValueFun, logger)
+			reg := prometheus.NewRegistry()
+			reg.MustRegister(
+				pgbrStanzaStatusMetric,
+				pgbrStanzaBackupLockStatusMetric,
+				pgbrStanzaBackupInProgressTotalMetric,
+				pgbrStanzaBackupInProgressCompleteMetric,
+				pgbrStanzaBackupInProgressRepoTotalMetric,
+				pgbrStanzaBackupInProgressRepoCompleteMetric,
+				pgbrStanzaRestoreLockStatusMetric,
+				pgbrStanzaRestoreInProgressTotalMetric,
+				pgbrStanzaRestoreInProgressCompleteMetric,
+			)
+			metricFamily, err := reg.Gather()
+			if err != nil {
+				fmt.Println(err)
+			}
+			out := &bytes.Buffer{}
+			for _, mf := range metricFamily {
+				if _, err := expfmt.MetricFamilyToText(out, mf); err != nil {
+					panic(err)
+				}
+			}
+			if tt.args.testText != out.String() {
+				t.Errorf("\nVariables do not match, metrics:\n%s\nwant:\n%s", tt.args.testText, out.String())
+			}
+		})
+	}
+}
+
 // pgBackrest version < 2.56.
 // Metrics always have 0 value:
 //   - pgbackrest_stanza_restore_lock_status
