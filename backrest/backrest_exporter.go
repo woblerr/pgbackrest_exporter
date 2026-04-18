@@ -196,7 +196,7 @@ func GetPgBackRestInfo(cfg BackrestExporterConfig, logger *slog.Logger) {
 				if stanzaInExclude(singleStanza.Name, cfg.ExcludeStanza) {
 					continue
 				}
-				getStanzaMetrics(singleStanza.Name, singleStanza.Status, setUpMetricValue, logger)
+				getStanzaMetrics(singleStanza.Name, singleStanza.Status, singleStanza.Repo, setUpMetricValue, logger)
 				getRepoMetrics(singleStanza.Name, singleStanza.Repo, setUpMetricValue, logger)
 				getWALMetrics(singleStanza.Name, singleStanza.Archive, singleStanza.DB, cfg.VerboseWAL, setUpMetricValue, logger)
 				// Last backups for current stanza
