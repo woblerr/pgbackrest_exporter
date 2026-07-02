@@ -53,6 +53,8 @@ To get a dashboard for visualizing the collected metrics, you can use a ready-ma
 | Metric | Description |  Labels | Additional Info |
 | ----------- | ------------------ | ------------- | --------------- |
 | `pgbackrest_backup_since_last_completion_seconds` | seconds since the last completed full, differential or incremental backup | backup_type, block_incr, stanza | |
+| `pgbackrest_backup_repo_since_last_completion_seconds` | seconds since the last completed full, differential or incremental backup in repository | backup_type, block_incr, repo_key, stanza | |
+| `pgbackrest_backup_repo_last_duration_seconds` | backup duration for the last full, differential or incremental backup in repository | backup_type, block_incr, repo_key, stanza | |
 | `pgbackrest_backup_last_annotations` | number of annotations in the last full, differential or incremental backup | backup_type, block_incr, stanza | |
 | `pgbackrest_backup_last_databases` | number of databases in the last full, differential or incremental backup | backup_type, block_incr, stanza | |
 | `pgbackrest_backup_last_references` | number of references to other backups (backup reference list) in the last full, differential or incremental backup | backup_type, block_incr, ref_backup, stanza | |

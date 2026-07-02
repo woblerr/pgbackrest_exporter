@@ -147,6 +147,225 @@ pgbackrest_backup_since_last_completion_seconds{backup_type="incr",block_incr="y
 	}
 }
 
+func TestGetBackupRepoLastMetrics(t *testing.T) {
+	type args struct {
+		stanzaName          string
+		backupData          []backup
+		dbData              []db
+		currentUnixTime     int64
+		setUpMetricValueFun setUpMetricValueFunType
+		testText            string
+	}
+	templateMetrics := `# HELP pgbackrest_backup_repo_last_duration_seconds Backup duration for the last full, differential or incremental backup in repository.
+# TYPE pgbackrest_backup_repo_last_duration_seconds gauge
+pgbackrest_backup_repo_last_duration_seconds{backup_type="diff",block_incr="n",repo_key="1",stanza="demo"} 10
+pgbackrest_backup_repo_last_duration_seconds{backup_type="diff",block_incr="n",repo_key="2",stanza="demo"} 20
+pgbackrest_backup_repo_last_duration_seconds{backup_type="full",block_incr="n",repo_key="1",stanza="demo"} 10
+pgbackrest_backup_repo_last_duration_seconds{backup_type="full",block_incr="n",repo_key="2",stanza="demo"} 5
+pgbackrest_backup_repo_last_duration_seconds{backup_type="incr",block_incr="n",repo_key="1",stanza="demo"} 10
+pgbackrest_backup_repo_last_duration_seconds{backup_type="incr",block_incr="n",repo_key="2",stanza="demo"} 30
+# HELP pgbackrest_backup_repo_since_last_completion_seconds Seconds since the last completed full, differential or incremental backup in repository.
+# TYPE pgbackrest_backup_repo_since_last_completion_seconds gauge
+pgbackrest_backup_repo_since_last_completion_seconds{backup_type="diff",block_incr="n",repo_key="1",stanza="demo"} 400
+pgbackrest_backup_repo_since_last_completion_seconds{backup_type="diff",block_incr="n",repo_key="2",stanza="demo"} 300
+pgbackrest_backup_repo_since_last_completion_seconds{backup_type="full",block_incr="n",repo_key="1",stanza="demo"} 400
+pgbackrest_backup_repo_since_last_completion_seconds{backup_type="full",block_incr="n",repo_key="2",stanza="demo"} 400
+pgbackrest_backup_repo_since_last_completion_seconds{backup_type="incr",block_incr="n",repo_key="1",stanza="demo"} 400
+pgbackrest_backup_repo_since_last_completion_seconds{backup_type="incr",block_incr="n",repo_key="2",stanza="demo"} 200
+`
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			"getBackupRepoLastMetrics",
+			args{
+				"demo",
+				[]backup{
+					templateBackupForRepoLastMetric(1, "repo1-full", "full", 90, 100, valToPtr(false)),
+					templateBackupForRepoLastMetric(2, "repo2-full", "full", 95, 100, valToPtr(false)),
+					templateBackupForRepoLastMetric(2, "repo2-full_repo2-diff", "diff", 180, 200, valToPtr(false)),
+					templateBackupForRepoLastMetric(2, "repo2-full_repo2-diff_repo2-incr", "incr", 270, 300, valToPtr(true)),
+				},
+				[]db{
+					{1, 1, 6970977677138971135, "13"},
+					{1, 2, 6970977677138971135, "13"},
+				},
+				500,
+				setUpMetricValue,
+				templateMetrics,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resetBackupMetrics()
+			resetLastBackupMetrics()
+			_, lastBackupsByRepo := getBackupMetrics(tt.args.stanzaName, false, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
+			getBackupRepoLastMetrics(tt.args.stanzaName, lastBackupsByRepo, tt.args.currentUnixTime, tt.args.setUpMetricValueFun, logger)
+			reg := prometheus.NewRegistry()
+			reg.MustRegister(
+				pgbrStanzaBackupRepoSinceLastCompletionSecondsMetric,
+				pgbrStanzaBackupRepoLastDurationMetric,
+			)
+			metricFamily, err := reg.Gather()
+			if err != nil {
+				fmt.Println(err)
+			}
+			out := &bytes.Buffer{}
+			for _, mf := range metricFamily {
+				if _, err := expfmt.MetricFamilyToText(out, mf); err != nil {
+					panic(err)
+				}
+			}
+			if tt.args.testText != out.String() {
+				t.Errorf(
+					"\nVariables do not match, metrics:\n%s\nwant:\n%s", tt.args.testText, out.String())
+			}
+		})
+	}
+}
+
+func TestGetBackupRepoLastMetricsRepoAbsent(t *testing.T) {
+	type args struct {
+		stanzaName          string
+		backupData          []backup
+		dbData              []db
+		currentUnixTime     int64
+		setUpMetricValueFun setUpMetricValueFunType
+		testText            string
+	}
+	templateMetrics := `# HELP pgbackrest_backup_repo_last_duration_seconds Backup duration for the last full, differential or incremental backup in repository.
+# TYPE pgbackrest_backup_repo_last_duration_seconds gauge
+pgbackrest_backup_repo_last_duration_seconds{backup_type="diff",block_incr="n",repo_key="0",stanza="demo"} 3
+pgbackrest_backup_repo_last_duration_seconds{backup_type="full",block_incr="n",repo_key="0",stanza="demo"} 3
+pgbackrest_backup_repo_last_duration_seconds{backup_type="incr",block_incr="n",repo_key="0",stanza="demo"} 3
+# HELP pgbackrest_backup_repo_since_last_completion_seconds Seconds since the last completed full, differential or incremental backup in repository.
+# TYPE pgbackrest_backup_repo_since_last_completion_seconds gauge
+pgbackrest_backup_repo_since_last_completion_seconds{backup_type="diff",block_incr="n",repo_key="0",stanza="demo"} 100
+pgbackrest_backup_repo_since_last_completion_seconds{backup_type="full",block_incr="n",repo_key="0",stanza="demo"} 100
+pgbackrest_backup_repo_since_last_completion_seconds{backup_type="incr",block_incr="n",repo_key="0",stanza="demo"} 100
+`
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			"getBackupRepoLastMetricsRepoAbsent",
+			args{
+				templateStanzaRepoAbsent(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					2969514).Name,
+				templateStanzaRepoAbsent(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					2969514).Backup,
+				templateStanzaRepoAbsent(
+					"000000010000000000000004",
+					"000000010000000000000001",
+					2969514).DB,
+				1623057966,
+				setUpMetricValue,
+				templateMetrics,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resetBackupMetrics()
+			resetLastBackupMetrics()
+			_, lastBackupsByRepo := getBackupMetrics(tt.args.stanzaName, false, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
+			getBackupRepoLastMetrics(tt.args.stanzaName, lastBackupsByRepo, tt.args.currentUnixTime, tt.args.setUpMetricValueFun, logger)
+			reg := prometheus.NewRegistry()
+			reg.MustRegister(
+				pgbrStanzaBackupRepoSinceLastCompletionSecondsMetric,
+				pgbrStanzaBackupRepoLastDurationMetric,
+			)
+			metricFamily, err := reg.Gather()
+			if err != nil {
+				fmt.Println(err)
+			}
+			out := &bytes.Buffer{}
+			for _, mf := range metricFamily {
+				if _, err := expfmt.MetricFamilyToText(out, mf); err != nil {
+					panic(err)
+				}
+			}
+			if tt.args.testText != out.String() {
+				t.Errorf(
+					"\nVariables do not match, metrics:\n%s\nwant:\n%s", tt.args.testText, out.String())
+			}
+		})
+	}
+}
+
+func TestGetBackupMetricsRepoFallbacks(t *testing.T) {
+	tests := []struct {
+		name         string
+		backups      []backup
+		wantFullTime int64
+		wantDiffTime int64
+		wantIncrTime int64
+	}{
+		{
+			"fullOnly",
+			[]backup{
+				templateBackupForRepoLastMetric(1, "repo1-full", "full", 90, 100, valToPtr(false)),
+			},
+			100,
+			100,
+			100,
+		},
+		{
+			"fullDiff",
+			[]backup{
+				templateBackupForRepoLastMetric(1, "repo1-full", "full", 90, 100, valToPtr(false)),
+				templateBackupForRepoLastMetric(1, "repo1-full_repo1-diff", "diff", 180, 200, valToPtr(false)),
+			},
+			100,
+			200,
+			200,
+		},
+		{
+			"fullDiffIncr",
+			[]backup{
+				templateBackupForRepoLastMetric(1, "repo1-full", "full", 90, 100, valToPtr(false)),
+				templateBackupForRepoLastMetric(1, "repo1-full_repo1-diff", "diff", 180, 200, valToPtr(false)),
+				templateBackupForRepoLastMetric(1, "repo1-full_repo1-diff_repo1-incr", "incr", 270, 300, valToPtr(false)),
+			},
+			100,
+			200,
+			300,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resetBackupMetrics()
+			_, lastBackupsByRepo := getBackupMetrics(
+				"demo",
+				false,
+				tt.backups,
+				[]db{{1, 1, 6970977677138971135, "13"}},
+				setUpMetricValue,
+				logger,
+			)
+			got := lastBackupsByRepo["1"]
+			if got.full.backupTime.Unix() != tt.wantFullTime ||
+				got.diff.backupTime.Unix() != tt.wantDiffTime ||
+				got.incr.backupTime.Unix() != tt.wantIncrTime {
+				t.Errorf(
+					"\nVariables do not match, lastBackups:\n%v\nwant times: full=%d diff=%d incr=%d",
+					got,
+					tt.wantFullTime,
+					tt.wantDiffTime,
+					tt.wantIncrTime,
+				)
+			}
+		})
+	}
+}
+
 func TestGetBackupLastDBCountMetrics(t *testing.T) {
 	type args struct {
 		config              string
@@ -313,4 +532,20 @@ pgbackrest_backup_last_databases{backup_type="incr",block_incr="n",stanza="demo"
 			}
 		})
 	}
+}
+
+func templateBackupForRepoLastMetric(repoKey int, label, backupType string, startTime, stopTime int64, errorStatus *bool) backup {
+	backupData := backup{}
+	backupData.BackrestInfo.Format = 5
+	backupData.BackrestInfo.Version = "2.45"
+	backupData.Database = databaseID{ID: 1, RepoKey: repoKey}
+	backupData.Error = errorStatus
+	backupData.Info.Delta = 1
+	backupData.Info.Repository.Delta = 1
+	backupData.Info.Size = 1
+	backupData.Label = label
+	backupData.Timestamp.Start = startTime
+	backupData.Timestamp.Stop = stopTime
+	backupData.Type = backupType
+	return backupData
 }

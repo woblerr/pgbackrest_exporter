@@ -200,13 +200,17 @@ func GetPgBackRestInfo(cfg BackrestExporterConfig, logger *slog.Logger) {
 				getRepoMetrics(singleStanza.Name, singleStanza.Repo, setUpMetricValue, logger)
 				getWALMetrics(singleStanza.Name, singleStanza.Archive, singleStanza.DB, cfg.VerboseWAL, setUpMetricValue, logger)
 				// Last backups for current stanza
-				lastBackups := getBackupMetrics(singleStanza.Name, cfg.BackupReferenceCount, singleStanza.Backup, singleStanza.DB, setUpMetricValue, logger)
+				lastBackups, lastBackupsByRepo := getBackupMetrics(singleStanza.Name, cfg.BackupReferenceCount, singleStanza.Backup, singleStanza.DB, setUpMetricValue, logger)
 				// If full backup exists, the values of metrics for differential and
 				// incremental backups also will be set.
 				// If not - metrics won't be set.
 				if !lastBackups.full.backupTime.IsZero() {
 					getBackupLastMetrics(singleStanza.Name, lastBackups, currentUnixTime, setUpMetricValue, logger)
 				}
+				// Repository last metrics need a per-repository full backup check,
+				// so getBackupRepoLastMetrics applies that guard internally for
+				// each repo_key and skips repositories without a full backup.
+				getBackupRepoLastMetrics(singleStanza.Name, lastBackupsByRepo, currentUnixTime, setUpMetricValue, logger)
 				// If the calculation of the number of databases in backups is enabled.
 				// Information about number of databases in specific backup has appeared since pgBackRest v2.41.
 				// In versions < v2.41 this is missing and the metric will be set to 0.
