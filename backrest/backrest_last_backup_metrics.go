@@ -88,6 +88,24 @@ var (
 			"backup_type",
 			"block_incr",
 			"stanza"})
+	pgbrStanzaBackupRepoSinceLastCompletionSecondsMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_backup_repo_since_last_completion_seconds",
+		Help: "Seconds since the last completed full, differential or incremental backup in repository.",
+	},
+		[]string{
+			"backup_type",
+			"block_incr",
+			"repo_key",
+			"stanza"})
+	pgbrStanzaBackupRepoLastDurationMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_backup_repo_last_duration_seconds",
+		Help: "Backup duration for the last full, differential or incremental backup in repository.",
+	},
+		[]string{
+			"backup_type",
+			"block_incr",
+			"repo_key",
+			"stanza"})
 	pgbrStanzaBackupLastAnnotationsMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "pgbackrest_backup_last_annotations",
 		Help: "Number of annotations in the last full, differential or incremental backup.",
@@ -262,6 +280,46 @@ func getBackupLastMetrics(stanzaName string, lastBackups lastBackupsStruct, curr
 	}
 }
 
+// Set per-repository backup metrics:
+//   - pgbackrest_backup_repo_since_last_completion_seconds
+//   - pgbackrest_backup_repo_last_duration_seconds
+//
+// Each repository is checked independently. Repositories without a full backup
+// are skipped to avoid emitting incomplete differential or incremental metrics.
+func getBackupRepoLastMetrics(stanzaName string, lastBackupsByRepo map[string]lastBackupsStruct, currentUnixTime int64, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) {
+	for repoKey, lastBackups := range lastBackupsByRepo {
+		if lastBackups.full.backupTime.IsZero() {
+			continue
+		}
+		for _, backup := range []backupStruct{lastBackups.full, lastBackups.diff, lastBackups.incr} {
+			// Seconds since the last completed backups.
+			setUpMetric(
+				pgbrStanzaBackupRepoSinceLastCompletionSecondsMetric,
+				"pgbackrest_backup_repo_since_last_completion_seconds",
+				time.Unix(currentUnixTime, 0).Sub(backup.backupTime).Seconds(),
+				setUpMetricValueFun,
+				logger,
+				backup.backupType,
+				backup.backupBlockIncr,
+				repoKey,
+				stanzaName,
+			)
+			// Backup durations in seconds for last backups.
+			setUpMetric(
+				pgbrStanzaBackupRepoLastDurationMetric,
+				"pgbackrest_backup_repo_last_duration_seconds",
+				backup.backupDuration,
+				setUpMetricValueFun,
+				logger,
+				backup.backupType,
+				backup.backupBlockIncr,
+				repoKey,
+				stanzaName,
+			)
+		}
+	}
+}
+
 // Set backup metrics:
 //   - pgbackrest_backup_last_databases
 func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, lastBackups lastBackupsStruct, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) {
@@ -376,4 +434,6 @@ func resetLastBackupMetrics() {
 	pgbrStanzaBackupLastErrorMetric.Reset()
 	pgbrStanzaBackupLastAnnotationsMetric.Reset()
 	pgbrStanzaBackupLastReferencesMetric.Reset()
+	pgbrStanzaBackupRepoSinceLastCompletionSecondsMetric.Reset()
+	pgbrStanzaBackupRepoLastDurationMetric.Reset()
 }

@@ -26,6 +26,7 @@ func TestGetBackupMetrics(t *testing.T) {
 		setUpMetricValueFun setUpMetricValueFunType
 		testText            string
 		testLastBackups     lastBackupsStruct
+		testRepoKey         string
 	}
 	templateMetrics := `# HELP pgbackrest_backup_annotations Number of annotations in backup.
 # TYPE pgbackrest_backup_annotations gauge
@@ -116,13 +117,14 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 				setUpMetricValue,
 				templateMetrics,
 				templateLastBackup(),
+				"1",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resetBackupMetrics()
-			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.referenceCountFlag, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
+			testLastBackups, testLastBackupsByRepo := getBackupMetrics(tt.args.stanzaName, tt.args.referenceCountFlag, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupInfoMetric,
@@ -161,6 +163,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 					tt.args.testLastBackups, testLastBackups,
 				)
 			}
+			checkLastBackupsByRepo(t, testLastBackupsByRepo, tt.args.testRepoKey, 1, tt.args.testLastBackups)
 		})
 	}
 }
@@ -180,6 +183,7 @@ func TestGetRepoMapMetricsAbsent(t *testing.T) {
 		setUpMetricValueFun setUpMetricValueFunType
 		testText            string
 		testLastBackups     lastBackupsStruct
+		testRepoKey         string
 	}
 	templateMetrics := `# HELP pgbackrest_backup_annotations Number of annotations in backup.
 # TYPE pgbackrest_backup_annotations gauge
@@ -247,13 +251,14 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 				setUpMetricValue,
 				templateMetrics,
 				templateLastBackupRepoMapSizesAbsent(),
+				"1",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resetBackupMetrics()
-			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.referenceCountFlag, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
+			testLastBackups, testLastBackupsByRepo := getBackupMetrics(tt.args.stanzaName, tt.args.referenceCountFlag, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupInfoMetric,
@@ -293,6 +298,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 					tt.args.testLastBackups, testLastBackups,
 				)
 			}
+			checkLastBackupsByRepo(t, testLastBackupsByRepo, tt.args.testRepoKey, 1, tt.args.testLastBackups)
 		})
 	}
 }
@@ -313,6 +319,7 @@ func TestGetBackupMetricsDBsAbsent(t *testing.T) {
 		setUpMetricValueFun setUpMetricValueFunType
 		testText            string
 		testLastBackups     lastBackupsStruct
+		testRepoKey         string
 	}
 	templateMetrics := `# HELP pgbackrest_backup_annotations Number of annotations in backup.
 # TYPE pgbackrest_backup_annotations gauge
@@ -380,13 +387,14 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 				setUpMetricValue,
 				templateMetrics,
 				templateLastBackupDBsAbsent(),
+				"1",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resetBackupMetrics()
-			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.referenceCountFlag, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
+			testLastBackups, testLastBackupsByRepo := getBackupMetrics(tt.args.stanzaName, tt.args.referenceCountFlag, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupInfoMetric,
@@ -425,6 +433,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 					tt.args.testLastBackups, testLastBackups,
 				)
 			}
+			checkLastBackupsByRepo(t, testLastBackupsByRepo, tt.args.testRepoKey, 1, tt.args.testLastBackups)
 		})
 	}
 }
@@ -450,6 +459,7 @@ func TestGetBackupMetricsErrorAbsent(t *testing.T) {
 		setUpMetricValueFun setUpMetricValueFunType
 		testText            string
 		testLastBackups     lastBackupsStruct
+		testRepoKey         string
 	}
 	templateMetrics := `# HELP pgbackrest_backup_annotations Number of annotations in backup.
 # TYPE pgbackrest_backup_annotations gauge
@@ -511,13 +521,14 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 				setUpMetricValue,
 				templateMetrics,
 				templateLastBackupErrorAbsent(),
+				"1",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resetBackupMetrics()
-			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.referenceCountFlag, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
+			testLastBackups, testLastBackupsByRepo := getBackupMetrics(tt.args.stanzaName, tt.args.referenceCountFlag, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupInfoMetric,
@@ -556,6 +567,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 					tt.args.testLastBackups, testLastBackups,
 				)
 			}
+			checkLastBackupsByRepo(t, testLastBackupsByRepo, tt.args.testRepoKey, 1, tt.args.testLastBackups)
 		})
 	}
 }
@@ -582,6 +594,7 @@ func TestGetBackupMetricsRepoAbsent(t *testing.T) {
 		setUpMetricValueFun setUpMetricValueFunType
 		testText            string
 		testLastBackups     lastBackupsStruct
+		testRepoKey         string
 	}
 	templateMetrics := `# HELP pgbackrest_backup_annotations Number of annotations in backup.
 # TYPE pgbackrest_backup_annotations gauge
@@ -644,13 +657,14 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 				templateMetrics,
 				// Re-use this function, because the fields with the same values from *ErrorAbsent case is returned.
 				templateLastBackupErrorAbsent(),
+				"0",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resetBackupMetrics()
-			testLastBackups := getBackupMetrics(tt.args.stanzaName, tt.args.referenceCountFlag, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
+			testLastBackups, testLastBackupsByRepo := getBackupMetrics(tt.args.stanzaName, tt.args.referenceCountFlag, tt.args.backupData, tt.args.dbData, tt.args.setUpMetricValueFun, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(
 				pgbrStanzaBackupInfoMetric,
@@ -689,6 +703,7 @@ pgbackrest_backup_size_bytes{backup_name="20210607-092423F",backup_type="full",b
 					tt.args.testLastBackups, testLastBackups,
 				)
 			}
+			checkLastBackupsByRepo(t, testLastBackupsByRepo, tt.args.testRepoKey, 1, tt.args.testLastBackups)
 		})
 	}
 }
@@ -812,4 +827,37 @@ func TestGetBackupMetricsErrorsAndDebugs(t *testing.T) {
 			}
 		})
 	}
+}
+
+func checkLastBackupsByRepo(t *testing.T, lastBackupsByRepo map[string]lastBackupsStruct, repoKey string, expectedLen int, lastBackups lastBackupsStruct) {
+	t.Helper()
+	if len(lastBackupsByRepo) != expectedLen {
+		t.Errorf(
+			"\nVariables do not match:\nlastBackupsByRepo length=%d\nwant:\n%d",
+			len(lastBackupsByRepo),
+			expectedLen,
+		)
+	}
+	lastBackupsRepo, ok := lastBackupsByRepo[repoKey]
+	if !ok {
+		t.Errorf(
+			"\nVariables do not match:\nlastBackupsByRepo repo_key=%s is absent",
+			repoKey,
+		)
+		return
+	}
+	if !compareLastBackupsStructs(lastBackups, lastBackupsRepo) {
+		t.Errorf(
+			"\nVariables do not match:\nlastBackupsByRepo[%s]:\n%v\nwant:\n%v",
+			repoKey,
+			lastBackupsRepo,
+			lastBackups,
+		)
+	}
+}
+
+func compareLastBackupsStructs(a, b lastBackupsStruct) bool {
+	return compareBackupStructs(a.full, b.full) &&
+		compareBackupStructs(a.diff, b.diff) &&
+		compareBackupStructs(a.incr, b.incr)
 }

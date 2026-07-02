@@ -209,9 +209,10 @@ var (
 //   - pgbackrest_backup_error_status
 //   - pgbackrest_backup_annotations
 //
-// And returns info about last backups.
-func getBackupMetrics(stanzaName string, backupRefCount bool, backupData []backup, dbData []db, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) lastBackupsStruct {
+// And returns info about last backups globally and by repository.
+func getBackupMetrics(stanzaName string, backupRefCount bool, backupData []backup, dbData []db, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) (lastBackupsStruct, map[string]lastBackupsStruct) {
 	lastBackups := initLastBackupStruct()
+	lastBackupsByRepo := make(map[string]lastBackupsStruct)
 	// Each backup for current stanza.
 	for _, backup := range backupData {
 		// For pgBackRest >= v2.44 the functionality to perform a block incremental backup has appeared.
@@ -401,8 +402,15 @@ func getBackupMetrics(stanzaName string, backupRefCount bool, backupData []backu
 				stanzaName)
 		}
 		compareLastBackups(&lastBackups, backup, blockIncr)
+		repoKey := strconv.Itoa(backup.Database.RepoKey)
+		lastBackupsRepo, ok := lastBackupsByRepo[repoKey]
+		if !ok {
+			lastBackupsRepo = initLastBackupStruct()
+		}
+		compareLastBackups(&lastBackupsRepo, backup, blockIncr)
+		lastBackupsByRepo[repoKey] = lastBackupsRepo
 	}
-	return lastBackups
+	return lastBackups, lastBackupsByRepo
 }
 
 // Set backup metrics:
