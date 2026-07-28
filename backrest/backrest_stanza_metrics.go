@@ -2,6 +2,7 @@ package backrest
 
 import (
 	"log/slog"
+	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -43,11 +44,21 @@ var (
 		Help: "Total size for restore in progress.",
 	},
 		[]string{"stanza"})
+	pgbrStanzaBackupInProgressRepoCompleteMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_stanza_backup_repo_complete_bytes",
+		Help: "Completed size for backup in progress per repository.",
+	},
+		[]string{"repo_key", "stanza"})
+	pgbrStanzaBackupInProgressRepoTotalMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "pgbackrest_stanza_backup_repo_total_bytes",
+		Help: "Total size for backup in progress per repository.",
+	},
+		[]string{"repo_key", "stanza"})
 )
 
 // Set stanza metrics:
 //   - pgbackrest_stanza_status
-func getStanzaMetrics(stanzaName string, stanzaStatus status, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) {
+func getStanzaMetrics(stanzaName string, stanzaStatus status, stanzaRepo *[]repo, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) {
 	//https://github.com/pgbackrest/pgbackrest/blob/03021c6a17f1374e84ef42614fa1dd2a6be4b64d/src/command/info/info.c#L78-L94
 	// Stanza statuses:
 	//  0: "ok",
@@ -138,6 +149,27 @@ func getStanzaMetrics(stanzaName string, stanzaStatus status, setUpMetricValueFu
 		logger,
 		stanzaName,
 	)
+	for _, repoLock := range convertLockBackupRepoPointerToSlice(stanzaStatus.Lock.Backup.Repo, stanzaRepo) {
+		repoKey := strconv.Itoa(repoLock.Key)
+		setUpMetric(
+			pgbrStanzaBackupInProgressRepoTotalMetric,
+			"pgbackrest_stanza_backup_repo_total_bytes",
+			float64(repoLock.SizeTotal),
+			setUpMetricValueFun,
+			logger,
+			repoKey,
+			stanzaName,
+		)
+		setUpMetric(
+			pgbrStanzaBackupInProgressRepoCompleteMetric,
+			"pgbackrest_stanza_backup_repo_complete_bytes",
+			float64(repoLock.SizeComplete),
+			setUpMetricValueFun,
+			logger,
+			repoKey,
+			stanzaName,
+		)
+	}
 }
 
 func resetStanzaMetrics() {
@@ -145,6 +177,8 @@ func resetStanzaMetrics() {
 	pgbrStanzaBackupLockStatusMetric.Reset()
 	pgbrStanzaBackupInProgressTotalMetric.Reset()
 	pgbrStanzaBackupInProgressCompleteMetric.Reset()
+	pgbrStanzaBackupInProgressRepoTotalMetric.Reset()
+	pgbrStanzaBackupInProgressRepoCompleteMetric.Reset()
 	pgbrStanzaRestoreLockStatusMetric.Reset()
 	pgbrStanzaRestoreInProgressTotalMetric.Reset()
 	pgbrStanzaRestoreInProgressCompleteMetric.Reset()
