@@ -113,20 +113,22 @@ For `pgBackRest >= v2.56.0` it is possible to determine whether a restore is run
 * `pgbackrest_stanza_restore_complete_bytes` and `pgbackrest_stanza_restore_total_bytes` metrics show the progress of the restore.
 
 For `pgbackrest_stanza_backup_repo_complete_bytes` and `pgbackrest_stanza_backup_repo_total_bytes` metrics the following logic is applied:
-* for `pgBackRest >= v2.59.0`, metrics contain actual per-repo backup progress;
+* for `pgBackRest >= v2.59.0`, metrics contain actual progress for repositories with an active backup; configured repositories without an active backup retain value `0`;
 * for `pgBackRest >= v2.32` but `pgBackRest < v2.59.0`, metrics always return `0`, the `repo_key` label values are taken from the stanza repository configuration;
 * for `pgBackRest < v2.32`, metrics use `repo_key="0"` with value `0`.
+
+For `pgBackRest >= v2.32`, metrics are emitted for every repository in the stanza repository list to keep the `repo_key` label set stable when backups start or stop.
 
 For `pgbackrest_version_info` metric the value is pgBackRest version in numeric format (e.g., `2057000` for version `2.57.0`).
 
 ## Compatibility with pgBackRest versions
 
-The number of collected metrics may vary depending on pgBackRest version. 
+The number of collected metrics may vary depending on pgBackRest version.
 
 For different versions, some metrics may not be collected or have insignificant label values:
 
 * `pgBackRest < v2.59.0`
-    
+
     The following metrics will always be `0`:
     * `pgbackrest_stanza_backup_repo_complete_bytes`,
     * `pgbackrest_stanza_backup_repo_total_bytes`.
@@ -134,30 +136,30 @@ For different versions, some metrics may not be collected or have insignificant 
     The `repo_key` label uses values from the stanza repository list (for `pgBackRest >= v2.32`) or `repo_key="0"` (for `pgBackRest < v2.32`).
 
 * `pgBackRest < v2.56.0`
-    
+
     The following metrics will always be `0`:
     * `pgbackrest_stanza_restore_lock_status`,
     * `pgbackrest_stanza_restore_complete_bytes`,
     * `pgbackrest_stanza_restore_total_bytes`.
 
 * `pgbackrest < v2.55.0`
-    
+
     The following metrics will always be `0`:
     * `pgbackrest_version_info`.
 
 * `pgBackRest < v2.48`
-    
+
     The following metrics will always be `0`:
     * `pgbackrest_stanza_backup_complete_bytes`,
     * `pgbackrest_stanza_backup_total_bytes`.
 
 * `pgBackRest >= v2.45`
-  
+
     For `pgbackrest_backup_repo_size_bytes` metric the values will be `0` for block incremental backups.
 
 * `pgBackRest < v2.44`
 
-    The following metrics will always be `0`: 
+    The following metrics will always be `0`:
     * `pgbackrest_backup_repo_size_map_bytes`,
     * `pgbackrest_backup_repo_delta_map_bytes`.
 
@@ -165,7 +167,7 @@ For different versions, some metrics may not be collected or have insignificant 
 
 * `pgBackRest < v2.41`
 
-    The following metrics will always be `0`: 
+    The following metrics will always be `0`:
     * `pgbackrest_backup_databases`,
     * `pgbackrest_backup_last_databases`,
     * `pgbackrest_backup_annotations`,

@@ -181,19 +181,39 @@ func TestConvertLockBackupRepoPointerToSlice(t *testing.T) {
 		args args
 		want []lockBackupRepo
 	}{
-		{"ConvertLockBackupRepoPointerToSliceLockRepoNotNil",
+		{"ConvertLockBackupRepoPointerToSlicePartialLockRepo",
 			args{
 				valToPtr([]lockBackupRepo{{Key: 1, SizeTotal: 100, SizeComplete: 50}}),
-				valToPtr([]repo{{Key: 1}}),
+				valToPtr([]repo{{Key: 1}, {Key: 2}}),
 			},
-			[]lockBackupRepo{{Key: 1, SizeTotal: 100, SizeComplete: 50}},
+			[]lockBackupRepo{{Key: 1, SizeTotal: 100, SizeComplete: 50}, {Key: 2}},
+		},
+		{"ConvertLockBackupRepoPointerToSliceAllLockRepos",
+			args{
+				valToPtr([]lockBackupRepo{
+					{Key: 2, SizeTotal: 200, SizeComplete: 100},
+					{Key: 1, SizeTotal: 100, SizeComplete: 50},
+				}),
+				valToPtr([]repo{{Key: 1}, {Key: 2}}),
+			},
+			[]lockBackupRepo{
+				{Key: 1, SizeTotal: 100, SizeComplete: 50},
+				{Key: 2, SizeTotal: 200, SizeComplete: 100},
+			},
+		},
+		{"ConvertLockBackupRepoPointerToSliceEmptyLockRepo",
+			args{
+				valToPtr([]lockBackupRepo{}),
+				valToPtr([]repo{{Key: 1}, {Key: 2}}),
+			},
+			[]lockBackupRepo{{Key: 1}, {Key: 2}},
 		},
 		{"ConvertLockBackupRepoPointerToSliceStanzaRepoNotNil",
 			args{
 				nil,
-				valToPtr([]repo{{Key: 1}}),
+				valToPtr([]repo{{Key: 1}, {Key: 2}}),
 			},
-			[]lockBackupRepo{{Key: 1}},
+			[]lockBackupRepo{{Key: 1}, {Key: 2}},
 		},
 		{"ConvertLockBackupRepoPointerToSliceNil",
 			args{nil, nil},
