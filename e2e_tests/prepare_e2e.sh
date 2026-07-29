@@ -5,7 +5,6 @@ set -e
 
 PG_CLUSTER="main"
 PG_DATABASE="test_db"
-PG_BIN="/usr/lib/postgresql/18/bin"
 PG_DATA="/var/lib/postgresql/18/${PG_CLUSTER}"
 BACKREST_STANZA="demo"
 EXPORTER_COMMAND="/etc/pgbackrest/pgbackrest_exporter \
@@ -14,8 +13,6 @@ EXPORTER_COMMAND="/etc/pgbackrest/pgbackrest_exporter \
 --backrest.database-parallel-processes=2 \
 --backrest.database-count-latest"
 
-# Enable checksums.
-${PG_BIN}/pg_checksums -e -D ${PG_DATA}
 # Start postgres.
 pg_ctlcluster 18 ${PG_CLUSTER} start
 # Create  database.
