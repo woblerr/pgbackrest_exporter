@@ -48,8 +48,8 @@ The project and CI use Go 1.26 and vendored modules.
 - `make docker` and `make docker-alpine` build the default and Alpine image variants.
 - `make dist` builds snapshot archives and packages through Docker and GoReleaser,
   then writes them under the ignored `dist/` directory.
-- Run lint with `golangci-lint run`; there is no Makefile lint target.
-- Keep changed Go files formatted with `gofmt`.
+- Run lint: `make lint`.
+- Format Go files: `make fmt`.
 
 Every Make invocation evaluates `DOCKER_CONTAINER_E2E` with `docker ps` at parse time,
 including `make -n` and targets that otherwise only run Go commands.
@@ -77,7 +77,7 @@ synchronized when e2e behavior or coverage changes.
 
 ## Verification
 
-- For Go changes, run `make test` and `golangci-lint run`.
+- For Go changes, run `make fmt`, `make test`, and `make lint`.
 - Focused tests are useful during iteration, but do not use them as the only final verification.
 - For build, Docker, or packaging changes, run the relevant Makefile target when practical.
 - Run `make test-e2e` only under the approval rules described above.
