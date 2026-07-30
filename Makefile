@@ -25,6 +25,16 @@ test:
 	@echo "Run tests for $(APP_NAME)"
 	TZ="Etc/UTC" go test -mod=vendor -timeout=60s -count 1  ./...
 
+.PHONY: lint
+lint:
+	@echo "Run linters for $(APP_NAME)"
+	golangci-lint run ./...
+
+.PHONY: fmt
+fmt:
+	@echo "Format Go files for $(APP_NAME)"
+	go fmt ./...
+
 .PHONY: test-e2e
 test-e2e:
 	@echo "Run end-to-end tests for $(APP_NAME)"
