@@ -2,7 +2,7 @@ ARG BACKREST_VERSION="2.59.1"
 ARG DOCKER_BACKREST_VERSION="v0.38"
 ARG PG_VERSION="18"
 
-FROM golang:1.26-bookworm AS builder
+FROM golang:1.27-bookworm AS builder
 ARG REPO_BUILD_TAG
 COPY . /build
 WORKDIR /build

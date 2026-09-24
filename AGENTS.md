@@ -27,7 +27,7 @@ or in the Docker image built by this repository.
 ## Build, Test, and Lint
 
 Prefer existing Makefile targets over equivalent raw commands.
-The project and CI use Go 1.26 and vendored modules.
+The project and CI use Go 1.27 and vendored modules.
 
 - Run unit tests with `make test`.
   The target runs:
