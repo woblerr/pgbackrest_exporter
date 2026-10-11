@@ -492,6 +492,11 @@ docker run -d \
 
 ### Running as systemd service
 
+The service runs as the `postgres` user and group,
+because pgBackRest refuses to run commands as `root` unless the `allow-root` option is set.
+If pgBackRest runs under a different OS user on your host,
+change `User=` and `Group=` in the service file accordingly.
+
 * Register `pgbackrest_exporter` (already builded, if not - exec `make build` before) as a systemd service:
 
 ```bash
