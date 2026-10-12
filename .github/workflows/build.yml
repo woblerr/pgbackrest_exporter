@@ -10,8 +10,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env: 
-      backrest_version: "2.59.1"
-      docker_backrest_version: "v0.38"
+      backrest_version: "2.59.3"
+      docker_backrest_version: "v0.40"
       build_platforms: "linux/amd64,linux/arm64"
     steps:
       - name: Set up go 1.27
@@ -33,7 +33,7 @@ jobs:
       - name: Run linters
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.13.2
+          version: v2.14.0
         env:
           TZ: "Etc/UTC"
 
