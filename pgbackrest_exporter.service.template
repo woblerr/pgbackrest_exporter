@@ -3,6 +3,8 @@ Description=pgbackrest_exporter
 
 [Service]
 Type=simple
+User=postgres
+Group=postgres
 Environment="ARGS=--web.telemetry-path=/metrics --web.listen-address=:9854 --collect.interval=600"
 EnvironmentFile=-/etc/default/pgbackrest_exporter
 ExecStart=/usr/bin/pgbackrest_exporter $ARGS
