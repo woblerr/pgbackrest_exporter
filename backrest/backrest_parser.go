@@ -381,7 +381,7 @@ func (backup backup) checkBackupIncremental() string {
 	return "n"
 }
 
-func processSpecificBackupData(config, configIncludePath, stanzaName, backupLabel, backupType, metricName string, metric *prometheus.GaugeVec, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger, addLabels ...string) {
+func processSpecificBackupData(config, configIncludePath, stanzaName, backupLabel string, backupTypes []string, metricName string, metric *prometheus.GaugeVec, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger, addLabels ...string) {
 	var metricValue float64 = 0
 	parseStanzaDataSpecific, err := getParsedSpecificBackupInfoData(config, configIncludePath, stanzaName, backupLabel, logger)
 	if err != nil {
@@ -406,15 +406,17 @@ func processSpecificBackupData(config, configIncludePath, stanzaName, backupLabe
 			"backup", backupLabel,
 		)
 	}
-	labels := append([]string{backupType, stanzaName}, addLabels...)
-	setUpMetric(
-		metric,
-		metricName,
-		metricValue,
-		setUpMetricValueFun,
-		logger,
-		labels...,
-	)
+	for _, backupType := range backupTypes {
+		labels := append([]string{backupType, stanzaName}, addLabels...)
+		setUpMetric(
+			metric,
+			metricName,
+			metricValue,
+			setUpMetricValueFun,
+			logger,
+			labels...,
+		)
+	}
 }
 
 // processBackupReferencesCount processes the number of references to other backups (backup reference list).

@@ -433,7 +433,7 @@ func getBackupDBCountMetrics(maxParallelProcesses int, config, configIncludePath
 				configIncludePath,
 				stanzaName,
 				backupLabel,
-				backupType,
+				[]string{backupType},
 				"pgbackrest_backup_databases",
 				pgbrStanzaBackupDatabasesMetric,
 				setUpMetricValueFun,

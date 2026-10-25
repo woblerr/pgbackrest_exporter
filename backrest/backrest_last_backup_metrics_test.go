@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"sync"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -529,6 +530,95 @@ pgbackrest_backup_last_databases{backup_type="incr",block_incr="n",stanza="demo"
 			if tt.args.testText != out.String() {
 				t.Errorf(
 					"\nVariables do not match, metrics:\n%s\nwant:\n%s", tt.args.testText, out.String())
+			}
+		})
+	}
+}
+
+func TestGetBackupLastDBCountMetricsBackupSelection(t *testing.T) {
+	const (
+		fullBackup = "20210607-092423F"
+		diffBackup = "20210607-092423F_20210607-102423D"
+		incrBackup = "20210607-092423F_20210607-112423I"
+	)
+	tests := []struct {
+		name      string
+		diffLabel string
+		incrLabel string
+		diffBlock string
+		incrBlock string
+		want      [3]int
+	}{
+		{"full", fullBackup, fullBackup, "n", "n", [3]int{2, 2, 2}},
+		{"full_incr", fullBackup, incrBackup, "n", "y", [3]int{2, 2, 4}},
+		{"full_diff", diffBackup, diffBackup, "y", "y", [3]int{2, 3, 3}},
+		{"full_diff_incr", diffBackup, incrBackup, "y", "y", [3]int{2, 3, 4}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resetLastBackupMetrics()
+			defer resetLastBackupMetrics()
+			mockDataBackupLast = mockBackupLastStruct{
+				mockFull: mockStruct{mockStdout: `[{"backup":[{"database-ref":[{},{}]}]}]`},
+				mockDiff: mockStruct{mockStdout: `[{"backup":[{"database-ref":[{},{},{}]}]}]`},
+				mockIncr: mockStruct{mockStdout: `[{"backup":[{"database-ref":[{},{},{},{}]}]}]`},
+			}
+			requests := make(map[string]int)
+			var requestsMu sync.Mutex
+			execCommand = func(command string, args ...string) *exec.Cmd {
+				for i, arg := range args {
+					if arg == "--set" && i+1 < len(args) {
+						requestsMu.Lock()
+						requests[args[i+1]]++
+						requestsMu.Unlock()
+					}
+				}
+				return fakeExecCommandSpecificDatabase(command, args...)
+			}
+			defer func() { execCommand = exec.Command }()
+			lastBackups := templateLastBackup()
+			lastBackups.full.backupBlockIncr = "n"
+			lastBackups.diff.backupLabel = tt.diffLabel
+			lastBackups.diff.backupBlockIncr = tt.diffBlock
+			lastBackups.incr.backupLabel = tt.incrLabel
+			lastBackups.incr.backupBlockIncr = tt.incrBlock
+			var writes sync.WaitGroup
+			writes.Add(3)
+			setMetric := func(metric *prometheus.GaugeVec, value float64, labels ...string) error {
+				defer writes.Done()
+				return setUpMetricValue(metric, value, labels...)
+			}
+			getBackupLastDBCountMetrics("", "", "demo", lastBackups, setMetric, logger)
+			writes.Wait()
+			reg := prometheus.NewRegistry()
+			reg.MustRegister(pgbrStanzaBackupLastDatabasesMetric)
+			metricFamily, err := reg.Gather()
+			if err != nil {
+				t.Fatal(err)
+			}
+			out := &bytes.Buffer{}
+			for _, mf := range metricFamily {
+				if _, err := expfmt.MetricFamilyToText(out, mf); err != nil {
+					t.Fatal(err)
+				}
+			}
+			want := fmt.Sprintf(`# HELP pgbackrest_backup_last_databases Number of databases in the last full, differential or incremental backup.
+# TYPE pgbackrest_backup_last_databases gauge
+pgbackrest_backup_last_databases{backup_type="diff",block_incr="%s",stanza="demo"} %d
+pgbackrest_backup_last_databases{backup_type="full",block_incr="n",stanza="demo"} %d
+pgbackrest_backup_last_databases{backup_type="incr",block_incr="%s",stanza="demo"} %d
+`, tt.diffBlock, tt.want[1], tt.want[0], tt.incrBlock, tt.want[2])
+			if out.String() != want {
+				t.Errorf("Metrics:\n%s\nwant:\n%s", out.String(), want)
+			}
+			wantRequests := map[string]int{fullBackup: 1, tt.diffLabel: 1, tt.incrLabel: 1}
+			if len(requests) != len(wantRequests) {
+				t.Errorf("Requests: %v, want: %v", requests, wantRequests)
+			}
+			for label, count := range wantRequests {
+				if requests[label] != count {
+					t.Errorf("Requests for %s: %d, want: %d", label, requests[label], count)
+				}
 			}
 		})
 	}
