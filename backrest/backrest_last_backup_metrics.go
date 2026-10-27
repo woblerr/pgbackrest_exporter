@@ -323,29 +323,34 @@ func getBackupRepoLastMetrics(stanzaName string, lastBackupsByRepo map[string]la
 // Set backup metrics:
 //   - pgbackrest_backup_last_databases
 func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, lastBackups lastBackupsStruct, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) {
-	// For diff and incr run in parallel.
 	var wg sync.WaitGroup
-	// If name for diff backup is equal to full, there is no point in re-receiving data.
+	// Query distinct diff and incr backups in parallel with full.
+	// Reuse the full result when diff selects the same backup.
 	if lastBackups.diff.backupLabel != lastBackups.full.backupLabel {
+		backupTypes := []string{lastBackups.diff.backupType}
+		// Reuse the diff result when incr selects the same backup.
+		if lastBackups.incr.backupLabel == lastBackups.diff.backupLabel {
+			backupTypes = append(backupTypes, lastBackups.incr.backupType)
+		}
 		wg.Add(1)
-		go func(backupLabel, backupType, backupBlockIncr string) {
+		go func(backupLabel string, backupTypes []string, backupBlockIncr string) {
 			defer wg.Done()
 			processSpecificBackupData(
 				config,
 				configIncludePath,
 				stanzaName,
 				backupLabel,
-				backupType,
+				backupTypes,
 				"pgbackrest_backup_last_databases",
 				pgbrStanzaBackupLastDatabasesMetric,
 				setUpMetricValueFun,
 				logger,
 				backupBlockIncr,
 			)
-		}(lastBackups.diff.backupLabel, lastBackups.diff.backupType, lastBackups.diff.backupBlockIncr)
+		}(lastBackups.diff.backupLabel, backupTypes, lastBackups.diff.backupBlockIncr)
 	}
-	// If name for diff backup is equal to full, there is no point in re-receiving data.
-	if lastBackups.incr.backupLabel != lastBackups.diff.backupLabel {
+	// Query incr only when neither full nor diff already provides its result.
+	if lastBackups.incr.backupLabel != lastBackups.full.backupLabel && lastBackups.incr.backupLabel != lastBackups.diff.backupLabel {
 		wg.Add(1)
 		go func(backupLabel, backupType, backupBlockIncr string) {
 			defer wg.Done()
@@ -354,7 +359,7 @@ func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, l
 				configIncludePath,
 				stanzaName,
 				backupLabel,
-				backupType,
+				[]string{backupType},
 				"pgbackrest_backup_last_databases",
 				pgbrStanzaBackupLastDatabasesMetric,
 				setUpMetricValueFun,
@@ -407,7 +412,7 @@ func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, l
 			lastBackups.diff.backupBlockIncr,
 		)
 	}
-	if lastBackups.incr.backupLabel == lastBackups.diff.backupLabel {
+	if lastBackups.incr.backupLabel == lastBackups.full.backupLabel {
 		setUpMetric(
 			pgbrStanzaBackupLastDatabasesMetric,
 			"pgbackrest_backup_last_databases",
@@ -419,6 +424,7 @@ func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, l
 			lastBackups.incr.backupBlockIncr,
 		)
 	}
+	wg.Wait()
 }
 
 func resetLastBackupMetrics() {
