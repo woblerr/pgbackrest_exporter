@@ -2,6 +2,7 @@ package backrest
 
 import (
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -322,6 +323,7 @@ func getBackupRepoLastMetrics(stanzaName string, lastBackupsByRepo map[string]la
 // Set backup metrics:
 //   - pgbackrest_backup_last_databases
 func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, lastBackups lastBackupsStruct, setUpMetricValueFun setUpMetricValueFunType, logger *slog.Logger) {
+	var wg sync.WaitGroup
 	// Query distinct diff and incr backups in parallel with full.
 	// Reuse the full result when diff selects the same backup.
 	if lastBackups.diff.backupLabel != lastBackups.full.backupLabel {
@@ -330,7 +332,9 @@ func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, l
 		if lastBackups.incr.backupLabel == lastBackups.diff.backupLabel {
 			backupTypes = append(backupTypes, lastBackups.incr.backupType)
 		}
+		wg.Add(1)
 		go func(backupLabel string, backupTypes []string, backupBlockIncr string) {
+			defer wg.Done()
 			processSpecificBackupData(
 				config,
 				configIncludePath,
@@ -347,7 +351,9 @@ func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, l
 	}
 	// Query incr only when neither full nor diff already provides its result.
 	if lastBackups.incr.backupLabel != lastBackups.full.backupLabel && lastBackups.incr.backupLabel != lastBackups.diff.backupLabel {
+		wg.Add(1)
 		go func(backupLabel, backupType, backupBlockIncr string) {
+			defer wg.Done()
 			processSpecificBackupData(
 				config,
 				configIncludePath,
@@ -418,6 +424,7 @@ func getBackupLastDBCountMetrics(config, configIncludePath, stanzaName string, l
 			lastBackups.incr.backupBlockIncr,
 		)
 	}
+	wg.Wait()
 }
 
 func resetLastBackupMetrics() {

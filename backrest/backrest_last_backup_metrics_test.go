@@ -582,14 +582,7 @@ func TestGetBackupLastDBCountMetricsBackupSelection(t *testing.T) {
 			lastBackups.diff.backupBlockIncr = tt.diffBlock
 			lastBackups.incr.backupLabel = tt.incrLabel
 			lastBackups.incr.backupBlockIncr = tt.incrBlock
-			var writes sync.WaitGroup
-			writes.Add(3)
-			setMetric := func(metric *prometheus.GaugeVec, value float64, labels ...string) error {
-				defer writes.Done()
-				return setUpMetricValue(metric, value, labels...)
-			}
-			getBackupLastDBCountMetrics("", "", "demo", lastBackups, setMetric, logger)
-			writes.Wait()
+			getBackupLastDBCountMetrics("", "", "demo", lastBackups, setUpMetricValue, logger)
 			reg := prometheus.NewRegistry()
 			reg.MustRegister(pgbrStanzaBackupLastDatabasesMetric)
 			metricFamily, err := reg.Gather()
